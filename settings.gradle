@@ -1,0 +1,4 @@
+include ':vksample'
+include ':vktutorials'
+include ':vulkan'
+include ':assimp'
