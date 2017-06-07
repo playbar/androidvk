@@ -2,3 +2,4 @@
 /.externalNativeBuild
 /.idea
 /.gradle
+*.iml
