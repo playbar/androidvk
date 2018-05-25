@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.4.1)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fexceptions -Werror")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fexceptions")
 
 #add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
 add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR)
