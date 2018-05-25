@@ -34,6 +34,7 @@ create and destroy Vulkan instance
 #include <cstdlib>
 #include <util_init.hpp>
 #include "my_log.h"
+#include "unordered_map"
 
 #define APP_SHORT_NAME "vulkansamples_instance"
 

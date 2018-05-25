@@ -6,6 +6,7 @@
 #include <iostream>
 #include "util.hpp"
 #include "my_log.h"
+#include "vector"
 
 #ifdef __ANDROID__
 // Android specific include files.

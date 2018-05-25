@@ -7,9 +7,9 @@ get_filename_component(SHADERC_SRC
                        ABSOLUTE)
 
 # Import shaderc lib in NDK
-add_library(shaderc_lib STATIC IMPORTED)
-set_target_properties(shaderc_lib PROPERTIES IMPORTED_LOCATION
-                      ${SHADERC_SRC}/libs/${ANDROID_STL}/${ANDROID_ABI}/libshaderc.a)
+#add_library(shaderc_lib STATIC IMPORTED)
+#set_target_properties(shaderc_lib PROPERTIES IMPORTED_LOCATION
+#                      ${SHADERC_SRC}/libs/${ANDROID_STL}/${ANDROID_ABI}/libshaderc.a)
 
 #file(GLOB UTILS_SOURCE *.cpp)
 #file(GLOB GLUE_SOURCE *.c)
@@ -17,6 +17,10 @@ set_target_properties(shaderc_lib PROPERTIES IMPORTED_LOCATION
 #add_library(vksample SHARED
 #            ${UTILS_SOURCE}
 #            ${GLUE_SOURCE})
+
+
+add_subdirectory(shaderc)
+
 
 add_library(vksample SHARED
             android_native_app_glue.c
@@ -28,11 +32,20 @@ add_library(vksample SHARED
             vulkan_wrapper.cpp)
 
 target_include_directories(vksample PRIVATE
-                          ${CMAKE_CURRENT_SOURCE_DIR}/data
                           ${CMAKE_CURRENT_SOURCE_DIR}
-                          ${ANDROID_NDK}/sources/third_party/shaderc/include)
+                          ${CMAKE_CURRENT_SOURCE_DIR}/data
+                          ${CMAKE_CURRENT_SOURCE_DIR}/shaderc
+                          ${CMAKE_CURRENT_SOURCE_DIR}/shaderc/libshaderc/include)
 
 target_link_libraries(vksample
                       android
                       log
-                      shaderc_lib)
+                      shaderc
+                      shaderc_util
+                      glslang
+                      SPIRV
+                      SPIRV-Tools
+                      SPIRV-Tools-opt
+                      OSDependent
+                      OGLCompiler)
+
