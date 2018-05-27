@@ -25,11 +25,11 @@
 #include <stdio.h>
 #include <sys/system_properties.h>
 
-#define LOG_TAG "test"
-#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
-#define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
-#define ABI "armeabi-v7a"
+//#define LOG_TAG "test"
+//#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+//#define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
+//#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+//#define ABI "armeabi-v7a"
 
 extern JavaVM *gs_jvm;
 
@@ -161,7 +161,7 @@ Java_com_vk_jnitest_JniActivity_stringFromJNI( JNIEnv* env,
     if(JNI_OK == (*env)->MonitorExit(env, thiz)){
         LOGE("MonitorExit");    }
 //    (*env)->ExceptionClear(env);
-    return (*env)->NewStringUTF(env, "Hello from JNI !  Compiled with ABI " ABI ".");
+    return (*env)->NewStringUTF(env, "Hello from JNI !  Compiled with ABI armeabi-v7a.");
 }
 
 JNIEXPORT jstring JNICALL

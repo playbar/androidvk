@@ -1,6 +1,5 @@
-cmake_minimum_required(VERSION 3.4.1)
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fexceptions -Werror")
+#cmake_minimum_required(VERSION 3.4.1)
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fexceptions")
 
 add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR)
 add_definitions(-DASSIMP_BUILD_NO_C4D_IMPORTER)
@@ -9,17 +8,17 @@ add_definitions(-DZLIB_CONST)
 add_definitions(-DASSIMP_BUILD_NO_OGRE_IMPORTER)
 add_definitions(-DASSIMP_BUILD_NO_OPENGEX_IMPORTER)
 
-get_filename_component(SHADERC_SRC
-                       ${ANDROID_NDK}/sources/third_party/shaderc
-                       ABSOLUTE)
+#get_filename_component(SHADERC_SRC
+#                       ${ANDROID_NDK}/sources/third_party/shaderc
+#                       ABSOLUTE)
 
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/contrib/zlib)
 
 # Import shaderc lib in NDK
-add_library(shaderc_lib STATIC IMPORTED)
-set_target_properties(shaderc_lib PROPERTIES IMPORTED_LOCATION
-                      ${SHADERC_SRC}/libs/${ANDROID_STL}/${ANDROID_ABI}/libshaderc.a)
+#add_library(shaderc_lib STATIC IMPORTED)
+#set_target_properties(shaderc_lib PROPERTIES IMPORTED_LOCATION
+#                      ${SHADERC_SRC}/libs/${ANDROID_STL}/${ANDROID_ABI}/libshaderc.a)
 
 #file(GLOB UTILS_SOURCE *.cpp)
 #file(GLOB GLUE_SOURCE *.c)

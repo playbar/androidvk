@@ -1,5 +1,5 @@
 //include ':shaderc'
-include ':vksample'
+//include ':vksample'
 //include ':vktutorials'
-//include ':vulkan'
+include ':vulkan'
 //include ':assimp'
