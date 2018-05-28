@@ -22,9 +22,37 @@ target_include_directories(tutorial03 PRIVATE
                           ${CMAKE_CURRENT_SOURCE_DIR}/data
                           ${CMAKE_CURRENT_SOURCE_DIR}/stb
                           ${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader
-                          ${ANDROID_NDK}/sources/third_party/shaderc/include)
+                          ${CMAKE_CURRENT_SOURCE_DIR}/shaderc/include)
 
 target_link_libraries(tutorial03
+                      android
+                      log
+                      shaderc
+                      shaderc_util
+                      glslang
+                      SPIRV
+                      SPIRV-Tools
+                      SPIRV-Tools-opt
+                      OSDependent
+                      OGLCompiler)
+
+#drawingt_riangle
+add_library(drawingt_riangle SHARED
+            android_native_app_glue.c
+            jniactivity.c
+            vulkan_wrapper.cpp
+            drawingt_riangle/DrawingTriangleMain.cpp
+            drawingt_riangle/DrawingTriangle.cpp
+            )
+
+target_include_directories(drawingt_riangle PRIVATE
+                          ${CMAKE_CURRENT_SOURCE_DIR}
+                          ${CMAKE_CURRENT_SOURCE_DIR}/data
+                          ${CMAKE_CURRENT_SOURCE_DIR}/stb
+                          ${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader
+                          ${CMAKE_CURRENT_SOURCE_DIR}/shaderc/include)
+
+target_link_libraries(drawingt_riangle
                       android
                       log
                       shaderc
@@ -50,7 +78,7 @@ target_include_directories(vktutorial PRIVATE
                           ${CMAKE_CURRENT_SOURCE_DIR}/data
                           ${CMAKE_CURRENT_SOURCE_DIR}/stb
                           ${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader
-                          ${ANDROID_NDK}/sources/third_party/shaderc/include)
+                          ${CMAKE_CURRENT_SOURCE_DIR}/shaderc/include)
 
 target_link_libraries(vktutorial
                       android
