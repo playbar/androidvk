@@ -283,6 +283,7 @@ void TriangleApplication::createInstance()
 
     VkApplicationInfo appInfo = {
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+            .pNext = nullptr,
             .pApplicationName = "TutorialVK",
             .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
             .pEngineName = "TutorialEngin",
@@ -396,6 +397,17 @@ void TriangleApplication::pickPhysicalDevice()
             break;
         }
     }
+}
+
+
+bool TriangleApplication::isDeviceSuitable_1(VkPhysicalDevice device) {
+    VkPhysicalDeviceProperties deviceProperties;
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+    return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+           deviceFeatures.geometryShader;
 }
 
 bool TriangleApplication::isDeviceSuitable(VkPhysicalDevice device)
