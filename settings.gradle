@@ -1,6 +1,6 @@
 //include ':shaderc'
 //include ':vksample'
-//include ':vktutorials'
-include ':vkwindow'
+include ':vktutorials'
+//include ':vkwindow'
 //include ':vulkan'
 //include ':assimp'
