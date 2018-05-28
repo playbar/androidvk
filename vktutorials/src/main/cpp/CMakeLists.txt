@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.4.1)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fexceptions -Werror -DVK_USE_PLATFORM_ANDROID_KHR")
 
+add_subdirectory(shaderc)
+
 add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
 #add_definitions(-DGLM_LANG_STL11_FORCED)
 
@@ -10,9 +12,9 @@ get_filename_component(SHADERC_SRC
                        ABSOLUTE)
 
 # Import shaderc lib in NDK
-add_library(shaderc_lib STATIC IMPORTED)
-set_target_properties(shaderc_lib PROPERTIES IMPORTED_LOCATION
-                      ${SHADERC_SRC}/libs/${ANDROID_STL}/${ANDROID_ABI}/libshaderc.a)
+#add_library(shaderc_lib STATIC IMPORTED)
+#set_target_properties(shaderc_lib PROPERTIES IMPORTED_LOCATION
+#                      ${SHADERC_SRC}/libs/${ANDROID_STL}/${ANDROID_ABI}/libshaderc.a)
 
 #file(GLOB UTILS_SOURCE *.cpp)
 #file(GLOB GLUE_SOURCE *.c)
@@ -47,4 +49,11 @@ target_include_directories(vksample PRIVATE
 target_link_libraries(vksample
                       android
                       log
-                      shaderc_lib)
+                      shaderc
+                      shaderc_util
+                      glslang
+                      SPIRV
+                      SPIRV-Tools
+                      SPIRV-Tools-opt
+                      OSDependent
+                      OGLCompiler)

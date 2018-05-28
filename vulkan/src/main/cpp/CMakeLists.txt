@@ -8,12 +8,11 @@ add_definitions(-DVK_NO_PROTOTYPES)
 #add_definitions(-DGLM_LANG_STL11_FORCED)
 add_definitions(-DRAPIDJSON_HAS_CXX11_RVALUE_REFS=1)
 
-#add_subdirectory(shaderc)
+add_subdirectory(shaderc)
 
 get_filename_component(SHADERC_SRC
                        ${ANDROID_NDK}/sources/third_party/shaderc
                        ABSOLUTE)
-
 
 # Import shaderc lib in NDK
 #add_library(shaderc_lib STATIC IMPORTED)
@@ -46,10 +45,11 @@ target_include_directories(vksample PRIVATE
                           ${CMAKE_CURRENT_SOURCE_DIR}/assimp/include
                           ${CMAKE_CURRENT_SOURCE_DIR}/stb
                           ${CMAKE_CURRENT_SOURCE_DIR}/base
-                          ${ANDROID_NDK}/sources/third_party/shaderc/include)
+                          )
 
 target_link_libraries(vksample
                       android
                       log
                       z
-                      assimp )
+                      assimp
+                      shaderc)

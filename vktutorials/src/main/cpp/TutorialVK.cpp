@@ -23,7 +23,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
-const std::string MODEL_PATH = "/sdcard/Android/data/com.vk/files/chalet.obj";
+const std::string MODEL_PATH = "/sdcard/Android/data/com.vk/file/chalet.obj";
 const std::string TEXTURE_PATH = "/sdcard/Android/data/com.vk/files/chalet.jpg";
 
 const std::vector<const char*>validationLayers = {
