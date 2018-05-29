@@ -5,6 +5,9 @@
 通过VkInstance初始化Vulkan后，我们需要在系统中查找并选择一个支持我们所需功能的显卡。
 实际上，我们可以选择任意数量的显卡并同时使用他们，但在本小节中，我们简单的设定选择规则，
 即将查找到的第一个图形卡作为我们适合的物理设备。
+
+ ![Image](pic/5_1.png)
+ 
 我们添加函数pickPhysicalDevice并在initVulkan函数中调用。
 
 void initVulkan() {
@@ -151,6 +154,8 @@ bool isDeviceSuitable(VkPhysicalDevice device) {
 我们需要检测设备中支持的队列簇，其中哪一个队列簇支持我们想要的commands。
 为此我们添加一个新的函数findQueueFamilies来查找我们需要的队列簇。
 现在我们只会寻找一个支持图形commands队列簇，但是我们可以在稍后的小节中扩展更多的内容。
+
+ ![Image](pic/5_2.png)
 
 此函数返回满足某个属性的队列簇索引。定义结构体，其中索引-1表示"未找到":
 
