@@ -1,4 +1,4 @@
-package com.vk;
+package com.vk.test;
 
 import android.app.NativeActivity;
 import android.content.res.Configuration;
@@ -6,8 +6,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.InputQueue;
 import android.view.SurfaceHolder;
-
-import com.vk.log.Loggvc;
 
 
 public class BarNativeActivity extends NativeActivity {

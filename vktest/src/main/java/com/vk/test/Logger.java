@@ -1,4 +1,4 @@
-package com.vk.log;
+package com.vk.test;
 
 /**
  * Logger is a wrapper of {@link android.util.Log}

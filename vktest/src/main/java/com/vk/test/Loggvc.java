@@ -1,9 +1,8 @@
-package com.vk.log;
+package com.vk.test;
 
 
 import android.util.Log;
 import java.text.SimpleDateFormat;
-
 
 /**
  * 日志打印工具类

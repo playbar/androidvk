@@ -1,4 +1,4 @@
-package com.vk.log;
+package com.vk.test;
 
 public interface LogAdapter {
   void d(String tag, String message);

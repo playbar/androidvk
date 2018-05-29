@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.vk.jnitest;
+package com.vk.test;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
-import com.vk.R;
-import com.vk.log.Logger;
+import com.vk.test.R;
 
 
 public class JniActivity extends AppCompatActivity {

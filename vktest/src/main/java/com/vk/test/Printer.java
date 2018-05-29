@@ -1,4 +1,4 @@
-package com.vk.log;
+package com.vk.test;
 
 public interface Printer {
 
