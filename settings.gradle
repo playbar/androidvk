@@ -1,6 +1,5 @@
 //include ':shaderc'
 //include ':vksample'
-//include ':stbox'
 include ':vk_android_java'
 //include ':vulkan'
 //include ':assimp'
