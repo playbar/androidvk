@@ -1,14 +1,8 @@
-//
-// Created by Piasy on 29/06/2017.
-//
-
-#include <jni.h>
 #include <android/native_window_jni.h>
 #include <android/asset_manager_jni.h>
 
+#include "vulkan_tutorial_jni.h"
 #include "vulkan_tutorial.h"
-
-extern "C" {
 
 JNIEXPORT jlong JNICALL
 Java_com_vk_androidjava_VkTutorial_create(
@@ -24,8 +18,7 @@ Java_com_vk_androidjava_VkTutorial_create(
     const char *vertexShader = env->GetStringUTFChars(vertexShader_, 0);
     const char *fragmentShader = env->GetStringUTFChars(fragmentShader_, 0);
 
-    VKTutorial *app = new VKTutorial(assetManager, vertexShader,
-                                                                 fragmentShader);
+    VKTutorial *app = new VKTutorial(assetManager, vertexShader, fragmentShader);
 
     env->ReleaseStringUTFChars(vertexShader_, vertexShader);
     env->ReleaseStringUTFChars(fragmentShader_, fragmentShader);
@@ -54,24 +47,21 @@ Java_com_vk_androidjava_VkTutorial_pause__J(JNIEnv *env, jclass type,
 }
 
 JNIEXPORT void JNICALL
-Java_com_vk_androidjava_VkTutorial_resume__J(JNIEnv *env, jclass type,
-                                                                        jlong nativeHandle) {
+Java_com_vk_androidjava_VkTutorial_resume__J(JNIEnv *env, jclass type, jlong nativeHandle) {
     VKTutorial *app = reinterpret_cast<VKTutorial *>(nativeHandle);
     app->resume();
 }
 
 JNIEXPORT void JNICALL
-Java_com_vk_androidjava_VkTutorial_surfaceChanged__J(
-        JNIEnv *env, jclass type, jlong nativeHandle) {
+Java_com_vk_androidjava_VkTutorial_surfaceChanged__J(JNIEnv *env, jclass type, jlong nativeHandle)
+{
     VKTutorial *app = reinterpret_cast<VKTutorial *>(nativeHandle);
     app->surfaceChanged();
 }
 
 JNIEXPORT void JNICALL
-Java_com_vk_androidjava_VkTutorial_stop__J(JNIEnv *env, jclass type,
-                                                                      jlong nativeHandle) {
+Java_com_vk_androidjava_VkTutorial_stop__J(JNIEnv *env, jclass type, jlong nativeHandle) {
     VKTutorial *app = reinterpret_cast<VKTutorial *>(nativeHandle);
     app->stop();
 }
 
-}

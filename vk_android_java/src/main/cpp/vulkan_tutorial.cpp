@@ -1,7 +1,3 @@
-//
-// Created by Piasy on 26/06/2017.
-//
-
 #include <set>
 #include <algorithm>
 #include <stdexcept>
