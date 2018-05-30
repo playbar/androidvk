@@ -7,16 +7,6 @@ add_subdirectory(shaderc)
 add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
 #add_definitions(-DGLM_LANG_STL11_FORCED)
 
-#LoadVK.cpp
-#TriangleMain.cpp
-#TriangleVK.cpp
-#PrebuildLayer.cpp
-#PrebuildLayerVK.cpp
-#TraceableLayer.cpp
-#TraceableLayerVK.cpp
-#FirstWindow.cpp
-#FirstWindowVK.cpp
-
 #vksample
 add_library(vktutorial SHARED
             vulkan_wrapper.cpp
@@ -30,7 +20,7 @@ target_include_directories(vktutorial PRIVATE
                           ${CMAKE_CURRENT_SOURCE_DIR}/data
                           ${CMAKE_CURRENT_SOURCE_DIR}/stb
                           ${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader
-                          ${ANDROID_NDK}/sources/third_party/shaderc/include)
+                          ${NDK_ROOT}/sysroot/usr/include)
 
 target_link_libraries(vktutorial
                       android

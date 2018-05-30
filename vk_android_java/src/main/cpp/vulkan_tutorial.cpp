@@ -1371,7 +1371,7 @@ std::vector<char> VKTutorial::readAsset(std::string name) {
 
     AAsset_close(file);
 
-    LOGI("read asset %s, length %d", name.c_str(), len);
+    LOGI("read asset %s, length %d", name.c_str(), (int)len);
 
     return buffer;
 }
