@@ -1,7 +1,7 @@
 //include ':shaderc'
 //include ':vksample'
 //include ':vktutorials'
-include ':vktest'
+include ':vk_android_java'
 //include ':vulkan'
 //include ':assimp'
 //include ':HeartBeatThreading'
