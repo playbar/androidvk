@@ -3,6 +3,7 @@
 
 #include "vulkan_tutorial_jni.h"
 #include "vulkan_tutorial.h"
+#include "mylog.h"
 
 JNIEXPORT jlong JNICALL
 Java_com_vk_androidjava_VkTutorial_create(
@@ -36,7 +37,9 @@ Java_com_vk_androidjava_VkTutorial_run__JLandroid_view_Surface_2(
     }
 
     VKTutorial *app = reinterpret_cast<VKTutorial *>(nativeHandle);
-    app->run(window);
+//    app->run(window);
+    app->runTriangle(window);
+    return;
 }
 
 JNIEXPORT void JNICALL

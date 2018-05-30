@@ -11,10 +11,6 @@
 #include <glm/glm.hpp>
 #include <vulkan_wrapper.h>
 
-#define APP_NAME "VK-TUTORIAL"
-#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, APP_NAME, __VA_ARGS__))
-#define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, APP_NAME, __VA_ARGS__))
-
 #define STATE_RUNNING 1
 #define STATE_PAUSED 2
 #define STATE_EXIT 3
@@ -101,6 +97,9 @@ public:
     inline void stop() {
         state = STATE_EXIT;
     }
+
+public:
+    void runTriangle(ANativeWindow *window);
 
 private:
     inline void initWindow(ANativeWindow *window) {

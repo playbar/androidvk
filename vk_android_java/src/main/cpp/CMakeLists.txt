@@ -22,6 +22,7 @@ add_library(vktutorial SHARED
             vulkan_wrapper.cpp
             vulkan_tutorial.cpp
             vulkan_tutorial_jni.cpp
+            TriangleVK.cpp
             )
 
 target_include_directories(vktutorial PRIVATE

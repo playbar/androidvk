@@ -1,6 +1,7 @@
 package com.vk.androidjava;
 
 import android.content.res.AssetManager;
+import android.util.Log;
 import android.view.Surface;
 
 /**
@@ -38,6 +39,7 @@ public class VkTutorial {
         new Thread(new Runnable() {
             @Override
             public void run() {
+                Log.e("java run", "tid=" + android.os.Process.myTid());
                 VkTutorial.run(mNativeHandle, surface);
             }
         }).start();

@@ -2,12 +2,15 @@
 #include <algorithm>
 #include <stdexcept>
 #include <chrono>
+#include "mylog.h"
+#include "TriangleVK.hpp"
 
 #define GLM_FORCE_RADIANS
 #include <glm/gtc/matrix_transform.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#include <unistd.h>
 
 #include "vulkan_tutorial.h"
 
@@ -82,27 +85,27 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         void *userData) {
     if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) {
         __android_log_print(ANDROID_LOG_ERROR,
-                            APP_NAME,
+                            LOG_TAG,
                             "ERROR: [%s] Code %i : %s",
                             layerPrefix, code, msg);
     } else if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT) {
         __android_log_print(ANDROID_LOG_WARN,
-                            APP_NAME,
+                            LOG_TAG,
                             "WARNING: [%s] Code %i : %s",
                             layerPrefix, code, msg);
     } else if (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT) {
         __android_log_print(ANDROID_LOG_WARN,
-                            APP_NAME,
+                            LOG_TAG,
                             "PERFORMANCE WARNING: [%s] Code %i : %s",
                             layerPrefix, code, msg);
     } else if (flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT) {
         __android_log_print(ANDROID_LOG_INFO,
-                            APP_NAME,
+                            LOG_TAG,
                             "INFO: [%s] Code %i : %s",
                             layerPrefix, code, msg);
     } else if (flags & VK_DEBUG_REPORT_DEBUG_BIT_EXT) {
         __android_log_print(ANDROID_LOG_VERBOSE,
-                            APP_NAME,
+                            LOG_TAG,
                             "DEBUG: [%s] Code %i : %s",
                             layerPrefix, code, msg);
     }
@@ -222,6 +225,18 @@ void VKTutorial::run(ANativeWindow *window) {
     cleanUp();
 }
 
+void VKTutorial::runTriangle(ANativeWindow *window)
+{
+    InitVulkan(window, this->assetManager);
+    while (state != STATE_EXIT) {
+        if (state == STATE_RUNNING) {
+            VulkanDrawFrame();
+        }
+    }
+    DeleteVulkan();
+
+}
+
 void VKTutorial::pause() {
     state = STATE_PAUSED;
     vkDeviceWaitIdle(device);
@@ -268,7 +283,7 @@ void VKTutorial::initVulkan() {
 }
 
 void VKTutorial::mainLoop() {
-    LOGI("mainLoop start");
+    LOGE("Fun:%s start, Line:%d, tid=%d", __FUNCTION__, __LINE__, gettid());
 
     while (state != STATE_EXIT) {
         if (state == STATE_RUNNING) {
@@ -279,7 +294,7 @@ void VKTutorial::mainLoop() {
 
     vkDeviceWaitIdle(device);
 
-    LOGI("mainLoop exit");
+    LOGE("Fun:%s exit, Line:%d, tid=%d", __FUNCTION__, __LINE__, gettid());
 }
 
 void VKTutorial::cleanUp() {

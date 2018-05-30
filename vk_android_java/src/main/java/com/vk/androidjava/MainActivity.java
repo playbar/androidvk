@@ -3,6 +3,7 @@ package com.vk.androidjava;
 import android.content.res.AssetManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -73,6 +74,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     @Override
     public void surfaceCreated(final SurfaceHolder holder) {
+        Log.e("surfaceCreated", "tid=" + android.os.Process.myTid());
         mVKTutorial.run(holder.getSurface());
         mFirstSurfaceChange = true;
     }
