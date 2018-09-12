@@ -4,7 +4,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fexceptions -Werror -DVK_USE
 
 add_subdirectory(shaderc)
 
-add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
+#add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
 #add_definitions(-DGLM_LANG_STL11_FORCED)
 
 #vk-drawcube

@@ -1,6 +1,6 @@
 //include ':shaderc'
 //include ':vksample'
-include ':vk_android_java'
-//include ':vulkan'
+//include ':vkdrawcube'
+include ':vulkan'
 //include ':assimp'
 //include ':HeartBeatThreading'

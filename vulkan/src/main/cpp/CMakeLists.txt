@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.4.1)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fexceptions")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fexceptions")
 
 #add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
 add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR)
@@ -24,7 +24,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/assimp)
 #set_target_properties(assimp_lib PROPERTIES IMPORTED_LOCATION
 #                      ${CMAKE_CURRENT_SOURCE_DIR}/assimp/libassimp.a)
 
-add_library(vksample SHARED
+add_library(vkvulkan SHARED
             android_native_app_glue.c
             cpu-features.c
             jniactivity.c
@@ -35,19 +35,19 @@ add_library(vksample SHARED
             base/VulkanModel.cpp
             base/VulkanTexture.cpp
             base/VulkanTools.cpp
-            src/gears.cpp
+            src/instancing.cpp
             src/vulkangear.cpp
             )
 
 
-target_include_directories(vksample PRIVATE
+target_include_directories(vkvulkan PRIVATE
                           ${CMAKE_CURRENT_SOURCE_DIR}
                           ${CMAKE_CURRENT_SOURCE_DIR}/assimp/include
                           ${CMAKE_CURRENT_SOURCE_DIR}/stb
                           ${CMAKE_CURRENT_SOURCE_DIR}/base
                           )
 
-target_link_libraries(vksample
+target_link_libraries(vkvulkan
                       android
                       log
                       z

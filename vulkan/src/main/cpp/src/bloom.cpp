@@ -77,7 +77,8 @@ public:
 	};
 
 	struct {
-		UBO scene, skyBox;
+		UBO scene;
+		UBO skyBox;
 		UBOBlurParams blurParams;
 	} ubos;
 

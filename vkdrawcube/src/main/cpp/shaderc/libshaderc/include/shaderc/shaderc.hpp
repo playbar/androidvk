@@ -176,10 +176,10 @@ class CompileOptions {
     virtual shaderc_include_result* GetInclude(const char* requested_source,
                                                shaderc_include_type type,
                                                const char* requesting_source,
-                                               size_t include_depth) = 0;
+                                               size_t include_depth){ return nullptr;};
 
     // Handles shaderc_include_result_release_fn callbacks.
-    virtual void ReleaseInclude(shaderc_include_result* data) = 0;
+    virtual void ReleaseInclude(shaderc_include_result* data){};
   };
 
   // Sets the includer instance for libshaderc to call during compilation, as

@@ -87,6 +87,9 @@ namespace vks
 			descriptor.offset = offset;
 			descriptor.buffer = buffer;
 			descriptor.range = size;
+			if( size < 1000000 ){
+				LOGE("size:%d", size);
+			}
 		}
 
 		/**

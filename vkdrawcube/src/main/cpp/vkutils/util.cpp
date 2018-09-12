@@ -32,7 +32,6 @@ samples utility functions
 #include <stdio.h>
 #include <assert.h>
 #include <cstdlib>
-#include <iomanip>
 #include <fstream>
 #include <iostream>
 #include "util.hpp"
@@ -44,6 +43,7 @@ samples utility functions
 // Header files.
 #include <android_native_app_glue.h>
 #include "shaderc/shaderc.hpp"
+
 // Static variable that keeps ANativeWindow and asset manager instances.
 static android_app* Android_application = nullptr;
 #else
@@ -55,6 +55,9 @@ static android_app* Android_application = nullptr;
 #include <Windows.h>
 #else
 #include <sys/time.h>
+#include <cstring>
+#include <iomanip>
+
 #endif
 
 using namespace std;
