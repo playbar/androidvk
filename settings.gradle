@@ -1,6 +1,7 @@
 //include ':shaderc'
 //include ':vksample'
 //include ':vkdrawcube'
-include ':vulkan'
+include ':vkview'
+//include ':vulkan'
 //include ':assimp'
 //include ':HeartBeatThreading'
