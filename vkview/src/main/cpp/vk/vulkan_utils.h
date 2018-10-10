@@ -57,6 +57,8 @@ public:
 
     void createDescriptorSetLayout();
 
+    void createGraphicsPipelineTest();
+
     void createGraphicsPipeline();
 
     void createFramebuffers();
