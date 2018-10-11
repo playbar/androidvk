@@ -2,6 +2,6 @@
 //include ':vksample'
 //include ':vkdrawcube'
 include ':vkview'
-//include ':vulkan'
+include ':vulkan'
 //include ':assimp'
 //include ':HeartBeatThreading'

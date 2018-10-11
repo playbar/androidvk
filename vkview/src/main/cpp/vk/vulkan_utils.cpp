@@ -217,6 +217,7 @@ VulkanUtils::VulkanUtils(AAssetManager *assetManager, const char *vertexShader, 
         mVertexBuffer(&mVKDevice),
         mIndexBuffer(&mVKDevice),
         mUniformBuffer(&mVKDevice),
+        mUniformProj(&mVKDevice),
         mTexImage(&mVKDevice),
     assetManager(assetManager),
     vertexShader(std::string(vertexShader)),
@@ -229,6 +230,7 @@ VulkanUtils::VulkanUtils():
         mVertexBuffer(&mVKDevice),
         mIndexBuffer(&mVKDevice),
         mUniformBuffer(&mVKDevice),
+        mUniformProj(&mVKDevice),
         mTexImage(&mVKDevice)
 {
     state = STATE_RUNNING;
@@ -263,7 +265,7 @@ void VulkanUtils::OnSurfaceCreated()
     createImageViews();
     createRenderPass();
     createDescriptorSetLayout();
-    createGraphicsPipelineTest();
+    createGraphicsPipeline();
     createFramebuffers();
 
     mTexImage.createTextureImage(assetManager);
@@ -447,15 +449,25 @@ void VulkanUtils::createDescriptorSetLayout() {
             .pImmutableSamplers = nullptr,
     };
 
-    VkDescriptorSetLayoutBinding samplerLayoutBinding = {
+    VkDescriptorSetLayoutBinding uboLayoutProjBinding = {
             .binding = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .pImmutableSamplers = nullptr,
+    };
+
+    VkDescriptorSetLayoutBinding samplerLayoutBinding = {
+            .binding = 2,
             .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             .descriptorCount = 1,
             .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
             .pImmutableSamplers = nullptr,
     };
 
-    std::array<VkDescriptorSetLayoutBinding,2> bindings = {uboLayoutBinding,samplerLayoutBinding};
+    std::array<VkDescriptorSetLayoutBinding, 3> bindings = {uboLayoutBinding,
+                                                            uboLayoutProjBinding,
+                                                            samplerLayoutBinding};
 
     VkDescriptorSetLayoutCreateInfo layoutInfo = {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
@@ -776,8 +788,9 @@ void VulkanUtils::createGraphicsPipeline() {
             .basePipelineHandle = VK_NULL_HANDLE,
     };
 
-    if (vkCreateGraphicsPipelines(mVKDevice.logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
-                                  &graphicsPipeline) != VK_SUCCESS) {
+    VkResult vkre = vkCreateGraphicsPipelines(mVKDevice.logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
+                                              &graphicsPipeline);
+    if ( vkre != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
@@ -856,6 +869,12 @@ void VulkanUtils::createUniformBuffer() {
     mUniformBuffer.createBuffer(bufferSize,
                  VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    VkDeviceSize bufferSizeProj = sizeof(UniformBufferProj);
+    mUniformProj.createBuffer(bufferSizeProj,
+                                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
 }
 
 void VulkanUtils::createDescriptorPool() {
@@ -894,15 +913,22 @@ void VulkanUtils::createDescriptorSet() {
             .range = sizeof(UniformBufferObject),
     };
 
+    VkDescriptorBufferInfo bufferInfoProj = {
+            .buffer = mUniformProj.mBuffer,
+            .offset = 0,
+            .range = sizeof(UniformBufferProj),
+    };
+
     VkDescriptorImageInfo imageInfo = {
             .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .imageView = mTexImage.textureImageView,
             .sampler = mTexImage.textureSampler,
     };
 
-    std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
+    std::array<VkWriteDescriptorSet, 3> descriptorWrites = {};
 
-    descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+
+    descriptorWrites[01].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptorWrites[0].dstSet = descriptorSet;
     descriptorWrites[0].dstBinding = 0;
     descriptorWrites[0].dstArrayElement = 0;
@@ -910,13 +936,23 @@ void VulkanUtils::createDescriptorSet() {
     descriptorWrites[0].descriptorCount = 1;
     descriptorWrites[0].pBufferInfo = &bufferInfo;
 
+
     descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptorWrites[1].dstSet = descriptorSet;
     descriptorWrites[1].dstBinding = 1;
     descriptorWrites[1].dstArrayElement = 0;
-    descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptorWrites[1].descriptorCount = 1;
-    descriptorWrites[1].pImageInfo = &imageInfo;
+    descriptorWrites[1].pBufferInfo = &bufferInfoProj;
+
+    descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[2].dstSet = descriptorSet;
+    descriptorWrites[2].dstBinding = 2;
+    descriptorWrites[2].dstArrayElement = 0;
+    descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrites[2].descriptorCount = 1;
+    descriptorWrites[2].pImageInfo = &imageInfo;
+
 
     vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
@@ -999,14 +1035,25 @@ void VulkanUtils::updateUniformBuffer() {
             .view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
                                 glm::vec3(0.0f, 0.0f, 0.0f),
                                 glm::vec3(0.0f, 0.0f, 1.0f)),
+
+//            .proj = glm::perspective(glm::radians(45.0f),
+//                                     swapchainExtent.width / (float) swapchainExtent.height, 0.1f, 10.0f),
+
+    };
+    UniformBufferProj uboproj = {
             .proj = glm::perspective(glm::radians(45.0f),
                                      swapchainExtent.width / (float) swapchainExtent.height, 0.1f, 10.0f),
     };
-    ubo.proj[1][1] *= -1;
+//    ubo.proj[1][1] *= -1;
+    uboproj.proj[1][1] *= -1;
 
     mUniformBuffer.map(sizeof(ubo), 0);
     mUniformBuffer.copyTo(&ubo, sizeof(ubo));
     mUniformBuffer.unmap();
+
+    mUniformProj.map(sizeof(uboproj), 0 );
+    mUniformProj.copyTo(&uboproj, sizeof(uboproj));
+    mUniformProj.unmap();
     return;
 }
 
@@ -1074,7 +1121,7 @@ void VulkanUtils::recreateSwapchain() {
     createSwapchain();
     createImageViews();
     createRenderPass();
-    createGraphicsPipelineTest();
+    createGraphicsPipeline();
     createFramebuffers();
     createCommandBuffers();
 }

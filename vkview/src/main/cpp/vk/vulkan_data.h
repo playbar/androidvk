@@ -65,9 +65,11 @@ struct Vertex {
 struct UniformBufferObject {
     glm::mat4 model;
     glm::mat4 view;
-    glm::mat4 proj;
 };
 
+struct UniformBufferProj {
+    glm::mat4 proj;
+};
 
 
 #endif //__BAR_VULKAN_DATA_H__

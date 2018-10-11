@@ -111,6 +111,7 @@ public:
     HVkBuffer mVertexBuffer;
     HVkBuffer mIndexBuffer;
     HVkBuffer mUniformBuffer;
+    HVkBuffer mUniformProj;
 
     HVkTexture mTexImage;
 

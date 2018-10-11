@@ -35,7 +35,7 @@ add_library(vkvulkan SHARED
             base/VulkanModel.cpp
             base/VulkanTexture.cpp
             base/VulkanTools.cpp
-            src/instancing.cpp
+            src/deferred.cpp
             src/vulkangear.cpp
             )
 
