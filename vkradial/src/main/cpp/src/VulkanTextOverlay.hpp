@@ -22,7 +22,7 @@
 #include "VulkanBuffer.hpp"
 #include "VulkanDevice.hpp"
 
-#include "../stb/stb_font_consolas_24_latin1.inl"
+#include "stb_font_consolas_24_latin1.inl"
 
 // Defines for the STB font used
 // STB font files can be found at http://nothings.org/stb/font/
@@ -226,12 +226,12 @@ public:
 		VK_CHECK_RESULT(vkBeginCommandBuffer(copyCmd, &cmdBufInfo));
 
 		// Prepare for transfer
-		vks::tools::setImageLayout(
-			copyCmd,
-			image,
-			VK_IMAGE_ASPECT_COLOR_BIT,
-			VK_IMAGE_LAYOUT_PREINITIALIZED,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		HSetImageLayout(
+				copyCmd,
+				image,
+				VK_IMAGE_ASPECT_COLOR_BIT,
+				VK_IMAGE_LAYOUT_PREINITIALIZED,
+				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
 		VkBufferImageCopy bufferCopyRegion = {};
 		bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -251,12 +251,12 @@ public:
 			);
 
 		// Prepare for shader read
-		vks::tools::setImageLayout(
-			copyCmd,
-			image,
-			VK_IMAGE_ASPECT_COLOR_BIT,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		HSetImageLayout(
+				copyCmd,
+				image,
+				VK_IMAGE_ASPECT_COLOR_BIT,
+				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 		VK_CHECK_RESULT(vkEndCommandBuffer(copyCmd));
 
@@ -651,9 +651,10 @@ public:
 
 			VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffers[i], &cmdBufInfo));
 
-			if (vks::debugmarker::active)
+			if (vks::debugmarker::gbActive)
 			{
-				vks::debugmarker::beginRegion(cmdBuffers[i], "Text overlay", glm::vec4(1.0f, 0.94f, 0.3f, 1.0f));
+				vks::debugmarker::DebugMarkerBeginRegion(cmdBuffers[i], "Text overlay",
+														 glm::vec4(1.0f, 0.94f, 0.3f, 1.0f));
 			}
 
 			vkCmdBeginRenderPass(cmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -677,9 +678,9 @@ public:
 
 			vkCmdEndRenderPass(cmdBuffers[i]);
 
-			if (vks::debugmarker::active)
+			if (vks::debugmarker::gbActive)
 			{
-				vks::debugmarker::endRegion(cmdBuffers[i]);
+				vks::debugmarker::DebugMarkerEndRegion(cmdBuffers[i]);
 			}
 
 			VK_CHECK_RESULT(vkEndCommandBuffer(cmdBuffers[i]));

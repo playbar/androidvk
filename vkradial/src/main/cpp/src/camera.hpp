@@ -12,11 +12,12 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-class Camera
+class HCamera
 {
 private:
 	float fov;
-	float znear, zfar;
+	float znear;
+    float zfar;
 
 	void updateViewMatrix()
 	{

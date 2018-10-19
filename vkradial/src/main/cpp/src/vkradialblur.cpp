@@ -49,8 +49,8 @@ VkResult VKRadialBlur::createInstance(bool enableValidation)
 	}
 	if (settings.validation)
 	{
-		instanceCreateInfo.enabledLayerCount = vks::debug::validationLayerCount;
-		instanceCreateInfo.ppEnabledLayerNames = vks::debug::validationLayerNames;
+		instanceCreateInfo.enabledLayerCount = vks::debug::giValidationLayerCount;
+		instanceCreateInfo.ppEnabledLayerNames = vks::debug::gzsValidationLayerNames;
 	}
 	return vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
 }
@@ -165,7 +165,7 @@ void VKRadialBlur::prepare()
 {
 	if (vulkanDevice->enableDebugMarkers)
 	{
-		vks::debugmarker::setup(device);
+		vks::debugmarker::DebugMarkerSetup(device);
 	}
 	createCommandPool();
 	setupSwapChain();
@@ -214,9 +214,9 @@ VkPipelineShaderStageCreateInfo VKRadialBlur::loadShader(std::string fileName, V
 	shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	shaderStage.stage = stage;
 #if defined(__ANDROID__)
-	shaderStage.module = vks::tools::loadShader(androidApp->activity->assetManager, fileName.c_str(), device, stage);
+	shaderStage.module = HLoadShader(androidApp->activity->assetManager, fileName.c_str(), device, stage);
 #else
-	shaderStage.module = vks::tools::loadShader(fileName.c_str(), device, stage);
+	shaderStage.module = loadShader(fileName.c_str(), device, stage);
 #endif
 	shaderStage.pName = "main"; // todo : make param
 	assert(shaderStage.module != VK_NULL_HANDLE);
@@ -357,7 +357,7 @@ void VKRadialBlur::renderLoop()
 			const float deadZone = 0.0015f;
 			// todo : check if gamepad is present
 			// todo : time based and relative axis positions
-			if (camera.type != Camera::CameraType::firstperson)
+			if (camera.type != HCamera::CameraType::firstperson)
 			{
 				// Rotate
 				if (std::abs(gamePadState.axisLeft.x) > deadZone)
@@ -736,7 +736,7 @@ VKRadialBlur::~VKRadialBlur()
 
 	if (settings.validation)
 	{
-		vks::debug::freeDebugCallback(instance);
+		vks::debug::HFreeDebugCallback(instance);
 	}
 
 	vkDestroyInstance(instance, nullptr);
@@ -752,7 +752,8 @@ void VKRadialBlur::initVulkan()
 	err = createInstance(settings.validation);
 	if (err)
 	{
-		vks::tools::exitFatal("Could not create Vulkan instance : \n" + vks::tools::errorString(err), "Fatal error");
+		HExitFatal("Could not create Vulkan instance : \n" +
+							   HErrorString(err), "Fatal error");
 	}
 
 #if defined(__ANDROID__)
@@ -766,7 +767,7 @@ void VKRadialBlur::initVulkan()
 		// For validating (debugging) an appplication the error and warning bits should suffice
 		VkDebugReportFlagsEXT debugReportFlags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
 		// Additional flags include performance info, loader and layer debug messages, etc.
-		vks::debug::setupDebugging(instance, debugReportFlags, VK_NULL_HANDLE);
+		vks::debug::HSetupDebugging(instance, debugReportFlags, VK_NULL_HANDLE);
 	}
 
 	// Physical device
@@ -779,7 +780,8 @@ void VKRadialBlur::initVulkan()
 	err = vkEnumeratePhysicalDevices(instance, &gpuCount, physicalDevices.data());
 	if (err)
 	{
-		vks::tools::exitFatal("Could not enumerate physical devices : \n" + vks::tools::errorString(err), "Fatal error");
+		HExitFatal("Could not enumerate physical devices : \n" +
+							   HErrorString(err), "Fatal error");
 	}
 
 	// GPU selection
@@ -830,7 +832,7 @@ void VKRadialBlur::initVulkan()
 					VkPhysicalDeviceProperties deviceProperties;
 					vkGetPhysicalDeviceProperties(devices[i], &deviceProperties);
 					std::cout << "Device [" << i << "] : " << deviceProperties.deviceName << std::endl;
-					std::cout << " Type: " << vks::tools::physicalDeviceTypeString(deviceProperties.deviceType) << std::endl;
+					std::cout << " Type: " << physicalDeviceTypeString(deviceProperties.deviceType) << std::endl;
 					std::cout << " API: " << (deviceProperties.apiVersion >> 22) << "." << ((deviceProperties.apiVersion >> 12) & 0x3ff) << "." << (deviceProperties.apiVersion & 0xfff) << std::endl;
 				}
 			}
@@ -854,7 +856,8 @@ void VKRadialBlur::initVulkan()
 	vulkanDevice = new vks::VulkanDevice(physicalDevice);
 	VkResult res = vulkanDevice->createLogicalDevice(enabledFeatures, enabledExtensions);
 	if (res != VK_SUCCESS) {
-		vks::tools::exitFatal("Could not create Vulkan device: \n" + vks::tools::errorString(res), "Fatal error");
+		HExitFatal("Could not create Vulkan device: \n" + HErrorString(res),
+							   "Fatal error");
 	}
 	device = vulkanDevice->logicalDevice;
 
@@ -862,7 +865,7 @@ void VKRadialBlur::initVulkan()
 	vkGetDeviceQueue(device, vulkanDevice->queueFamilyIndices.graphics, 0, &queue);
 
 	// Find a suitable depth format
-	VkBool32 validDepthFormat = vks::tools::getSupportedDepthFormat(physicalDevice, &depthFormat);
+	VkBool32 validDepthFormat = HGetSupportedDepthFormat(physicalDevice, &depthFormat);
 	assert(validDepthFormat);
 
 	swapChain.connect(instance, physicalDevice, device);
@@ -2117,7 +2120,7 @@ void VKRadialBlur::prepareOffscreen()
 
 	// Find a suitable depth format
 	VkFormat fbDepthFormat;
-	VkBool32 validDepthFormat = vks::tools::getSupportedDepthFormat(physicalDevice, &fbDepthFormat);
+	VkBool32 validDepthFormat = HGetSupportedDepthFormat(physicalDevice, &fbDepthFormat);
 	assert(validDepthFormat);
 
 	// Color attachment

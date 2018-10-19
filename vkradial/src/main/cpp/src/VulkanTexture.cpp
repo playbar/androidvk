@@ -160,7 +160,7 @@ void Texture2D::loadFromFile(
 
 		// Image barrier for optimal image (target)
 		// Optimal image will be used as destination for the copy
-		vks::tools::setImageLayout(
+		HSetImageLayout(
 				copyCmd,
 				image,
 				VK_IMAGE_ASPECT_COLOR_BIT,
@@ -180,7 +180,7 @@ void Texture2D::loadFromFile(
 
 		// Change texture image layout to shader read after all mip levels have been copied
 		this->imageLayout = imageLayout;
-		vks::tools::setImageLayout(
+		HSetImageLayout(
 				copyCmd,
 				image,
 				VK_IMAGE_ASPECT_COLOR_BIT,
@@ -264,7 +264,8 @@ void Texture2D::loadFromFile(
 		imageLayout = imageLayout;
 
 		// Setup image memory barrier
-		vks::tools::setImageLayout(copyCmd, image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, imageLayout);
+		HSetImageLayout(copyCmd, image, VK_IMAGE_ASPECT_COLOR_BIT,
+									VK_IMAGE_LAYOUT_UNDEFINED, imageLayout);
 
 		device->flushCommandBuffer(copyCmd, copyQueue);
 	}
@@ -421,7 +422,7 @@ void Texture2D::fromBuffer(
 
 	// Image barrier for optimal image (target)
 	// Optimal image will be used as destination for the copy
-	vks::tools::setImageLayout(
+	HSetImageLayout(
 			copyCmd,
 			image,
 			VK_IMAGE_ASPECT_COLOR_BIT,
@@ -441,7 +442,7 @@ void Texture2D::fromBuffer(
 
 	// Change texture image layout to shader read after all mip levels have been copied
 	this->imageLayout = imageLayout;
-	vks::tools::setImageLayout(
+	HSetImageLayout(
 			copyCmd,
 			image,
 			VK_IMAGE_ASPECT_COLOR_BIT,
@@ -619,7 +620,7 @@ void Texture2DArray::loadFromFile(
 	subresourceRange.levelCount = mipLevels;
 	subresourceRange.layerCount = layerCount;
 
-	vks::tools::setImageLayout(
+	HSetImageLayout(
 			copyCmd,
 			image,
 			VK_IMAGE_ASPECT_COLOR_BIT,
@@ -638,7 +639,7 @@ void Texture2DArray::loadFromFile(
 
 	// Change texture image layout to shader read after all faces have been copied
 	this->imageLayout = imageLayout;
-	vks::tools::setImageLayout(
+	HSetImageLayout(
 			copyCmd,
 			image,
 			VK_IMAGE_ASPECT_COLOR_BIT,
@@ -817,7 +818,7 @@ void TextureCubeMap::loadFromFile(
 	subresourceRange.levelCount = mipLevels;
 	subresourceRange.layerCount = 6;
 
-	vks::tools::setImageLayout(
+	HSetImageLayout(
 			copyCmd,
 			image,
 			VK_IMAGE_ASPECT_COLOR_BIT,
@@ -836,7 +837,7 @@ void TextureCubeMap::loadFromFile(
 
 	// Change texture image layout to shader read after all faces have been copied
 	this->imageLayout = imageLayout;
-	vks::tools::setImageLayout(
+	HSetImageLayout(
 			copyCmd,
 			image,
 			VK_IMAGE_ASPECT_COLOR_BIT,

@@ -1,120 +1,108 @@
-/*
-* Basic C++11 based thread pool with per-thread job queues
-*
-* Copyright (C) 2016 by Sascha Willems - www.saschawillems.de
-*
-* This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
-*/
-
 #include <vector>
 #include <thread>
 #include <queue>
 #include <mutex>
 #include <condition_variable>
 
-// make_unique is not available in C++11
-// Taken from Herb Sutter's blog (https://herbsutter.com/gotw/_102/)
 template<typename T, typename ...Args>
 std::unique_ptr<T> make_unique(Args&& ...args)
 {
 	return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-namespace vks
+
+class HThread
 {
-	class Thread
+private:
+	bool destroying = false;
+	std::thread worker;
+	std::queue<std::function<void()>> jobQueue;
+	std::mutex queueMutex;
+	std::condition_variable condition;
+
+	// Loop through all remaining jobs
+	void queueLoop()
 	{
-	private:
-		bool destroying = false;
-		std::thread worker;
-		std::queue<std::function<void()>> jobQueue;
-		std::mutex queueMutex;
-		std::condition_variable condition;
-
-		// Loop through all remaining jobs
-		void queueLoop()
+		while (true)
 		{
-			while (true)
+			std::function<void()> job;
 			{
-				std::function<void()> job;
+				std::unique_lock<std::mutex> lock(queueMutex);
+				condition.wait(lock, [this] { return !jobQueue.empty() || destroying; });
+				if (destroying)
 				{
-					std::unique_lock<std::mutex> lock(queueMutex);
-					condition.wait(lock, [this] { return !jobQueue.empty() || destroying; });
-					if (destroying)
-					{
-						break;
-					}
-					job = jobQueue.front();
+					break;
 				}
-
-				job();
-
-				{
-					std::lock_guard<std::mutex> lock(queueMutex);
-					jobQueue.pop();
-					condition.notify_one();
-				}
+				job = jobQueue.front();
 			}
-		}
 
-	public:
-		Thread()
-		{
-			worker = std::thread(&Thread::queueLoop, this);
-		}
+			job();
 
-		~Thread()
-		{
-			if (worker.joinable())
 			{
-				wait();
-				queueMutex.lock();
-				destroying = true;
+				std::lock_guard<std::mutex> lock(queueMutex);
+				jobQueue.pop();
 				condition.notify_one();
-				queueMutex.unlock();
-				worker.join();
 			}
 		}
+	}
 
-		// Add a new job to the thread's queue
-		void addJob(std::function<void()> function)
-		{
-			std::lock_guard<std::mutex> lock(queueMutex);
-			jobQueue.push(std::move(function));
-			condition.notify_one();
-		}
-
-		// Wait until all work items have been finished
-		void wait()
-		{
-			std::unique_lock<std::mutex> lock(queueMutex);
-			condition.wait(lock, [this]() { return jobQueue.empty(); });
-		}
-	};
-	
-	class ThreadPool
+public:
+	HThread()
 	{
-	public:
-		std::vector<std::unique_ptr<Thread>> threads;
+		worker = std::thread(&HThread::queueLoop, this);
+	}
 
-		// Sets the number of threads to be allocted in this pool
-		void setThreadCount(uint32_t count)
+	~HThread()
+	{
+		if (worker.joinable())
 		{
-			threads.clear();
-			for (auto i = 0; i < count; i++)
-			{
-				threads.push_back(make_unique<Thread>());
-			}
+			wait();
+			queueMutex.lock();
+			destroying = true;
+			condition.notify_one();
+			queueMutex.unlock();
+			worker.join();
 		}
+	}
 
-		// Wait until all threads have finished their work items
-		void wait()
+	// Add a new job to the thread's queue
+	void addJob(std::function<void()> function)
+	{
+		std::lock_guard<std::mutex> lock(queueMutex);
+		jobQueue.push(std::move(function));
+		condition.notify_one();
+	}
+
+	// Wait until all work items have been finished
+	void wait()
+	{
+		std::unique_lock<std::mutex> lock(queueMutex);
+		condition.wait(lock, [this]() { return jobQueue.empty(); });
+	}
+};
+
+class ThreadPool
+{
+public:
+	std::vector<std::unique_ptr<HThread>> threads;
+
+	// Sets the number of threads to be allocted in this pool
+	void setThreadCount(uint32_t count)
+	{
+		threads.clear();
+		for (auto i = 0; i < count; i++)
 		{
-			for (auto &thread : threads)
-			{
-				thread->wait();
-			}
+			threads.push_back(make_unique<HThread>());
 		}
-	};
+	}
 
-}
+	// Wait until all threads have finished their work items
+	void wait()
+	{
+		for (auto &thread : threads)
+		{
+			thread->wait();
+		}
+	}
+};
+
