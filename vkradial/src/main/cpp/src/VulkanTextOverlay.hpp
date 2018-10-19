@@ -651,9 +651,9 @@ public:
 
 			VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffers[i], &cmdBufInfo));
 
-			if (vks::debugmarker::gbActive)
+			if (gbActive)
 			{
-				vks::debugmarker::DebugMarkerBeginRegion(cmdBuffers[i], "Text overlay",
+				DebugMarkerBeginRegion(cmdBuffers[i], "Text overlay",
 														 glm::vec4(1.0f, 0.94f, 0.3f, 1.0f));
 			}
 
@@ -678,9 +678,9 @@ public:
 
 			vkCmdEndRenderPass(cmdBuffers[i]);
 
-			if (vks::debugmarker::gbActive)
+			if (gbActive)
 			{
-				vks::debugmarker::DebugMarkerEndRegion(cmdBuffers[i]);
+				DebugMarkerEndRegion(cmdBuffers[i]);
 			}
 
 			VK_CHECK_RESULT(vkEndCommandBuffer(cmdBuffers[i]));
