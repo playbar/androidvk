@@ -128,7 +128,7 @@ namespace vks
 		*
 		* @return VK_SUCCESS if buffer handle and memory have been created and (optionally passed) data has been copied
 		*/
-		VkResult createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, vks::Buffer *buffer,
+		VkResult createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, vks::HBuffer *buffer,
 							  VkDeviceSize size, void *data = nullptr);
 
 		/**
@@ -141,7 +141,7 @@ namespace vks
 		*
 		* @note Source and destionation pointers must have the approriate transfer usage flags set (TRANSFER_SRC / TRANSFER_DST)
 		*/
-		void copyBuffer(vks::Buffer *src, vks::Buffer *dst, VkQueue queue, VkBufferCopy *copyRegion = nullptr);
+		void copyBuffer(vks::HBuffer *src, vks::HBuffer *dst, VkQueue queue, VkBufferCopy *copyRegion = nullptr);
 
 		/** 
 		* Create a command pool for allocation command buffers from

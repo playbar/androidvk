@@ -65,8 +65,8 @@ public:
     } vertices;
 
     struct {
-        vks::Buffer scene;
-        vks::Buffer blurParams;
+        vks::HBuffer scene;
+        vks::HBuffer blurParams;
     } uniformBuffers;
 
     struct UboVS {

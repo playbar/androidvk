@@ -54,7 +54,7 @@ private:
 	VkSampler sampler;
 	VkImage image;
 	VkImageView view;
-	vks::Buffer vertexBuffer;
+	vks::HBuffer vertexBuffer;
 	VkDeviceMemory imageMemory;
 	VkDescriptorPool descriptorPool;
 	VkDescriptorSetLayout descriptorSetLayout;
@@ -205,7 +205,7 @@ public:
 		VK_CHECK_RESULT(vkBindImageMemory(vulkanDevice->logicalDevice, image, imageMemory, 0));
 
 		// Staging
-		vks::Buffer stagingBuffer;
+		vks::HBuffer stagingBuffer;
 
 		VK_CHECK_RESULT(vulkanDevice->createBuffer(
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,

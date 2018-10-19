@@ -69,8 +69,8 @@
 	struct Model
 	{
 		VkDevice device = nullptr;
-		vks::Buffer vertices;
-		vks::Buffer indices;
+		vks::HBuffer vertices;
+		vks::HBuffer indices;
 		uint32_t indexCount = 0;
 		uint32_t vertexCount = 0;
 

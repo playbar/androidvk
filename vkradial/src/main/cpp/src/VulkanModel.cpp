@@ -234,7 +234,7 @@
 
 				// Use staging buffer to move vertex and index buffer to device local memory
 				// Create staging buffers
-				vks::Buffer vertexStaging, indexStaging;
+				vks::HBuffer vertexStaging, indexStaging;
 
 				// Vertex buffer
 				VK_CHECK_RESULT(device->createBuffer(
