@@ -54,7 +54,7 @@ private:
 	VkSampler sampler;
 	VkImage image;
 	VkImageView view;
-	vks::HBuffer vertexBuffer;
+	VksBuffer vertexBuffer;
 	VkDeviceMemory imageMemory;
 	VkDescriptorPool descriptorPool;
 	VkDescriptorSetLayout descriptorSetLayout;
@@ -163,10 +163,10 @@ public:
 		VK_CHECK_RESULT(vkCreateCommandPool(vulkanDevice->logicalDevice, &cmdPoolInfo, nullptr, &commandPool));
 
 		VkCommandBufferAllocateInfo cmdBufAllocateInfo =
-			vks::initializers::commandBufferAllocateInfo(
-				commandPool,
-				VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-				(uint32_t)cmdBuffers.size());
+                vks::initializers::InitCommandBufferAllocateInfo(
+                        commandPool,
+                        VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+                        (uint32_t) cmdBuffers.size());
 
 		VK_CHECK_RESULT(vkAllocateCommandBuffers(vulkanDevice->logicalDevice, &cmdBufAllocateInfo, cmdBuffers.data()));
 
@@ -181,7 +181,7 @@ public:
 		vertexBuffer.map();
 
 		// Font texture
-		VkImageCreateInfo imageInfo = vks::initializers::imageCreateInfo();
+		VkImageCreateInfo imageInfo = vks::initializers::InitImageCreateInfo();
 		imageInfo.imageType = VK_IMAGE_TYPE_2D;
 		imageInfo.format = VK_FORMAT_R8_UNORM;
 		imageInfo.extent.width = STB_FONT_WIDTH;
@@ -197,7 +197,7 @@ public:
 		VK_CHECK_RESULT(vkCreateImage(vulkanDevice->logicalDevice, &imageInfo, nullptr, &image));
 
 		VkMemoryRequirements memReqs;
-		VkMemoryAllocateInfo allocInfo = vks::initializers::memoryAllocateInfo();
+		VkMemoryAllocateInfo allocInfo = vks::initializers::InitMemoryAllocateInfo();
 		vkGetImageMemoryRequirements(vulkanDevice->logicalDevice, image, &memReqs);
 		allocInfo.allocationSize = memReqs.size;
 		allocInfo.memoryTypeIndex = vulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -205,7 +205,7 @@ public:
 		VK_CHECK_RESULT(vkBindImageMemory(vulkanDevice->logicalDevice, image, imageMemory, 0));
 
 		// Staging
-		vks::HBuffer stagingBuffer;
+		VksBuffer stagingBuffer;
 
 		VK_CHECK_RESULT(vulkanDevice->createBuffer(
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -222,7 +222,7 @@ public:
 		cmdBufAllocateInfo.commandBufferCount = 1;
 		VK_CHECK_RESULT(vkAllocateCommandBuffers(vulkanDevice->logicalDevice, &cmdBufAllocateInfo, &copyCmd));
 
-		VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::commandBufferBeginInfo();
+		VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::InitCommandBufferBeginInfo();
 		VK_CHECK_RESULT(vkBeginCommandBuffer(copyCmd, &cmdBufInfo));
 
 		// Prepare for transfer
@@ -260,7 +260,7 @@ public:
 
 		VK_CHECK_RESULT(vkEndCommandBuffer(copyCmd));
 
-		VkSubmitInfo submitInfo = vks::initializers::submitInfo();
+		VkSubmitInfo submitInfo = vks::initializers::InitSubmitInfo();
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &copyCmd;
 
@@ -271,7 +271,7 @@ public:
 
 		vkFreeCommandBuffers(vulkanDevice->logicalDevice, commandPool, 1, &copyCmd);
 
-		VkImageViewCreateInfo imageViewInfo = vks::initializers::imageViewCreateInfo();
+		VkImageViewCreateInfo imageViewInfo = vks::initializers::InitImageViewCreateInfo();
 		imageViewInfo.image = image;
 		imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		imageViewInfo.format = imageInfo.format;
@@ -280,7 +280,7 @@ public:
 		VK_CHECK_RESULT(vkCreateImageView(vulkanDevice->logicalDevice, &imageViewInfo, nullptr, &view));
 
 		// Sampler
-		VkSamplerCreateInfo samplerInfo = vks::initializers::samplerCreateInfo();
+		VkSamplerCreateInfo samplerInfo = vks::initializers::InitSamplerCreateInfo();
 		samplerInfo.magFilter = VK_FILTER_LINEAR;
 		samplerInfo.minFilter = VK_FILTER_LINEAR;
 		samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
@@ -351,7 +351,7 @@ public:
 		VK_CHECK_RESULT(vkCreatePipelineCache(vulkanDevice->logicalDevice, &pipelineCacheCreateInfo, nullptr, &pipelineCache));
 
 		// Command buffer execution fence
-		VkFenceCreateInfo fenceCreateInfo = vks::initializers::fenceCreateInfo();
+		VkFenceCreateInfo fenceCreateInfo = vks::initializers::InitFenceCreateInfo();
 		VK_CHECK_RESULT(vkCreateFence(vulkanDevice->logicalDevice, &fenceCreateInfo, nullptr, &fence));
 	}
 
@@ -635,9 +635,9 @@ public:
 	*/
 	void updateCommandBuffers()
 	{
-		VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::commandBufferBeginInfo();
+		VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::InitCommandBufferBeginInfo();
 
-		VkRenderPassBeginInfo renderPassBeginInfo = vks::initializers::renderPassBeginInfo();
+		VkRenderPassBeginInfo renderPassBeginInfo = vks::initializers::InitRenderPassBeginInfo();
 		renderPassBeginInfo.renderPass = renderPass;
 		renderPassBeginInfo.renderArea.extent.width = *frameBufferWidth;
 		renderPassBeginInfo.renderArea.extent.height = *frameBufferHeight;
@@ -659,7 +659,7 @@ public:
 
 			vkCmdBeginRenderPass(cmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-			VkViewport viewport = vks::initializers::viewport((float)*frameBufferWidth, (float)*frameBufferHeight, 0.0f, 1.0f);
+			VkViewport viewport = vks::initializers::InitViewport((float)*frameBufferWidth, (float)*frameBufferHeight, 0.0f, 1.0f);
 			vkCmdSetViewport(cmdBuffers[i], 0, 1, &viewport);
 
 			VkRect2D scissor = vks::initializers::rect2D(*frameBufferWidth, *frameBufferHeight, 0, 0);
@@ -715,10 +715,10 @@ public:
 		vkFreeCommandBuffers(vulkanDevice->logicalDevice, commandPool, static_cast<uint32_t>(cmdBuffers.size()), cmdBuffers.data());
 
 		VkCommandBufferAllocateInfo cmdBufAllocateInfo =
-			vks::initializers::commandBufferAllocateInfo(
-				commandPool,
-				VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-				static_cast<uint32_t>(cmdBuffers.size()));
+                vks::initializers::InitCommandBufferAllocateInfo(
+                        commandPool,
+                        VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+                        static_cast<uint32_t>(cmdBuffers.size()));
 
 		VK_CHECK_RESULT(vkAllocateCommandBuffers(vulkanDevice->logicalDevice, &cmdBufAllocateInfo, cmdBuffers.data()));
 	}

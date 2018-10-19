@@ -99,7 +99,7 @@ void HSetImageLayout(
 		VkPipelineStageFlags dstStageMask)
 {
 	// Create an image barrier object
-	VkImageMemoryBarrier imageMemoryBarrier = vks::initializers::imageMemoryBarrier();
+	VkImageMemoryBarrier imageMemoryBarrier = vks::initializers::InitImageMemoryBarrier();
 	imageMemoryBarrier.oldLayout = oldImageLayout;
 	imageMemoryBarrier.newLayout = newImageLayout;
 	imageMemoryBarrier.image = image;
@@ -241,7 +241,7 @@ void HInsertImageMemoryBarrier(
 		VkPipelineStageFlags dstStageMask,
 		VkImageSubresourceRange subresourceRange)
 {
-	VkImageMemoryBarrier imageMemoryBarrier = vks::initializers::imageMemoryBarrier();
+	VkImageMemoryBarrier imageMemoryBarrier = vks::initializers::InitImageMemoryBarrier();
 	imageMemoryBarrier.srcAccessMask = srcAccessMask;
 	imageMemoryBarrier.dstAccessMask = dstAccessMask;
 	imageMemoryBarrier.oldLayout = oldImageLayout;

@@ -311,7 +311,7 @@ namespace vks
 
 			// Create the memory backing up the buffer handle
 			VkMemoryRequirements memReqs;
-			VkMemoryAllocateInfo memAlloc = vks::initializers::memoryAllocateInfo();
+			VkMemoryAllocateInfo memAlloc = vks::initializers::InitMemoryAllocateInfo();
 			vkGetBufferMemoryRequirements(logicalDevice, *buffer, &memReqs);
 			memAlloc.allocationSize = memReqs.size;
 			// Find a memory type index that fits the properties of the buffer
@@ -327,7 +327,7 @@ namespace vks
 				// If host coherency hasn't been requested, do a manual flush to make writes visible
 				if ((memoryPropertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0)
 				{
-					VkMappedMemoryRange mappedRange = vks::initializers::mappedMemoryRange();
+					VkMappedMemoryRange mappedRange = vks::initializers::InitMappedMemoryRange();
 					mappedRange.memory = *memory;
 					mappedRange.offset = 0;
 					mappedRange.size = size;
@@ -353,7 +353,7 @@ namespace vks
 		*
 		* @return VK_SUCCESS if buffer handle and memory have been created and (optionally passed) data has been copied
 		*/
-		VkResult VulkanDevice::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, vks::HBuffer *buffer,
+		VkResult VulkanDevice::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VksBuffer *buffer,
 											VkDeviceSize size, void *data)
 		{
 			buffer->device = logicalDevice;
@@ -364,7 +364,7 @@ namespace vks
 
 			// Create the memory backing up the buffer handle
 			VkMemoryRequirements memReqs;
-			VkMemoryAllocateInfo memAlloc = vks::initializers::memoryAllocateInfo();
+			VkMemoryAllocateInfo memAlloc = vks::initializers::InitMemoryAllocateInfo();
 			vkGetBufferMemoryRequirements(logicalDevice, buffer->buffer, &memReqs);
 			memAlloc.allocationSize = memReqs.size;
 			// Find a memory type index that fits the properties of the buffer
@@ -401,7 +401,7 @@ namespace vks
 		*
 		* @note Source and destionation pointers must have the approriate transfer usage flags set (TRANSFER_SRC / TRANSFER_DST)
 		*/
-		void VulkanDevice::copyBuffer(vks::HBuffer *src, vks::HBuffer *dst, VkQueue queue, VkBufferCopy *copyRegion )
+		void VulkanDevice::copyBuffer(VksBuffer *src, VksBuffer *dst, VkQueue queue, VkBufferCopy *copyRegion )
 		{
 			assert(dst->size <= src->size);
 			assert(src->buffer && src->buffer);
@@ -452,7 +452,8 @@ namespace vks
 		*/
 		VkCommandBuffer VulkanDevice::createCommandBuffer(VkCommandBufferLevel level, bool begin)
 		{
-			VkCommandBufferAllocateInfo cmdBufAllocateInfo = vks::initializers::commandBufferAllocateInfo(commandPool, level, 1);
+			VkCommandBufferAllocateInfo cmdBufAllocateInfo = vks::initializers::InitCommandBufferAllocateInfo(
+					commandPool, level, 1);
 
 			VkCommandBuffer cmdBuffer;
 			VK_CHECK_RESULT(vkAllocateCommandBuffers(logicalDevice, &cmdBufAllocateInfo, &cmdBuffer));
@@ -460,7 +461,7 @@ namespace vks
 			// If requested, also start recording for the new command buffer
 			if (begin)
 			{
-				VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::commandBufferBeginInfo();
+				VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::InitCommandBufferBeginInfo();
 				VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
 			}
 
@@ -486,12 +487,12 @@ namespace vks
 
 			VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
 
-			VkSubmitInfo submitInfo = vks::initializers::submitInfo();
+			VkSubmitInfo submitInfo = vks::initializers::InitSubmitInfo();
 			submitInfo.commandBufferCount = 1;
 			submitInfo.pCommandBuffers = &commandBuffer;
 
 			// Create fence to ensure that the command buffer has finished executing
-			VkFenceCreateInfo fenceInfo = vks::initializers::fenceCreateInfo(VK_FLAGS_NONE);
+			VkFenceCreateInfo fenceInfo = vks::initializers::InitFenceCreateInfo(VK_FLAGS_NONE);
 			VkFence fence;
 			VK_CHECK_RESULT(vkCreateFence(logicalDevice, &fenceInfo, nullptr, &fence));
 			

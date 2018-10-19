@@ -18,24 +18,24 @@ namespace vks
 	namespace initializers
 	{
 
-		inline VkMemoryAllocateInfo memoryAllocateInfo()
+		inline VkMemoryAllocateInfo InitMemoryAllocateInfo()
 		{
 			VkMemoryAllocateInfo memAllocInfo {};
 			memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 			return memAllocInfo;
 		}
 
-		inline VkMappedMemoryRange mappedMemoryRange()
+		inline VkMappedMemoryRange InitMappedMemoryRange()
 		{
 			VkMappedMemoryRange mappedMemoryRange {};
 			mappedMemoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
 			return mappedMemoryRange;
 		}
 
-		inline VkCommandBufferAllocateInfo commandBufferAllocateInfo(
-			VkCommandPool commandPool, 
-			VkCommandBufferLevel level, 
-			uint32_t bufferCount)
+		inline VkCommandBufferAllocateInfo InitCommandBufferAllocateInfo(
+				VkCommandPool commandPool,
+				VkCommandBufferLevel level,
+				uint32_t bufferCount)
 		{
 			VkCommandBufferAllocateInfo commandBufferAllocateInfo {};
 			commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -45,35 +45,35 @@ namespace vks
 			return commandBufferAllocateInfo;
 		}
 
-		inline VkCommandPoolCreateInfo commandPoolCreateInfo()
+		inline VkCommandPoolCreateInfo InitCommandPoolCreateInfo()
 		{
 			VkCommandPoolCreateInfo cmdPoolCreateInfo {};
 			cmdPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 			return cmdPoolCreateInfo;
 		}
 
-		inline VkCommandBufferBeginInfo commandBufferBeginInfo()
+		inline VkCommandBufferBeginInfo InitCommandBufferBeginInfo()
 		{
 			VkCommandBufferBeginInfo cmdBufferBeginInfo {};
 			cmdBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 			return cmdBufferBeginInfo;
 		}
 
-		inline VkCommandBufferInheritanceInfo commandBufferInheritanceInfo()
+		inline VkCommandBufferInheritanceInfo InitCommandBufferInheritanceInfo()
 		{
 			VkCommandBufferInheritanceInfo cmdBufferInheritanceInfo {};
 			cmdBufferInheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
 			return cmdBufferInheritanceInfo;
 		}
 
-		inline VkRenderPassBeginInfo renderPassBeginInfo()
+		inline VkRenderPassBeginInfo InitRenderPassBeginInfo()
 		{
 			VkRenderPassBeginInfo renderPassBeginInfo {};
 			renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			return renderPassBeginInfo;
 		}
 
-		inline VkRenderPassCreateInfo renderPassCreateInfo()
+		inline VkRenderPassCreateInfo InitRenderPassCreateInfo()
 		{
 			VkRenderPassCreateInfo renderPassCreateInfo {};
 			renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -81,7 +81,7 @@ namespace vks
 		}
 
 		/** @brief Initialize an image memory barrier with no image transfer ownership */
-		inline VkImageMemoryBarrier imageMemoryBarrier()
+		inline VkImageMemoryBarrier InitImageMemoryBarrier()
 		{
 			VkImageMemoryBarrier imageMemoryBarrier {};
 			imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -91,7 +91,7 @@ namespace vks
 		}
 
 		/** @brief Initialize a buffer memory barrier with no image transfer ownership */
-		inline VkBufferMemoryBarrier bufferMemoryBarrier()
+		inline VkBufferMemoryBarrier InitBufferMemoryBarrier()
 		{
 			VkBufferMemoryBarrier bufferMemoryBarrier {};
 			bufferMemoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -100,49 +100,49 @@ namespace vks
 			return bufferMemoryBarrier;
 		}
 
-		inline VkMemoryBarrier memoryBarrier()
+		inline VkMemoryBarrier InitMemoryBarrier()
 		{
 			VkMemoryBarrier memoryBarrier {};
 			memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
 			return memoryBarrier;
 		}
 
-		inline VkImageCreateInfo imageCreateInfo()
+		inline VkImageCreateInfo InitImageCreateInfo()
 		{
 			VkImageCreateInfo imageCreateInfo {};
 			imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 			return imageCreateInfo;
 		}
 
-		inline VkSamplerCreateInfo samplerCreateInfo()
+		inline VkSamplerCreateInfo InitSamplerCreateInfo()
 		{
 			VkSamplerCreateInfo samplerCreateInfo {};
 			samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 			return samplerCreateInfo;
 		}
 
-		inline VkImageViewCreateInfo imageViewCreateInfo()
+		inline VkImageViewCreateInfo InitImageViewCreateInfo()
 		{
 			VkImageViewCreateInfo imageViewCreateInfo {};
 			imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 			return imageViewCreateInfo;
 		}
 
-		inline VkFramebufferCreateInfo framebufferCreateInfo()
+		inline VkFramebufferCreateInfo InitFramebufferCreateInfo()
 		{
 			VkFramebufferCreateInfo framebufferCreateInfo {};
 			framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 			return framebufferCreateInfo;
 		}
 
-		inline VkSemaphoreCreateInfo semaphoreCreateInfo()
+		inline VkSemaphoreCreateInfo InitSemaphoreCreateInfo()
 		{
 			VkSemaphoreCreateInfo semaphoreCreateInfo {};
 			semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 			return semaphoreCreateInfo;
 		}
 
-		inline VkFenceCreateInfo fenceCreateInfo(VkFenceCreateFlags flags = 0)
+		inline VkFenceCreateInfo InitFenceCreateInfo(VkFenceCreateFlags flags = 0)
 		{
 			VkFenceCreateInfo fenceCreateInfo {};
 			fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -150,21 +150,21 @@ namespace vks
 			return fenceCreateInfo;
 		}
 
-		inline VkEventCreateInfo eventCreateInfo()
+		inline VkEventCreateInfo InitEventCreateInfo()
 		{
 			VkEventCreateInfo eventCreateInfo {};
 			eventCreateInfo.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
 			return eventCreateInfo;
 		}
 
-		inline VkSubmitInfo submitInfo()
+		inline VkSubmitInfo InitSubmitInfo()
 		{
 			VkSubmitInfo submitInfo {};
 			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 			return submitInfo;
 		}
 
-		inline VkViewport viewport(
+		inline VkViewport InitViewport(
 			float width,
 			float height,
 			float minDepth,

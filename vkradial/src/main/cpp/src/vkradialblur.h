@@ -13,7 +13,7 @@
 #include <android/asset_manager.h>
 #include <android_native_app_glue.h>
 #include <sys/system_properties.h>
-#include "vulkanandroid.h"
+
 #include <iostream>
 #include <chrono>
 #include <sys/stat.h>
@@ -27,18 +27,22 @@
 
 #include "vulkan/vulkan.h"
 
+#include "camera.hpp"
+#include "frustum.hpp"
 #include "keycodes.hpp"
-#include "VulkanTools.h"
+#include "threadpool.hpp"
+#include "vulkanandroid.h"
+#include "VulkanBuffer.hpp"
 #include "VulkanDebug.h"
-
-#include "VulkanInitializers.hpp"
 #include "VulkanDevice.hpp"
+#include "VulkanFrameBuffer.hpp"
+#include "VulkanHeightmap.hpp"
+#include "VulkanInitializers.hpp"
+#include "VulkanModel.hpp"
 #include "VulkanSwapChain.hpp"
 #include "VulkanTextOverlay.hpp"
-#include "camera.hpp"
-#include "VulkanBuffer.hpp"
 #include "VulkanTexture.hpp"
-#include "VulkanModel.hpp"
+#include "VulkanTools.h"
 
 class VKRadialBlur
 {
@@ -65,8 +69,8 @@ public:
     } vertices;
 
     struct {
-        vks::HBuffer scene;
-        vks::HBuffer blurParams;
+        VksBuffer scene;
+        VksBuffer blurParams;
     } uniformBuffers;
 
     struct UboVS {

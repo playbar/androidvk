@@ -31,8 +31,8 @@ namespace vks
 		float heightScale = 1.0f;
 		float uvScale = 1.0f;
 
-		vks::Buffer vertexBuffer;
-		vks::Buffer indexBuffer;
+		VksBuffer vertexBuffer;
+		VksBuffer indexBuffer;
 
 		struct Vertex {
 			glm::vec3 pos;
@@ -192,7 +192,7 @@ namespace vks
 
 			// Generate Vulkan buffers
 
-			vks::Buffer vertexStaging, indexStaging;
+			VksBuffer vertexStaging, indexStaging;
 
 			// Create staging buffers
 			device->createBuffer(

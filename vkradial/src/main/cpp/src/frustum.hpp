@@ -68,4 +68,4 @@ public:
 		return true;
 	}
 
-}
+};

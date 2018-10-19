@@ -96,10 +96,10 @@ void VKRadialBlur::createCommandBuffers()
 	drawCmdBuffers.resize(swapChain.imageCount);
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
-		vks::initializers::commandBufferAllocateInfo(
-			cmdPool,
-			VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-			static_cast<uint32_t>(drawCmdBuffers.size()));
+			vks::initializers::InitCommandBufferAllocateInfo(
+					cmdPool,
+					VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+					static_cast<uint32_t>(drawCmdBuffers.size()));
 
 	VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, drawCmdBuffers.data()));
 }
@@ -114,17 +114,17 @@ VkCommandBuffer VKRadialBlur::createCommandBuffer(VkCommandBufferLevel level, bo
 	VkCommandBuffer cmdBuffer;
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
-		vks::initializers::commandBufferAllocateInfo(
-			cmdPool,
-			level,
-			1);
+			vks::initializers::InitCommandBufferAllocateInfo(
+					cmdPool,
+					level,
+					1);
 
 	VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, &cmdBuffer));
 
 	// If requested, also start the new command buffer
 	if (begin)
 	{
-		VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::commandBufferBeginInfo();
+		VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::InitCommandBufferBeginInfo();
 		VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
 	}
 
@@ -871,7 +871,7 @@ void VKRadialBlur::initVulkan()
 	swapChain.connect(instance, physicalDevice, device);
 
 	// Create synchronization objects
-	VkSemaphoreCreateInfo semaphoreCreateInfo = vks::initializers::semaphoreCreateInfo();
+	VkSemaphoreCreateInfo semaphoreCreateInfo = vks::initializers::InitSemaphoreCreateInfo();
 	// Create a semaphore used to synchronize image presentation
 	// Ensures that the image is displayed before we start submitting new commands to the queu
 	VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphores.presentComplete));
@@ -886,7 +886,7 @@ void VKRadialBlur::initVulkan()
 	// Set up submit info structure
 	// Semaphores will stay the same during application lifetime
 	// Command buffer submission info is set by each example
-	submitInfo = vks::initializers::submitInfo();
+	submitInfo = vks::initializers::InitSubmitInfo();
 	submitInfo.pWaitDstStageMask = &submitPipelineStages;
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = &semaphores.presentComplete;
@@ -2124,7 +2124,7 @@ void VKRadialBlur::prepareOffscreen()
 	assert(validDepthFormat);
 
 	// Color attachment
-	VkImageCreateInfo image = vks::initializers::imageCreateInfo();
+	VkImageCreateInfo image = vks::initializers::InitImageCreateInfo();
 	image.imageType = VK_IMAGE_TYPE_2D;
 	image.format = FB_COLOR_FORMAT;
 	image.extent.width = offscreenPass.width;
@@ -2137,7 +2137,7 @@ void VKRadialBlur::prepareOffscreen()
 	// We will sample directly from the color attachment
 	image.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
-	VkMemoryAllocateInfo memAlloc = vks::initializers::memoryAllocateInfo();
+	VkMemoryAllocateInfo memAlloc = vks::initializers::InitMemoryAllocateInfo();
 	VkMemoryRequirements memReqs;
 
 	VK_CHECK_RESULT(vkCreateImage(device, &image, nullptr, &offscreenPass.color.image));
@@ -2147,7 +2147,7 @@ void VKRadialBlur::prepareOffscreen()
 	VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &offscreenPass.color.mem));
 	VK_CHECK_RESULT(vkBindImageMemory(device, offscreenPass.color.image, offscreenPass.color.mem, 0));
 
-	VkImageViewCreateInfo colorImageView = vks::initializers::imageViewCreateInfo();
+	VkImageViewCreateInfo colorImageView = vks::initializers::InitImageViewCreateInfo();
 	colorImageView.viewType = VK_IMAGE_VIEW_TYPE_2D;
 	colorImageView.format = FB_COLOR_FORMAT;
 	colorImageView.subresourceRange = {};
@@ -2160,7 +2160,7 @@ void VKRadialBlur::prepareOffscreen()
 	VK_CHECK_RESULT(vkCreateImageView(device, &colorImageView, nullptr, &offscreenPass.color.view));
 
 	// Create sampler to sample from the attachment in the fragment shader
-	VkSamplerCreateInfo samplerInfo = vks::initializers::samplerCreateInfo();
+	VkSamplerCreateInfo samplerInfo = vks::initializers::InitSamplerCreateInfo();
 	samplerInfo.magFilter = VK_FILTER_LINEAR;
 	samplerInfo.minFilter = VK_FILTER_LINEAR;
 	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
@@ -2185,7 +2185,7 @@ void VKRadialBlur::prepareOffscreen()
 	VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &offscreenPass.depth.mem));
 	VK_CHECK_RESULT(vkBindImageMemory(device, offscreenPass.depth.image, offscreenPass.depth.mem, 0));
 
-	VkImageViewCreateInfo depthStencilView = vks::initializers::imageViewCreateInfo();
+	VkImageViewCreateInfo depthStencilView = vks::initializers::InitImageViewCreateInfo();
 	depthStencilView.viewType = VK_IMAGE_VIEW_TYPE_2D;
 	depthStencilView.format = fbDepthFormat;
 	depthStencilView.flags = 0;
@@ -2264,7 +2264,7 @@ void VKRadialBlur::prepareOffscreen()
 	attachments[0] = offscreenPass.color.view;
 	attachments[1] = offscreenPass.depth.view;
 
-	VkFramebufferCreateInfo fbufCreateInfo = vks::initializers::framebufferCreateInfo();
+	VkFramebufferCreateInfo fbufCreateInfo = vks::initializers::InitFramebufferCreateInfo();
 	fbufCreateInfo.renderPass = offscreenPass.renderPass;
 	fbufCreateInfo.attachmentCount = 2;
 	fbufCreateInfo.pAttachments = attachments;
@@ -2289,17 +2289,17 @@ void VKRadialBlur::buildOffscreenCommandBuffer()
 	}
 	if (offscreenPass.semaphore == VK_NULL_HANDLE)
 	{
-		VkSemaphoreCreateInfo semaphoreCreateInfo = vks::initializers::semaphoreCreateInfo();
+		VkSemaphoreCreateInfo semaphoreCreateInfo = vks::initializers::InitSemaphoreCreateInfo();
 		VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &offscreenPass.semaphore));
 	}
 
-	VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::commandBufferBeginInfo();
+	VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::InitCommandBufferBeginInfo();
 
 	VkClearValue clearValues[2];
 	clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
 	clearValues[1].depthStencil = { 1.0f, 0 };
 
-	VkRenderPassBeginInfo renderPassBeginInfo = vks::initializers::renderPassBeginInfo();
+	VkRenderPassBeginInfo renderPassBeginInfo = vks::initializers::InitRenderPassBeginInfo();
 	renderPassBeginInfo.renderPass = offscreenPass.renderPass;
 	renderPassBeginInfo.framebuffer = offscreenPass.frameBuffer;
 	renderPassBeginInfo.renderArea.extent.width = offscreenPass.width;
@@ -2309,7 +2309,7 @@ void VKRadialBlur::buildOffscreenCommandBuffer()
 
 	VK_CHECK_RESULT(vkBeginCommandBuffer(offscreenPass.commandBuffer, &cmdBufInfo));
 
-	VkViewport viewport = vks::initializers::viewport((float)offscreenPass.width, (float)offscreenPass.height, 0.0f, 1.0f);
+	VkViewport viewport = vks::initializers::InitViewport((float)offscreenPass.width, (float)offscreenPass.height, 0.0f, 1.0f);
 	vkCmdSetViewport(offscreenPass.commandBuffer, 0, 1, &viewport);
 
 	VkRect2D scissor = vks::initializers::rect2D(offscreenPass.width, offscreenPass.height, 0, 0);
@@ -2345,13 +2345,13 @@ void VKRadialBlur::reBuildCommandBuffers()
 
 void VKRadialBlur::buildCommandBuffers()
 {
-	VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::commandBufferBeginInfo();
+	VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::InitCommandBufferBeginInfo();
 
 	VkClearValue clearValues[2];
 	clearValues[0].color = defaultClearColor;
 	clearValues[1].depthStencil = { 1.0f, 0 };
 
-	VkRenderPassBeginInfo renderPassBeginInfo = vks::initializers::renderPassBeginInfo();
+	VkRenderPassBeginInfo renderPassBeginInfo = vks::initializers::InitRenderPassBeginInfo();
 	renderPassBeginInfo.renderPass = renderPass;
 	renderPassBeginInfo.renderArea.offset.x = 0;
 	renderPassBeginInfo.renderArea.offset.y = 0;
@@ -2369,7 +2369,7 @@ void VKRadialBlur::buildCommandBuffers()
 
 		vkCmdBeginRenderPass(drawCmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		VkViewport viewport = vks::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
+		VkViewport viewport = vks::initializers::InitViewport((float)width, (float)height, 0.0f, 1.0f);
 		vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
 
 		VkRect2D scissor = vks::initializers::rect2D(width, height, 0, 0);
