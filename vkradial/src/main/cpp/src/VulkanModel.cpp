@@ -3,8 +3,7 @@
 #include "VulkanModel.hpp"
 
 
-namespace vks
-{
+
 
 		VertexLayout::VertexLayout(std::vector<Component> components)
 		{
@@ -78,7 +77,7 @@ namespace vks
 		* @param copyQueue Queue used for the memory staging copy commands (must support transfer)
 		* @param (Optional) flags ASSIMP model loading flags
 		*/
-		bool Model::loadFromFile(const std::string& filename, vks::VertexLayout layout, vks::ModelCreateInfo *createInfo,
+		bool Model::loadFromFile(const std::string& filename, VertexLayout layout, ModelCreateInfo *createInfo,
 								 vks::VulkanDevice *device, VkQueue copyQueue, const int flags)
 		{
 			this->device = device->logicalDevice;
@@ -309,10 +308,10 @@ namespace vks
 		* @param copyQueue Queue used for the memory staging copy commands (must support transfer)
 		* @param (Optional) flags ASSIMP model loading flags
 		*/
-		bool Model::loadFromFile(const std::string& filename, vks::VertexLayout layout, float scale,
+		bool Model::loadFromFile(const std::string& filename, VertexLayout layout, float scale,
 								 vks::VulkanDevice *device, VkQueue copyQueue, const int flags)
 		{
-			vks::ModelCreateInfo modelCreateInfo(scale, 1.0f, 0.0f);
+			ModelCreateInfo modelCreateInfo(scale, 1.0f, 0.0f);
 			return loadFromFile(filename, layout, &modelCreateInfo, device, copyQueue, flags);
 		}
-};
+

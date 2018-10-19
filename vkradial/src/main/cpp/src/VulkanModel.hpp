@@ -31,8 +31,6 @@
 #include <android/asset_manager.h>
 #endif
 
-namespace vks
-{
 	/** @brief Vertex layout components */
 	typedef enum Component {
 		VERTEX_COMPONENT_POSITION = 0x0,
@@ -68,7 +66,8 @@ namespace vks
 
 	};
 
-	struct Model {
+	struct Model
+	{
 		VkDevice device = nullptr;
 		vks::Buffer vertices;
 		vks::Buffer indices;
@@ -106,7 +105,7 @@ namespace vks
 		* @param copyQueue Queue used for the memory staging copy commands (must support transfer)
 		* @param (Optional) flags ASSIMP model loading flags
 		*/
-		bool loadFromFile(const std::string& filename, vks::VertexLayout layout, vks::ModelCreateInfo *createInfo,
+		bool loadFromFile(const std::string& filename, VertexLayout layout, ModelCreateInfo *createInfo,
 						  vks::VulkanDevice *device, VkQueue copyQueue, const int flags = defaultFlags);
 
 		/**
@@ -119,7 +118,6 @@ namespace vks
 		* @param copyQueue Queue used for the memory staging copy commands (must support transfer)
 		* @param (Optional) flags ASSIMP model loading flags
 		*/
-		bool loadFromFile(const std::string& filename, vks::VertexLayout layout, float scale, vks::VulkanDevice *device,
+		bool loadFromFile(const std::string& filename, VertexLayout layout, float scale, vks::VulkanDevice *device,
 						  VkQueue copyQueue, const int flags = defaultFlags);
 	};
-};

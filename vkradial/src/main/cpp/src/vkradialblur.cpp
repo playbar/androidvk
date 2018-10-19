@@ -7,9 +7,9 @@
 #define FB_DIM 512
 #define FB_COLOR_FORMAT VK_FORMAT_R8G8B8A8_UNORM
 
-std::vector<const char*> VulkanExampleBase::args;
+std::vector<const char*> VKRadialBlur::args;
 
-VkResult VulkanExampleBase::createInstance(bool enableValidation)
+VkResult VKRadialBlur::createInstance(bool enableValidation)
 {
 	this->settings.validation = enableValidation;
 
@@ -55,7 +55,7 @@ VkResult VulkanExampleBase::createInstance(bool enableValidation)
 	return vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
 }
 
-std::string VulkanExampleBase::getWindowTitle()
+std::string VKRadialBlur::getWindowTitle()
 {
 	std::string device(deviceProperties.deviceName);
 	std::string windowTitle;
@@ -69,7 +69,7 @@ std::string VulkanExampleBase::getWindowTitle()
 	return windowTitle;
 }
 
-const std::string VulkanExampleBase::getAssetPath()
+const std::string VKRadialBlur::getAssetPath()
 {
 #if defined(__ANDROID__)
 	return "";
@@ -78,7 +78,7 @@ const std::string VulkanExampleBase::getAssetPath()
 #endif
 }
 
-bool VulkanExampleBase::checkCommandBuffers()
+bool VKRadialBlur::checkCommandBuffers()
 {
 	for (auto& cmdBuffer : drawCmdBuffers)
 	{
@@ -90,7 +90,7 @@ bool VulkanExampleBase::checkCommandBuffers()
 	return true;
 }
 
-void VulkanExampleBase::createCommandBuffers()
+void VKRadialBlur::createCommandBuffers()
 {
 	// Create one command buffer for each swap chain image and reuse for rendering
 	drawCmdBuffers.resize(swapChain.imageCount);
@@ -104,12 +104,12 @@ void VulkanExampleBase::createCommandBuffers()
 	VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, drawCmdBuffers.data()));
 }
 
-void VulkanExampleBase::destroyCommandBuffers()
+void VKRadialBlur::destroyCommandBuffers()
 {
 	vkFreeCommandBuffers(device, cmdPool, static_cast<uint32_t>(drawCmdBuffers.size()), drawCmdBuffers.data());
 }
 
-VkCommandBuffer VulkanExampleBase::createCommandBuffer(VkCommandBufferLevel level, bool begin)
+VkCommandBuffer VKRadialBlur::createCommandBuffer(VkCommandBufferLevel level, bool begin)
 {
 	VkCommandBuffer cmdBuffer;
 
@@ -131,7 +131,7 @@ VkCommandBuffer VulkanExampleBase::createCommandBuffer(VkCommandBufferLevel leve
 	return cmdBuffer;
 }
 
-void VulkanExampleBase::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free)
+void VKRadialBlur::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free)
 {
 	if (commandBuffer == VK_NULL_HANDLE)
 	{
@@ -154,14 +154,14 @@ void VulkanExampleBase::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueu
 	}
 }
 
-void VulkanExampleBase::createPipelineCache()
+void VKRadialBlur::createPipelineCache()
 {
 	VkPipelineCacheCreateInfo pipelineCacheCreateInfo = {};
 	pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
 	VK_CHECK_RESULT(vkCreatePipelineCache(device, &pipelineCacheCreateInfo, nullptr, &pipelineCache));
 }
 
-void VulkanExampleBase::prepare()
+void VKRadialBlur::prepare()
 {
 	if (vulkanDevice->enableDebugMarkers)
 	{
@@ -208,7 +208,7 @@ void VulkanExampleBase::prepare()
 
 }
 
-VkPipelineShaderStageCreateInfo VulkanExampleBase::loadShader(std::string fileName, VkShaderStageFlagBits stage)
+VkPipelineShaderStageCreateInfo VKRadialBlur::loadShader(std::string fileName, VkShaderStageFlagBits stage)
 {
 	VkPipelineShaderStageCreateInfo shaderStage = {};
 	shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -224,7 +224,7 @@ VkPipelineShaderStageCreateInfo VulkanExampleBase::loadShader(std::string fileNa
 	return shaderStage;
 }
 
-void VulkanExampleBase::renderLoop()
+void VKRadialBlur::renderLoop()
 {
 	destWidth = width;
 	destHeight = height;
@@ -535,7 +535,7 @@ void VulkanExampleBase::renderLoop()
 	vkDeviceWaitIdle(device);
 }
 
-void VulkanExampleBase::updateTextOverlay()
+void VKRadialBlur::updateTextOverlay()
 {
 	if (!enableTextOverlay)
 		return;
@@ -559,7 +559,7 @@ void VulkanExampleBase::updateTextOverlay()
 	textOverlay->endTextUpdate();
 }
 
-void VulkanExampleBase::getOverlayText(VulkanTextOverlay *textOverlay)
+void VKRadialBlur::getOverlayText(VulkanTextOverlay *textOverlay)
 {
 	// Can be overriden in derived class
 	textOverlay->addText("Press \"Button A\" to toggle blur", 5.0f, 85.0f, VulkanTextOverlay::alignLeft);
@@ -567,13 +567,13 @@ void VulkanExampleBase::getOverlayText(VulkanTextOverlay *textOverlay)
 
 }
 
-void VulkanExampleBase::prepareFrame()
+void VKRadialBlur::prepareFrame()
 {
 	// Acquire the next image from the swap chaing
 	VK_CHECK_RESULT(swapChain.acquireNextImage(semaphores.presentComplete, &currentBuffer));
 }
 
-void VulkanExampleBase::submitFrame()
+void VKRadialBlur::submitFrame()
 {
 	bool submitTextOverlay = enableTextOverlay && textOverlay->visible;
 
@@ -612,7 +612,7 @@ void VulkanExampleBase::submitFrame()
 	VK_CHECK_RESULT(vkQueueWaitIdle(queue));
 }
 
-VulkanExampleBase::VulkanExampleBase(bool enableValidation)
+VKRadialBlur::VKRadialBlur(bool enableValidation)
 {
 
 	settings.validation = enableValidation;
@@ -659,7 +659,7 @@ VulkanExampleBase::VulkanExampleBase(bool enableValidation)
 	title = "Vulkan Example - Radial blur";
 }
 
-VulkanExampleBase::~VulkanExampleBase()
+VKRadialBlur::~VKRadialBlur()
 {
 
 	// Color attachment
@@ -687,7 +687,7 @@ VulkanExampleBase::~VulkanExampleBase()
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayouts.scene, nullptr);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayouts.radialBlur, nullptr);
 
-	models.example.destroy();
+	models.destroy();
 
 	uniformBuffers.scene.destroy();
 	uniformBuffers.blurParams.destroy();
@@ -695,7 +695,7 @@ VulkanExampleBase::~VulkanExampleBase()
 	vkFreeCommandBuffers(device, cmdPool, 1, &offscreenPass.commandBuffer);
 	vkDestroySemaphore(device, offscreenPass.semaphore, nullptr);
 
-	textures.gradient.destroy();
+	textures.destroy();
 
 	////////
 	// Clean up Vulkan resources
@@ -744,7 +744,7 @@ VulkanExampleBase::~VulkanExampleBase()
 
 }
 
-void VulkanExampleBase::initVulkan()
+void VKRadialBlur::initVulkan()
 {
 	VkResult err;
 
@@ -908,7 +908,7 @@ void VulkanExampleBase::initVulkan()
 
 #if defined(_WIN32)
 // Win32 : Sets up a console window and redirects standard output to it
-void VulkanExampleBase::setupConsole(std::string title)
+void VKRadialBlur::setupConsole(std::string title)
 {
 	AllocConsole();
 	AttachConsole(GetCurrentProcessId());
@@ -918,7 +918,7 @@ void VulkanExampleBase::setupConsole(std::string title)
 	SetConsoleTitle(TEXT(title.c_str()));
 }
 
-HWND VulkanExampleBase::setupWindow(HINSTANCE hinstance, WNDPROC wndproc)
+HWND VKRadialBlur::setupWindow(HINSTANCE hinstance, WNDPROC wndproc)
 {
 	this->windowInstance = hinstance;
 
@@ -1033,7 +1033,7 @@ HWND VulkanExampleBase::setupWindow(HINSTANCE hinstance, WNDPROC wndproc)
 	return window;
 }
 
-void VulkanExampleBase::handleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+void VKRadialBlur::handleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
 	{
@@ -1169,9 +1169,9 @@ void VulkanExampleBase::handleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
 	}
 }
 #elif defined(__ANDROID__)
-int32_t VulkanExampleBase::handleAppInput(struct android_app* app, AInputEvent* event)
+int32_t VKRadialBlur::handleAppInput(struct android_app* app, AInputEvent* event)
 {
-	VulkanExampleBase* vulkanExample = reinterpret_cast<VulkanExampleBase*>(app->userData);
+	VKRadialBlur* vulkanExample = reinterpret_cast<VKRadialBlur*>(app->userData);
 	if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION)
 	{
 		int32_t eventSource = AInputEvent_getSource(event);
@@ -1273,10 +1273,10 @@ int32_t VulkanExampleBase::handleAppInput(struct android_app* app, AInputEvent* 
 	return 0;
 }
 
-void VulkanExampleBase::handleAppCommand(android_app * app, int32_t cmd)
+void VKRadialBlur::handleAppCommand(android_app * app, int32_t cmd)
 {
 	assert(app->userData != NULL);
-	VulkanExampleBase* vulkanExample = reinterpret_cast<VulkanExampleBase*>(app->userData);
+	VKRadialBlur* vulkanExample = reinterpret_cast<VKRadialBlur*>(app->userData);
 	switch (cmd)
 	{
 	case APP_CMD_SAVE_STATE:
@@ -1318,39 +1318,39 @@ void VulkanExampleBase::handleAppCommand(android_app * app, int32_t cmd)
 }
 #elif defined(_DIRECT2DISPLAY)
 #elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-/*static*/void VulkanExampleBase::registryGlobalCb(void *data,
+/*static*/void VKRadialBlur::registryGlobalCb(void *data,
 		wl_registry *registry, uint32_t name, const char *interface,
 		uint32_t version)
 {
-	VulkanExampleBase *self = reinterpret_cast<VulkanExampleBase *>(data);
+	VKRadialBlur *self = reinterpret_cast<VKRadialBlur *>(data);
 	self->registryGlobal(registry, name, interface, version);
 }
 
-/*static*/void VulkanExampleBase::seatCapabilitiesCb(void *data, wl_seat *seat,
+/*static*/void VKRadialBlur::seatCapabilitiesCb(void *data, wl_seat *seat,
 		uint32_t caps)
 {
-	VulkanExampleBase *self = reinterpret_cast<VulkanExampleBase *>(data);
+	VKRadialBlur *self = reinterpret_cast<VKRadialBlur *>(data);
 	self->seatCapabilities(seat, caps);
 }
 
-/*static*/void VulkanExampleBase::pointerEnterCb(void *data,
+/*static*/void VKRadialBlur::pointerEnterCb(void *data,
 		wl_pointer *pointer, uint32_t serial, wl_surface *surface,
 		wl_fixed_t sx, wl_fixed_t sy)
 {
 }
 
-/*static*/void VulkanExampleBase::pointerLeaveCb(void *data,
+/*static*/void VKRadialBlur::pointerLeaveCb(void *data,
 		wl_pointer *pointer, uint32_t serial, wl_surface *surface)
 {
 }
 
-/*static*/void VulkanExampleBase::pointerMotionCb(void *data,
+/*static*/void VKRadialBlur::pointerMotionCb(void *data,
 		wl_pointer *pointer, uint32_t time, wl_fixed_t sx, wl_fixed_t sy)
 {
-	VulkanExampleBase *self = reinterpret_cast<VulkanExampleBase *>(data);
+	VKRadialBlur *self = reinterpret_cast<VKRadialBlur *>(data);
 	self->pointerMotion(pointer, time, sx, sy);
 }
-void VulkanExampleBase::pointerMotion(wl_pointer *pointer, uint32_t time,
+void VKRadialBlur::pointerMotion(wl_pointer *pointer, uint32_t time,
 		wl_fixed_t sx, wl_fixed_t sy)
 {
 	double x = wl_fixed_to_double(sx);
@@ -1385,15 +1385,15 @@ void VulkanExampleBase::pointerMotion(wl_pointer *pointer, uint32_t time,
 	mousePos = glm::vec2(x, y);
 }
 
-/*static*/void VulkanExampleBase::pointerButtonCb(void *data,
+/*static*/void VKRadialBlur::pointerButtonCb(void *data,
 		wl_pointer *pointer, uint32_t serial, uint32_t time, uint32_t button,
 		uint32_t state)
 {
-	VulkanExampleBase *self = reinterpret_cast<VulkanExampleBase *>(data);
+	VKRadialBlur *self = reinterpret_cast<VKRadialBlur *>(data);
 	self->pointerButton(pointer, serial, time, button, state);
 }
 
-void VulkanExampleBase::pointerButton(struct wl_pointer *pointer,
+void VKRadialBlur::pointerButton(struct wl_pointer *pointer,
 		uint32_t serial, uint32_t time, uint32_t button, uint32_t state)
 {
 	switch (button)
@@ -1412,15 +1412,15 @@ void VulkanExampleBase::pointerButton(struct wl_pointer *pointer,
 	}
 }
 
-/*static*/void VulkanExampleBase::pointerAxisCb(void *data,
+/*static*/void VKRadialBlur::pointerAxisCb(void *data,
 		wl_pointer *pointer, uint32_t time, uint32_t axis,
 		wl_fixed_t value)
 {
-	VulkanExampleBase *self = reinterpret_cast<VulkanExampleBase *>(data);
+	VKRadialBlur *self = reinterpret_cast<VKRadialBlur *>(data);
 	self->pointerAxis(pointer, time, axis, value);
 }
 
-void VulkanExampleBase::pointerAxis(wl_pointer *pointer, uint32_t time,
+void VKRadialBlur::pointerAxis(wl_pointer *pointer, uint32_t time,
 		uint32_t axis, wl_fixed_t value)
 {
 	double d = wl_fixed_to_double(value);
@@ -1436,32 +1436,32 @@ void VulkanExampleBase::pointerAxis(wl_pointer *pointer, uint32_t time,
 	}
 }
 
-/*static*/void VulkanExampleBase::keyboardKeymapCb(void *data,
+/*static*/void VKRadialBlur::keyboardKeymapCb(void *data,
 		struct wl_keyboard *keyboard, uint32_t format, int fd, uint32_t size)
 {
 }
 
-/*static*/void VulkanExampleBase::keyboardEnterCb(void *data,
+/*static*/void VKRadialBlur::keyboardEnterCb(void *data,
 		struct wl_keyboard *keyboard, uint32_t serial,
 		struct wl_surface *surface, struct wl_array *keys)
 {
 }
 
-/*static*/void VulkanExampleBase::keyboardLeaveCb(void *data,
+/*static*/void VKRadialBlur::keyboardLeaveCb(void *data,
 		struct wl_keyboard *keyboard, uint32_t serial,
 		struct wl_surface *surface)
 {
 }
 
-/*static*/void VulkanExampleBase::keyboardKeyCb(void *data,
+/*static*/void VKRadialBlur::keyboardKeyCb(void *data,
 		struct wl_keyboard *keyboard, uint32_t serial, uint32_t time,
 		uint32_t key, uint32_t state)
 {
-	VulkanExampleBase *self = reinterpret_cast<VulkanExampleBase *>(data);
+	VKRadialBlur *self = reinterpret_cast<VKRadialBlur *>(data);
 	self->keyboardKey(keyboard, serial, time, key, state);
 }
 
-void VulkanExampleBase::keyboardKey(struct wl_keyboard *keyboard,
+void VKRadialBlur::keyboardKey(struct wl_keyboard *keyboard,
 		uint32_t serial, uint32_t time, uint32_t key, uint32_t state)
 {
 	switch (key)
@@ -1495,13 +1495,13 @@ void VulkanExampleBase::keyboardKey(struct wl_keyboard *keyboard,
 		keyPressed(key);
 }
 
-/*static*/void VulkanExampleBase::keyboardModifiersCb(void *data,
+/*static*/void VKRadialBlur::keyboardModifiersCb(void *data,
 		struct wl_keyboard *keyboard, uint32_t serial, uint32_t mods_depressed,
 		uint32_t mods_latched, uint32_t mods_locked, uint32_t group)
 {
 }
 
-void VulkanExampleBase::seatCapabilities(wl_seat *seat, uint32_t caps)
+void VKRadialBlur::seatCapabilities(wl_seat *seat, uint32_t caps)
 {
 	if ((caps & WL_SEAT_CAPABILITY_POINTER) && !pointer)
 	{
@@ -1532,7 +1532,7 @@ void VulkanExampleBase::seatCapabilities(wl_seat *seat, uint32_t caps)
 	}
 }
 
-void VulkanExampleBase::registryGlobal(wl_registry *registry, uint32_t name,
+void VKRadialBlur::registryGlobal(wl_registry *registry, uint32_t name,
 		const char *interface, uint32_t version)
 {
 	if (strcmp(interface, "wl_compositor") == 0)
@@ -1556,12 +1556,12 @@ void VulkanExampleBase::registryGlobal(wl_registry *registry, uint32_t name,
 	}
 }
 
-/*static*/void VulkanExampleBase::registryGlobalRemoveCb(void *data,
+/*static*/void VKRadialBlur::registryGlobalRemoveCb(void *data,
 		struct wl_registry *registry, uint32_t name)
 {
 }
 
-void VulkanExampleBase::initWaylandConnection()
+void VKRadialBlur::initWaylandConnection()
 {
 	display = wl_display_connect(NULL);
 	if (!display)
@@ -1607,7 +1607,7 @@ static void PopupDoneCb(void *data, struct wl_shell_surface *shell_surface)
 {
 }
 
-wl_shell_surface *VulkanExampleBase::setupWindow()
+wl_shell_surface *VKRadialBlur::setupWindow()
 {
 	surface = wl_compositor_create_surface(compositor);
 	shell_surface = wl_shell_get_shell_surface(shell, surface);
@@ -1631,7 +1631,7 @@ static inline xcb_intern_atom_reply_t* intern_atom_helper(xcb_connection_t *conn
 }
 
 // Set up a window using XCB and request event types
-xcb_window_t VulkanExampleBase::setupWindow()
+xcb_window_t VKRadialBlur::setupWindow()
 {
 	uint32_t value_mask, value_list[32];
 
@@ -1696,7 +1696,7 @@ xcb_window_t VulkanExampleBase::setupWindow()
 }
 
 // Initialize XCB connection
-void VulkanExampleBase::initxcbConnection()
+void VKRadialBlur::initxcbConnection()
 {
 	const xcb_setup_t *setup;
 	xcb_screen_iterator_t iter;
@@ -1716,7 +1716,7 @@ void VulkanExampleBase::initxcbConnection()
 	screen = iter.data;
 }
 
-void VulkanExampleBase::handleEvent(const xcb_generic_event_t *event)
+void VKRadialBlur::handleEvent(const xcb_generic_event_t *event)
 {
 	switch (event->response_type & 0x7f)
 	{
@@ -1852,13 +1852,13 @@ void VulkanExampleBase::handleEvent(const xcb_generic_event_t *event)
 }
 #endif
 
-void VulkanExampleBase::viewChanged()
+void VKRadialBlur::viewChanged()
 {
 	// Can be overrdiden in derived class
 	updateUniformBuffersScene();
 }
 
-void VulkanExampleBase::keyPressed(uint32_t keyCode)
+void VKRadialBlur::keyPressed(uint32_t keyCode)
 {
 	switch (keyCode)
 	{
@@ -1873,7 +1873,7 @@ void VulkanExampleBase::keyPressed(uint32_t keyCode)
 	}
 }
 
-void VulkanExampleBase::createCommandPool()
+void VKRadialBlur::createCommandPool()
 {
 	VkCommandPoolCreateInfo cmdPoolInfo = {};
 	cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -1882,7 +1882,7 @@ void VulkanExampleBase::createCommandPool()
 	VK_CHECK_RESULT(vkCreateCommandPool(device, &cmdPoolInfo, nullptr, &cmdPool));
 }
 
-void VulkanExampleBase::setupDepthStencil()
+void VKRadialBlur::setupDepthStencil()
 {
 	VkImageCreateInfo image = {};
 	image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -1929,7 +1929,7 @@ void VulkanExampleBase::setupDepthStencil()
 	VK_CHECK_RESULT(vkCreateImageView(device, &depthStencilView, nullptr, &depthStencil.view));
 }
 
-void VulkanExampleBase::setupFrameBuffer()
+void VKRadialBlur::setupFrameBuffer()
 {
 	VkImageView attachments[2];
 
@@ -1955,7 +1955,7 @@ void VulkanExampleBase::setupFrameBuffer()
 	}
 }
 
-void VulkanExampleBase::setupRenderPass()
+void VKRadialBlur::setupRenderPass()
 {
 	std::array<VkAttachmentDescription, 2> attachments = {};
 	// Color attachment
@@ -2027,12 +2027,12 @@ void VulkanExampleBase::setupRenderPass()
 	VK_CHECK_RESULT(vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass));
 }
 
-void VulkanExampleBase::getEnabledFeatures()
+void VKRadialBlur::getEnabledFeatures()
 {
 	// Can be overriden in derived class
 }
 
-void VulkanExampleBase::windowResize()
+void VKRadialBlur::windowResize()
 {
 	if (!prepared)
 	{
@@ -2084,12 +2084,12 @@ void VulkanExampleBase::windowResize()
 	prepared = true;
 }
 
-void VulkanExampleBase::windowResized()
+void VKRadialBlur::windowResized()
 {
 	// Can be overriden in derived class
 }
 
-void VulkanExampleBase::initSwapchain()
+void VKRadialBlur::initSwapchain()
 {
 #if defined(_WIN32)
 	swapChain.initSurface(windowInstance, window);
@@ -2104,13 +2104,13 @@ void VulkanExampleBase::initSwapchain()
 #endif
 }
 
-void VulkanExampleBase::setupSwapChain()
+void VKRadialBlur::setupSwapChain()
 {
 	swapChain.create(&width, &height, settings.vsync);
 }
 
 ////
-void VulkanExampleBase::prepareOffscreen()
+void VKRadialBlur::prepareOffscreen()
 {
 	offscreenPass.width = FB_DIM;
 	offscreenPass.height = FB_DIM;
@@ -2278,11 +2278,11 @@ void VulkanExampleBase::prepareOffscreen()
 }
 
 // Sets up the command buffer that renders the scene to the offscreen frame buffer
-void VulkanExampleBase::buildOffscreenCommandBuffer()
+void VKRadialBlur::buildOffscreenCommandBuffer()
 {
 	if (offscreenPass.commandBuffer == VK_NULL_HANDLE)
 	{
-		offscreenPass.commandBuffer = VulkanExampleBase::createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, false);
+		offscreenPass.commandBuffer = VKRadialBlur::createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, false);
 	}
 	if (offscreenPass.semaphore == VK_NULL_HANDLE)
 	{
@@ -2318,9 +2318,9 @@ void VulkanExampleBase::buildOffscreenCommandBuffer()
 	vkCmdBindPipeline(offscreenPass.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.colorPass);
 
 	VkDeviceSize offsets[1] = { 0 };
-	vkCmdBindVertexBuffers(offscreenPass.commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &models.example.vertices.buffer, offsets);
-	vkCmdBindIndexBuffer(offscreenPass.commandBuffer, models.example.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
-	vkCmdDrawIndexed(offscreenPass.commandBuffer, models.example.indexCount, 1, 0, 0, 0);
+	vkCmdBindVertexBuffers(offscreenPass.commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &models.vertices.buffer, offsets);
+	vkCmdBindIndexBuffer(offscreenPass.commandBuffer, models.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdDrawIndexed(offscreenPass.commandBuffer, models.indexCount, 1, 0, 0, 0);
 
 	vkCmdEndRenderPass(offscreenPass.commandBuffer);
 
@@ -2330,7 +2330,7 @@ void VulkanExampleBase::buildOffscreenCommandBuffer()
 
 
 ////
-void VulkanExampleBase::reBuildCommandBuffers()
+void VKRadialBlur::reBuildCommandBuffers()
 {
 	if (!checkCommandBuffers())
 	{
@@ -2340,7 +2340,7 @@ void VulkanExampleBase::reBuildCommandBuffers()
 	buildCommandBuffers();
 }
 
-void VulkanExampleBase::buildCommandBuffers()
+void VKRadialBlur::buildCommandBuffers()
 {
 	VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::commandBufferBeginInfo();
 
@@ -2378,9 +2378,9 @@ void VulkanExampleBase::buildCommandBuffers()
 		vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayouts.scene, 0, 1, &descriptorSets.scene, 0, NULL);
 		vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.phongPass);
 
-		vkCmdBindVertexBuffers(drawCmdBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &models.example.vertices.buffer, offsets);
-		vkCmdBindIndexBuffer(drawCmdBuffers[i], models.example.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
-		vkCmdDrawIndexed(drawCmdBuffers[i], models.example.indexCount, 1, 0, 0, 0);
+		vkCmdBindVertexBuffers(drawCmdBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &models.vertices.buffer, offsets);
+		vkCmdBindIndexBuffer(drawCmdBuffers[i], models.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdDrawIndexed(drawCmdBuffers[i], models.indexCount, 1, 0, 0, 0);
 
 		// Fullscreen triangle (clipped to a quad) with radial blur
 		if (blur)
@@ -2396,13 +2396,13 @@ void VulkanExampleBase::buildCommandBuffers()
 	}
 }
 
-void VulkanExampleBase::loadAssets()
+void VKRadialBlur::loadAssets()
 {
-	models.example.loadFromFile(getAssetPath() + "models/glowsphere.dae", vertexLayout, 0.05f, vulkanDevice, queue);
-	textures.gradient.loadFromFile(getAssetPath() + "textures/particle_gradient_rgba.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice, queue);
+	models.loadFromFile(getAssetPath() + "models/glowsphere.dae", vertexLayout, 0.05f, vulkanDevice, queue);
+	textures.loadFromFile(getAssetPath() + "textures/particle_gradient_rgba.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice, queue);
 }
 
-void VulkanExampleBase::setupVertexDescriptions()
+void VKRadialBlur::setupVertexDescriptions()
 {
 	// Binding description
 	vertices.bindingDescriptions.resize(1);
@@ -2450,7 +2450,7 @@ void VulkanExampleBase::setupVertexDescriptions()
 	vertices.inputState.pVertexAttributeDescriptions = vertices.attributeDescriptions.data();
 }
 
-void VulkanExampleBase::setupDescriptorPool()
+void VKRadialBlur::setupDescriptorPool()
 {
 	// Example uses three ubos and one image sampler
 	std::vector<VkDescriptorPoolSize> poolSizes =
@@ -2468,7 +2468,7 @@ void VulkanExampleBase::setupDescriptorPool()
 	VK_CHECK_RESULT(vkCreateDescriptorPool(device, &descriptorPoolInfo, nullptr, &descriptorPool));
 }
 
-void VulkanExampleBase::setupDescriptorSetLayout()
+void VKRadialBlur::setupDescriptorSetLayout()
 {
 	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
 	VkDescriptorSetLayoutCreateInfo descriptorLayout;
@@ -2518,7 +2518,7 @@ void VulkanExampleBase::setupDescriptorSetLayout()
 	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pPipelineLayoutCreateInfo, nullptr, &pipelineLayouts.radialBlur));
 }
 
-void VulkanExampleBase::setupDescriptorSet()
+void VKRadialBlur::setupDescriptorSet()
 {
 	VkDescriptorSetAllocateInfo descriptorSetAllocInfo;
 
@@ -2539,7 +2539,7 @@ void VulkanExampleBase::setupDescriptorSet()
 							descriptorSets.scene,
 							VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 							1,
-							&textures.gradient.descriptor),
+							&textures.descriptor),
 			};
 	vkUpdateDescriptorSets(device, offScreenWriteDescriptorSets.size(), offScreenWriteDescriptorSets.data(), 0, NULL);
 
@@ -2566,7 +2566,7 @@ void VulkanExampleBase::setupDescriptorSet()
 	vkUpdateDescriptorSets(device, writeDescriptorSets.size(), writeDescriptorSets.data(), 0, NULL);
 }
 
-void VulkanExampleBase::preparePipelines()
+void VKRadialBlur::preparePipelines()
 {
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyState =
 			vks::initializers::pipelineInputAssemblyStateCreateInfo(
@@ -2672,7 +2672,7 @@ void VulkanExampleBase::preparePipelines()
 }
 
 // Prepare and initialize uniform buffer containing shader uniforms
-void VulkanExampleBase::prepareUniformBuffers()
+void VKRadialBlur::prepareUniformBuffers()
 {
 	// Phong and color pass vertex shader uniform buffer
 	VK_CHECK_RESULT(vulkanDevice->createBuffer(
@@ -2697,7 +2697,7 @@ void VulkanExampleBase::prepareUniformBuffers()
 }
 
 // Update uniform buffers for rendering the 3D scene
-void VulkanExampleBase::updateUniformBuffersScene()
+void VKRadialBlur::updateUniformBuffersScene()
 {
 	uboScene.projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 1.0f, 256.0f);
 	glm::mat4 viewMatrix = glm::translate(glm::mat4(), glm::vec3(0.0f, 0.0f, zoom));
@@ -2718,7 +2718,7 @@ void VulkanExampleBase::updateUniformBuffersScene()
 }
 
 
-void VulkanExampleBase::draw()
+void VKRadialBlur::draw()
 {
 	prepareFrame();
 
@@ -2749,7 +2749,7 @@ void VulkanExampleBase::draw()
 }
 
 
-void VulkanExampleBase::render()
+void VKRadialBlur::render()
 {
 	if (!prepared)
 		return;
@@ -2761,28 +2761,28 @@ void VulkanExampleBase::render()
 }
 
 
-void VulkanExampleBase::toggleBlur()
+void VKRadialBlur::toggleBlur()
 {
 	blur = !blur;
 	updateUniformBuffersScene();
 	reBuildCommandBuffers();
 }
 
-void VulkanExampleBase::toggleTextureDisplay()
+void VKRadialBlur::toggleTextureDisplay()
 {
 	displayTexture = !displayTexture;
 	reBuildCommandBuffers();
 }
 
 
-VulkanExampleBase *vulkanExample;
+VKRadialBlur *vulkanExample;
 void android_main(android_app* state)
 {
 	app_dummy();
-	vulkanExample = new VulkanExampleBase(false);
+	vulkanExample = new VKRadialBlur(false);
 	state->userData = vulkanExample;
-	state->onAppCmd = VulkanExampleBase::handleAppCommand;
-	state->onInputEvent = VulkanExampleBase::handleAppInput;
+	state->onAppCmd = VKRadialBlur::handleAppCommand;
+	state->onInputEvent = VKRadialBlur::handleAppInput;
 	androidApp = state;
 	vulkanExample->renderLoop();
 	delete(vulkanExample);

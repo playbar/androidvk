@@ -8,23 +8,12 @@
 
 #pragma once
 
-#ifdef _WIN32
-#pragma comment(linker, "/subsystem:windows")
-#include <windows.h>
-#include <fcntl.h>
-#include <io.h>
-#elif defined(__ANDROID__)
+
 #include <android/native_activity.h>
 #include <android/asset_manager.h>
 #include <android_native_app_glue.h>
 #include <sys/system_properties.h>
 #include "vulkanandroid.h"
-#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-#include <wayland-client.h>
-#elif defined(__linux__)
-#include <xcb/xcb.h>
-#endif
-
 #include <iostream>
 #include <chrono>
 #include <sys/stat.h>
@@ -51,27 +40,23 @@
 #include "VulkanTexture.hpp"
 #include "VulkanModel.hpp"
 
-class VulkanExampleBase
+class VKRadialBlur
 {
 public:
     bool blur = true;
     bool displayTexture = false;
 
-    struct {
-        vks::Texture2D gradient;
-    } textures;
+    Texture2D textures;
+	Model models;
 
     // Vertex layout for the models
-    vks::VertexLayout vertexLayout = vks::VertexLayout({
-                                                               vks::VERTEX_COMPONENT_POSITION,
-                                                               vks::VERTEX_COMPONENT_UV,
-                                                               vks::VERTEX_COMPONENT_COLOR,
-                                                               vks::VERTEX_COMPONENT_NORMAL,
-                                                       });
+    VertexLayout vertexLayout = VertexLayout({
+                                                     VERTEX_COMPONENT_POSITION,
+                                                     VERTEX_COMPONENT_UV,
+                                                     VERTEX_COMPONENT_COLOR,
+                                                     VERTEX_COMPONENT_NORMAL,
+                                             });
 
-    struct {
-        vks::Model example;
-    } models;
 
     struct {
         VkPipelineVertexInputStateCreateInfo inputState;
@@ -290,10 +275,10 @@ public:
 	std::string androidProduct;
 
 	// Default ctor
-	VulkanExampleBase(bool enableValidation);
+	VKRadialBlur(bool enableValidation);
 
 	// dtor
-	~VulkanExampleBase();
+	~VKRadialBlur();
 
 	// Setup the vulkan instance, enable required extensions and connect to the physical device (GPU)
 	void initVulkan();
