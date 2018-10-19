@@ -10,6 +10,16 @@ const std::string IMAGE_PATH = "sample_tex.png";
 HVkTexture::HVkTexture(VulkanDevice *device)
 {
     mVkDevice = device;
+    textureImage = NULL;
+    textureImageMemory = NULL;
+    textureImageView = NULL;
+    VkSampler textureSampler;
+}
+
+HVkTexture::~HVkTexture()
+{
+    destroyImage();
+    destroySampler();
 }
 
 void HVkTexture::createImage(uint32_t width, uint32_t height, VkFormat format,
@@ -266,3 +276,27 @@ void HVkTexture::createTextureSampler()
     return;
 }
 
+void HVkTexture::destroyImage()
+{
+    if(textureImage != NULL ) {
+        vkDestroyImage(mVkDevice->logicalDevice, textureImage, nullptr);
+        textureImage = NULL;
+    }
+    if( textureImageView != NULL ) {
+        vkDestroyImageView(mVkDevice->logicalDevice, textureImageView, nullptr);
+        textureImageView = NULL;
+    }
+    if( textureImageMemory != NULL ) {
+        vkFreeMemory(mVkDevice->logicalDevice, textureImageMemory, nullptr);
+        textureImageMemory = NULL;
+    }
+}
+
+void HVkTexture::destroySampler()
+{
+    if(textureSampler != NULL )
+    {
+        vkDestroySampler(mVkDevice->logicalDevice, textureSampler, NULL );
+        textureSampler = NULL;
+    }
+}

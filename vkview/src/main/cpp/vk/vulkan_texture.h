@@ -20,6 +20,7 @@ public:
 	uint32_t layerCount;
 
 	HVkTexture(VulkanDevice *device);
+	~HVkTexture();
 
 public:
     void createImage(uint32_t width, uint32_t height, VkFormat format,
@@ -40,5 +41,10 @@ public:
     void createTextureImageView();
 
     void createTextureSampler();
+
+	void destroyImage();
+
+	void destroySampler();
+
 
 };

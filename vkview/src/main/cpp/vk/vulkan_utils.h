@@ -26,6 +26,7 @@ public:
     VulkanUtils(AAssetManager *assetManager, const char *vertexShader, const char *fragmentShader);
 
     VulkanUtils();
+    ~VulkanUtils();
     void SetData(AAssetManager *assetManager, const char *vertexShader, const char *fragmentShader);
 
 public:
