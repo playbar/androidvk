@@ -1,4 +1,5 @@
 #include "vkradialblur.h"
+#include "VulkanPipeLine.h"
 
 #define VERTEX_BUFFER_BIND_ID 0
 #define ENABLE_VALIDATION false
@@ -158,7 +159,7 @@ void VKRadialBlur::createPipelineCache()
 {
 	VkPipelineCacheCreateInfo pipelineCacheCreateInfo = {};
 	pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-	VK_CHECK_RESULT(vkCreatePipelineCache(device, &pipelineCacheCreateInfo, nullptr, &pipelineCache));
+	VK_CHECK_RESULT(vkCreatePipelineCache(device, &pipelineCacheCreateInfo, nullptr, &VksPipeLine::mPipelineCache));
 }
 
 void VKRadialBlur::prepare()
@@ -688,7 +689,7 @@ VKRadialBlur::~VKRadialBlur()
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayouts.scene, nullptr);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayouts.radialBlur, nullptr);
 
-	models.destroy();
+	mModels.destroy();
 
 	uniformBuffers.scene.destroy();
 	uniformBuffers.blurParams.destroy();
@@ -696,7 +697,7 @@ VKRadialBlur::~VKRadialBlur()
 	vkFreeCommandBuffers(device, cmdPool, 1, &offscreenPass.commandBuffer);
 	vkDestroySemaphore(device, offscreenPass.semaphore, nullptr);
 
-	textures.destroy();
+	mTextures.destroy();
 
 	////////
 	// Clean up Vulkan resources
@@ -720,7 +721,7 @@ VKRadialBlur::~VKRadialBlur()
 	vkDestroyImage(device, depthStencil.image, nullptr);
 	vkFreeMemory(device, depthStencil.mem, nullptr);
 
-	vkDestroyPipelineCache(device, pipelineCache, nullptr);
+	vkDestroyPipelineCache(device, VksPipeLine::mPipelineCache, nullptr);
 
 	vkDestroyCommandPool(device, cmdPool, nullptr);
 
@@ -2323,9 +2324,9 @@ void VKRadialBlur::buildOffscreenCommandBuffer()
 	vkCmdBindPipeline(offscreenPass.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.colorPass);
 
 	VkDeviceSize offsets[1] = { 0 };
-	vkCmdBindVertexBuffers(offscreenPass.commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &models.vertices.mBuffer, offsets);
-	vkCmdBindIndexBuffer(offscreenPass.commandBuffer, models.indices.mBuffer, 0, VK_INDEX_TYPE_UINT32);
-	vkCmdDrawIndexed(offscreenPass.commandBuffer, models.indexCount, 1, 0, 0, 0);
+	vkCmdBindVertexBuffers(offscreenPass.commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &mModels.vertices.mBuffer, offsets);
+	vkCmdBindIndexBuffer(offscreenPass.commandBuffer, mModels.indices.mBuffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdDrawIndexed(offscreenPass.commandBuffer, mModels.indexCount, 1, 0, 0, 0);
 
 	vkCmdEndRenderPass(offscreenPass.commandBuffer);
 
@@ -2383,15 +2384,15 @@ void VKRadialBlur::buildCommandBuffers()
 		vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayouts.scene, 0, 1, &descriptorSets.scene, 0, NULL);
 		vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.phongPass);
 
-		vkCmdBindVertexBuffers(drawCmdBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &models.vertices.mBuffer, offsets);
-		vkCmdBindIndexBuffer(drawCmdBuffers[i], models.indices.mBuffer, 0, VK_INDEX_TYPE_UINT32);
-		vkCmdDrawIndexed(drawCmdBuffers[i], models.indexCount, 1, 0, 0, 0);
+		vkCmdBindVertexBuffers(drawCmdBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &mModels.vertices.mBuffer, offsets);
+		vkCmdBindIndexBuffer(drawCmdBuffers[i], mModels.indices.mBuffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdDrawIndexed(drawCmdBuffers[i], mModels.indexCount, 1, 0, 0, 0);
 
 		// Fullscreen triangle (clipped to a quad) with radial blur
-		if (blur)
+		if (mBlur)
 		{
 			vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayouts.radialBlur, 0, 1, &descriptorSets.radialBlur, 0, NULL);
-			vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, (displayTexture) ? pipelines.offscreenDisplay : pipelines.radialBlur);
+			vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, (mDisplayTexture) ? pipelines.offscreenDisplay : pipelines.radialBlur);
 			vkCmdDraw(drawCmdBuffers[i], 3, 1, 0, 0);
 		}
 
@@ -2403,8 +2404,8 @@ void VKRadialBlur::buildCommandBuffers()
 
 void VKRadialBlur::loadAssets()
 {
-	models.loadFromFile(getAssetPath() + "models/glowsphere.dae", vertexLayout, 0.05f, vulkanDevice, queue);
-	textures.loadFromFile(getAssetPath() + "textures/particle_gradient_rgba.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice, queue);
+	mModels.loadFromFile(getAssetPath() + "models/glowsphere.dae", vertexLayout, 0.05f, vulkanDevice, queue);
+	mTextures.loadFromFile(getAssetPath() + "textures/particle_gradient_rgba.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice, queue);
 }
 
 void VKRadialBlur::setupVertexDescriptions()
@@ -2551,7 +2552,7 @@ void VKRadialBlur::setupDescriptorSet()
 							descriptorSets.scene,
 							VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 							1,
-							&textures.descriptor),
+							&mTextures.descriptor),
 			};
 	vkUpdateDescriptorSets(device, offScreenWriteDescriptorSets.size(), offScreenWriteDescriptorSets.data(), 0, NULL);
 
@@ -2663,11 +2664,11 @@ void VKRadialBlur::preparePipelines()
 	blendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
 	blendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
 	blendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_DST_ALPHA;
-	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCreateInfo, nullptr, &pipelines.radialBlur));
+	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, VksPipeLine::mPipelineCache, 1, &pipelineCreateInfo, nullptr, &pipelines.radialBlur));
 
 	// No blending (for debug display)
 	blendAttachmentState.blendEnable = VK_FALSE;
-	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCreateInfo, nullptr, &pipelines.offscreenDisplay));
+	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, VksPipeLine::mPipelineCache, 1, &pipelineCreateInfo, nullptr, &pipelines.offscreenDisplay));
 
 	// Phong pass
 	pipelineCreateInfo.layout = pipelineLayouts.scene;
@@ -2676,13 +2677,13 @@ void VKRadialBlur::preparePipelines()
 	pipelineCreateInfo.pVertexInputState = &vertices.inputState;
 	blendAttachmentState.blendEnable = VK_FALSE;
 	depthStencilState.depthWriteEnable = VK_TRUE;
-	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCreateInfo, nullptr, &pipelines.phongPass));
+	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, VksPipeLine::mPipelineCache, 1, &pipelineCreateInfo, nullptr, &pipelines.phongPass));
 
 	// Color only pass (offscreen blur base)
 	shaderStages[0] = loadShader(getAssetPath() + "shaders/radialblur/colorpass.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 	shaderStages[1] = loadShader(getAssetPath() + "shaders/radialblur/colorpass.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 	pipelineCreateInfo.renderPass = offscreenPass.renderPass;
-	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCreateInfo, nullptr, &pipelines.colorPass));
+	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, VksPipeLine::mPipelineCache, 1, &pipelineCreateInfo, nullptr, &pipelines.colorPass));
 }
 
 // Prepare and initialize uniform buffer containing shader uniforms
@@ -2777,14 +2778,14 @@ void VKRadialBlur::render()
 
 void VKRadialBlur::toggleBlur()
 {
-	blur = !blur;
+	mBlur = !mBlur;
 	updateUniformBuffersScene();
 	reBuildCommandBuffers();
 }
 
 void VKRadialBlur::toggleTextureDisplay()
 {
-	displayTexture = !displayTexture;
+	mDisplayTexture = !mDisplayTexture;
 	reBuildCommandBuffers();
 }
 

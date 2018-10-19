@@ -47,11 +47,11 @@
 class VKRadialBlur
 {
 public:
-    bool blur = true;
-    bool displayTexture = false;
+    bool mBlur = true;
+    bool mDisplayTexture = true;
 
-    Texture2D textures;
-	VksModel models;
+    Texture2D mTextures;
+	VksModel mModels;
 
     // Vertex layout for the models
     VertexLayout vertexLayout = VertexLayout({
@@ -188,8 +188,7 @@ protected:
 	VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
 	// List of shader modules created (stored for cleanup)
 	std::vector<VkShaderModule> shaderModules;
-	// Pipeline cache object
-	VkPipelineCache pipelineCache;
+
 	// Wraps the swap chain to present images (framebuffers) to the windowing system
 	VulkanSwapChain swapChain;
 	// Synchronization semaphores
