@@ -28,14 +28,13 @@ add_library(vkvulkan SHARED
             android_native_app_glue.c
             cpu-features.c
             jniactivity.c
-            base/vulkanandroid.cpp
-            base/VulkanDebug.cpp
-            base/VulkanDevice.cpp
-            base/vulkanexamplebase.cpp
-            base/VulkanModel.cpp
-            base/VulkanTexture.cpp
-            base/VulkanTools.cpp
-            src/radialblur.cpp
+            src/vulkanandroid.cpp
+            src/VulkanDebug.cpp
+            src/VulkanDevice.cpp
+            src/vkradialblur.cpp
+            src/VulkanModel.cpp
+            src/VulkanTexture.cpp
+            src/VulkanTools.cpp
             )
 
 
@@ -43,7 +42,7 @@ target_include_directories(vkvulkan PRIVATE
                           ${CMAKE_CURRENT_SOURCE_DIR}
                           ${CMAKE_CURRENT_SOURCE_DIR}/assimp/include
                           ${CMAKE_CURRENT_SOURCE_DIR}/stb
-                          ${CMAKE_CURRENT_SOURCE_DIR}/base
+                          ${CMAKE_CURRENT_SOURCE_DIR}/src
                           )
 
 target_link_libraries(vkvulkan

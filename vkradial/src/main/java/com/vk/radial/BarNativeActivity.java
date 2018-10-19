@@ -7,7 +7,7 @@ import android.os.Bundle;
 import android.view.InputQueue;
 import android.view.SurfaceHolder;
 
-import com.vk.log.Loggvc;
+import com.vk.radial.log.Loggvc;
 
 
 public class BarNativeActivity extends NativeActivity {
