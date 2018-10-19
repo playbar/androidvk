@@ -9,7 +9,7 @@
 #include "VulkanTools.h"
 
 
-std::string HErrorString(VkResult errorCode)
+std::string VksErrorString(VkResult errorCode)
 {
 	switch (errorCode)
 	{
@@ -43,7 +43,7 @@ std::string HErrorString(VkResult errorCode)
 	}
 }
 
-std::string HPhysicalDeviceTypeString(VkPhysicalDeviceType type)
+std::string VksPhysicalDeviceTypeString(VkPhysicalDeviceType type)
 {
 	switch (type)
 	{
@@ -57,7 +57,7 @@ std::string HPhysicalDeviceTypeString(VkPhysicalDeviceType type)
 	}
 }
 
-VkBool32 HGetSupportedDepthFormat(VkPhysicalDevice physicalDevice, VkFormat *depthFormat)
+VkBool32 VksGetSupportedDepthFormat(VkPhysicalDevice physicalDevice, VkFormat *depthFormat)
 {
 	// Since all depth formats may be optional, we need to find a suitable depth format to use
 	// Start with the highest precision packed format
@@ -88,7 +88,7 @@ VkBool32 HGetSupportedDepthFormat(VkPhysicalDevice physicalDevice, VkFormat *dep
 // an image and put it into an active command buffer
 // See chapter 11.4 "Image Layout" for details
 
-void HSetImageLayout(
+void VksSetImageLayout(
 		VkCommandBuffer cmdbuffer,
 		VkImage image,
 		VkImageAspectFlags aspectMask,
@@ -212,7 +212,7 @@ void HSetImageLayout(
 }
 
 // Fixed sub resource on first mip level and layer
-void HSetImageLayout(
+void VksSetImageLayout(
 		VkCommandBuffer cmdbuffer,
 		VkImage image,
 		VkImageAspectFlags aspectMask,
@@ -226,11 +226,11 @@ void HSetImageLayout(
 	subresourceRange.baseMipLevel = 0;
 	subresourceRange.levelCount = 1;
 	subresourceRange.layerCount = 1;
-	HSetImageLayout(cmdbuffer, image, aspectMask, oldImageLayout, newImageLayout,
-					subresourceRange);
+	VksSetImageLayout(cmdbuffer, image, aspectMask, oldImageLayout, newImageLayout,
+					  subresourceRange);
 }
 
-void HInsertImageMemoryBarrier(
+void VksInsertImageMemoryBarrier(
 		VkCommandBuffer cmdbuffer,
 		VkImage image,
 		VkAccessFlags srcAccessMask,
@@ -259,7 +259,7 @@ void HInsertImageMemoryBarrier(
 			1, &imageMemoryBarrier);
 }
 
-void HExitFatal(std::string message, std::string caption)
+void VksExitFatal(std::string message, std::string caption)
 {
 #if defined(_WIN32)
 	MessageBox(NULL, message.c_str(), caption.c_str(), MB_OK | MB_ICONERROR);
@@ -291,7 +291,8 @@ std::string readTextFile(const char *fileName)
 #if defined(__ANDROID__)
 // Android shaders are stored as assets in the apk
 // So they need to be loaded via the asset manager
-VkShaderModule HLoadShader(AAssetManager* assetManager, const char *fileName, VkDevice device, VkShaderStageFlagBits stage)
+VkShaderModule VksLoadShader(AAssetManager *assetManager, const char *fileName, VkDevice device,
+							 VkShaderStageFlagBits stage)
 {
 	// Load shader from compressed asset
 	AAsset* asset = AAssetManager_open(assetManager, fileName, AASSET_MODE_STREAMING);
@@ -318,7 +319,7 @@ VkShaderModule HLoadShader(AAssetManager* assetManager, const char *fileName, Vk
 	return shaderModule;
 }
 #else
-VkShaderModule HLoadShader(const char *fileName, VkDevice device, VkShaderStageFlagBits stage)
+VkShaderModule VksLoadShader(const char *fileName, VkDevice device, VkShaderStageFlagBits stage)
 		{
 			std::ifstream is(fileName, std::ios::binary | std::ios::in | std::ios::ate);
 
@@ -352,7 +353,7 @@ VkShaderModule HLoadShader(const char *fileName, VkDevice device, VkShaderStageF
 		}
 #endif
 
-VkShaderModule HLoadShaderGLSL(const char *fileName, VkDevice device, VkShaderStageFlagBits stage)
+VkShaderModule VksLoadShaderGLSL(const char *fileName, VkDevice device, VkShaderStageFlagBits stage)
 {
 	std::string shaderSrc = readTextFile(fileName);
 	const char *shaderCode = shaderSrc.c_str();

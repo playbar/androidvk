@@ -42,7 +42,7 @@
 class VulkanTextOverlay
 {
 private:
-	vks::VulkanDevice *vulkanDevice;
+	VulkanDevice *vulkanDevice;
 
 	VkQueue queue;
 	VkFormat colorFormat;
@@ -91,7 +91,7 @@ public:
 	* @param vulkanDevice Pointer to a valid VulkanDevice
 	*/
 	VulkanTextOverlay(
-		vks::VulkanDevice *vulkanDevice,
+		VulkanDevice *vulkanDevice,
 		VkQueue queue,
 		std::vector<VkFramebuffer> &framebuffers,
 		VkFormat colorformat,
@@ -226,7 +226,7 @@ public:
 		VK_CHECK_RESULT(vkBeginCommandBuffer(copyCmd, &cmdBufInfo));
 
 		// Prepare for transfer
-		HSetImageLayout(
+		VksSetImageLayout(
 				copyCmd,
 				image,
 				VK_IMAGE_ASPECT_COLOR_BIT,
@@ -251,7 +251,7 @@ public:
 			);
 
 		// Prepare for shader read
-		HSetImageLayout(
+		VksSetImageLayout(
 				copyCmd,
 				image,
 				VK_IMAGE_ASPECT_COLOR_BIT,

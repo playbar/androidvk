@@ -51,15 +51,14 @@ public:
     bool displayTexture = false;
 
     Texture2D textures;
-	Model models;
+	VksModel models;
 
     // Vertex layout for the models
     VertexLayout vertexLayout = VertexLayout({
-                                                     VERTEX_COMPONENT_POSITION,
-                                                     VERTEX_COMPONENT_UV,
-                                                     VERTEX_COMPONENT_COLOR,
-                                                     VERTEX_COMPONENT_NORMAL,
-                                             });
+						 VERTEX_COMPONENT_POSITION,
+						 VERTEX_COMPONENT_UV,
+						 VERTEX_COMPONENT_COLOR,
+						 VERTEX_COMPONENT_NORMAL,});
 
 
     struct {
@@ -166,7 +165,7 @@ protected:
 	// todo: getter? should always point to VulkanDevice->device
 	VkDevice device;
 	/** @brief Encapsulated physical and logical vulkan device */
-	vks::VulkanDevice *vulkanDevice;
+	VulkanDevice *vulkanDevice;
 	// Handle to the device graphics queue that command buffers are submitted to
 	VkQueue queue;
 	// Depth buffer format (selected during Vulkan initialization)

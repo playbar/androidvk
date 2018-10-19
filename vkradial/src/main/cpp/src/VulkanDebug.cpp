@@ -27,15 +27,15 @@ PFN_vkDebugReportMessageEXT dbgBreakCallback = VK_NULL_HANDLE;
 
 VkDebugReportCallbackEXT msgCallback;
 
-VkBool32 HMessageCallback(
-		VkDebugReportFlagsEXT flags,
-		VkDebugReportObjectTypeEXT objType,
-		uint64_t srcObject,
-		size_t location,
-		int32_t msgCode,
-		const char *pLayerPrefix,
-		const char *pMsg,
-		void *pUserData)
+VkBool32 DebugMessageCallback(
+        VkDebugReportFlagsEXT flags,
+        VkDebugReportObjectTypeEXT objType,
+        uint64_t srcObject,
+        size_t location,
+        int32_t msgCode,
+        const char *pLayerPrefix,
+        const char *pMsg,
+        void *pUserData)
 {
 	// Select prefix depending on flags passed to the callback
 	// Note that multiple flags may be set for a single validation message
@@ -82,7 +82,8 @@ VkBool32 HMessageCallback(
 	return VK_FALSE;
 }
 
-void HSetupDebugging(VkInstance instance, VkDebugReportFlagsEXT flags, VkDebugReportCallbackEXT callBack)
+void DebugSetupDebugging(VkInstance instance, VkDebugReportFlagsEXT flags,
+						 VkDebugReportCallbackEXT callBack)
 {
 	CreateDebugReportCallback = reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>(vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT"));
 	DestroyDebugReportCallback = reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>(vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT"));
@@ -90,7 +91,7 @@ void HSetupDebugging(VkInstance instance, VkDebugReportFlagsEXT flags, VkDebugRe
 
 	VkDebugReportCallbackCreateInfoEXT dbgCreateInfo = {};
 	dbgCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-	dbgCreateInfo.pfnCallback = (PFN_vkDebugReportCallbackEXT)HMessageCallback;
+	dbgCreateInfo.pfnCallback = (PFN_vkDebugReportCallbackEXT)DebugMessageCallback;
 	dbgCreateInfo.flags = flags;
 
 	VkResult err = CreateDebugReportCallback(
@@ -101,7 +102,7 @@ void HSetupDebugging(VkInstance instance, VkDebugReportFlagsEXT flags, VkDebugRe
 	assert(!err);
 }
 
-void HFreeDebugCallback(VkInstance instance)
+void DebugFreeDebugCallback(VkInstance instance)
 {
 	if (msgCallback != VK_NULL_HANDLE)
 	{

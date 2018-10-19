@@ -30,7 +30,7 @@ extern int giValidationLayerCount;
 extern const char *gzsValidationLayerNames[];
 
 // Default debug callback
-VkBool32 HMessageCallback(
+VkBool32 DebugMessageCallback(
 		VkDebugReportFlagsEXT flags,
 		VkDebugReportObjectTypeEXT objType,
 		uint64_t srcObject,
@@ -42,12 +42,12 @@ VkBool32 HMessageCallback(
 
 // Load debug function pointers and set debug callback
 // if callBack is NULL, default message callback will be used
-void HSetupDebugging(
+void DebugSetupDebugging(
 		VkInstance instance,
 		VkDebugReportFlagsEXT flags,
 		VkDebugReportCallbackEXT callBack);
 // Clear debug callback
-void HFreeDebugCallback(VkInstance instance);
+void DebugFreeDebugCallback(VkInstance instance);
 
 // Get function pointers for the debug report extensions from the device
 void DebugMarkerSetup(VkDevice device);

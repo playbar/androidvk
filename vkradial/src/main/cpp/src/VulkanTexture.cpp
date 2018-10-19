@@ -2,7 +2,7 @@
 
 
 /** @brief Update image descriptor from current sampler, view and image layout */
-void Texture::updateDescriptor()
+void VksTexture::updateDescriptor()
 {
 	descriptor.sampler = sampler;
 	descriptor.imageView = view;
@@ -10,7 +10,7 @@ void Texture::updateDescriptor()
 }
 
 /** @brief Release all Vulkan resources held by this texture */
-void Texture::destroy()
+void VksTexture::destroy()
 {
 	vkDestroyImageView(device->logicalDevice, view, nullptr);
 	vkDestroyImage(device->logicalDevice, image, nullptr);
@@ -26,7 +26,7 @@ void Texture::destroy()
 void Texture2D::loadFromFile(
 		std::string filename,
 		VkFormat format,
-		vks::VulkanDevice *device,
+		VulkanDevice *device,
 		VkQueue copyQueue,
 		VkImageUsageFlags imageUsageFlags,
 		VkImageLayout imageLayout,
@@ -160,7 +160,7 @@ void Texture2D::loadFromFile(
 
 		// Image barrier for optimal image (target)
 		// Optimal image will be used as destination for the copy
-		HSetImageLayout(
+		VksSetImageLayout(
 				copyCmd,
 				image,
 				VK_IMAGE_ASPECT_COLOR_BIT,
@@ -180,7 +180,7 @@ void Texture2D::loadFromFile(
 
 		// Change texture image layout to shader read after all mip levels have been copied
 		this->imageLayout = imageLayout;
-		HSetImageLayout(
+		VksSetImageLayout(
 				copyCmd,
 				image,
 				VK_IMAGE_ASPECT_COLOR_BIT,
@@ -264,8 +264,8 @@ void Texture2D::loadFromFile(
 		imageLayout = imageLayout;
 
 		// Setup image memory barrier
-		HSetImageLayout(copyCmd, image, VK_IMAGE_ASPECT_COLOR_BIT,
-									VK_IMAGE_LAYOUT_UNDEFINED, imageLayout);
+		VksSetImageLayout(copyCmd, image, VK_IMAGE_ASPECT_COLOR_BIT,
+						  VK_IMAGE_LAYOUT_UNDEFINED, imageLayout);
 
 		device->flushCommandBuffer(copyCmd, copyQueue);
 	}
@@ -330,7 +330,7 @@ void Texture2D::fromBuffer(
 		VkFormat format,
 		uint32_t width,
 		uint32_t height,
-		vks::VulkanDevice *device,
+		VulkanDevice *device,
 		VkQueue copyQueue,
 		VkFilter filter,
 		VkImageUsageFlags imageUsageFlags,
@@ -422,7 +422,7 @@ void Texture2D::fromBuffer(
 
 	// Image barrier for optimal image (target)
 	// Optimal image will be used as destination for the copy
-	HSetImageLayout(
+	VksSetImageLayout(
 			copyCmd,
 			image,
 			VK_IMAGE_ASPECT_COLOR_BIT,
@@ -442,7 +442,7 @@ void Texture2D::fromBuffer(
 
 	// Change texture image layout to shader read after all mip levels have been copied
 	this->imageLayout = imageLayout;
-	HSetImageLayout(
+	VksSetImageLayout(
 			copyCmd,
 			image,
 			VK_IMAGE_ASPECT_COLOR_BIT,
@@ -493,7 +493,7 @@ void Texture2D::fromBuffer(
 void Texture2DArray::loadFromFile(
 		std::string filename,
 		VkFormat format,
-		vks::VulkanDevice *device,
+		VulkanDevice *device,
 		VkQueue copyQueue,
 		VkImageUsageFlags imageUsageFlags,
 		VkImageLayout imageLayout)
@@ -620,7 +620,7 @@ void Texture2DArray::loadFromFile(
 	subresourceRange.levelCount = mipLevels;
 	subresourceRange.layerCount = layerCount;
 
-	HSetImageLayout(
+	VksSetImageLayout(
 			copyCmd,
 			image,
 			VK_IMAGE_ASPECT_COLOR_BIT,
@@ -639,7 +639,7 @@ void Texture2DArray::loadFromFile(
 
 	// Change texture image layout to shader read after all faces have been copied
 	this->imageLayout = imageLayout;
-	HSetImageLayout(
+	VksSetImageLayout(
 			copyCmd,
 			image,
 			VK_IMAGE_ASPECT_COLOR_BIT,
@@ -689,7 +689,7 @@ void Texture2DArray::loadFromFile(
 void TextureCubeMap::loadFromFile(
 		std::string filename,
 		VkFormat format,
-		vks::VulkanDevice *device,
+		VulkanDevice *device,
 		VkQueue copyQueue,
 		VkImageUsageFlags imageUsageFlags,
 		VkImageLayout imageLayout)
@@ -818,7 +818,7 @@ void TextureCubeMap::loadFromFile(
 	subresourceRange.levelCount = mipLevels;
 	subresourceRange.layerCount = 6;
 
-	HSetImageLayout(
+	VksSetImageLayout(
 			copyCmd,
 			image,
 			VK_IMAGE_ASPECT_COLOR_BIT,
@@ -837,7 +837,7 @@ void TextureCubeMap::loadFromFile(
 
 	// Change texture image layout to shader read after all faces have been copied
 	this->imageLayout = imageLayout;
-	HSetImageLayout(
+	VksSetImageLayout(
 			copyCmd,
 			image,
 			VK_IMAGE_ASPECT_COLOR_BIT,

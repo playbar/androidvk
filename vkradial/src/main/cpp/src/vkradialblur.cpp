@@ -214,7 +214,8 @@ VkPipelineShaderStageCreateInfo VKRadialBlur::loadShader(std::string fileName, V
 	shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	shaderStage.stage = stage;
 #if defined(__ANDROID__)
-	shaderStage.module = HLoadShader(androidApp->activity->assetManager, fileName.c_str(), device, stage);
+	shaderStage.module = VksLoadShader(androidApp->activity->assetManager, fileName.c_str(), device,
+									   stage);
 #else
 	shaderStage.module = loadShader(fileName.c_str(), device, stage);
 #endif
@@ -736,7 +737,7 @@ VKRadialBlur::~VKRadialBlur()
 
 	if (settings.validation)
 	{
-		HFreeDebugCallback(instance);
+		DebugFreeDebugCallback(instance);
 	}
 
 	vkDestroyInstance(instance, nullptr);
@@ -752,8 +753,8 @@ void VKRadialBlur::initVulkan()
 	err = createInstance(settings.validation);
 	if (err)
 	{
-		HExitFatal("Could not create Vulkan instance : \n" +
-							   HErrorString(err), "Fatal error");
+		VksExitFatal("Could not create Vulkan instance : \n" +
+					 VksErrorString(err), "Fatal error");
 	}
 
 #if defined(__ANDROID__)
@@ -767,7 +768,7 @@ void VKRadialBlur::initVulkan()
 		// For validating (debugging) an appplication the error and warning bits should suffice
 		VkDebugReportFlagsEXT debugReportFlags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
 		// Additional flags include performance info, loader and layer debug messages, etc.
-		HSetupDebugging(instance, debugReportFlags, VK_NULL_HANDLE);
+		DebugSetupDebugging(instance, debugReportFlags, VK_NULL_HANDLE);
 	}
 
 	// Physical device
@@ -780,8 +781,8 @@ void VKRadialBlur::initVulkan()
 	err = vkEnumeratePhysicalDevices(instance, &gpuCount, physicalDevices.data());
 	if (err)
 	{
-		HExitFatal("Could not enumerate physical devices : \n" +
-							   HErrorString(err), "Fatal error");
+		VksExitFatal("Could not enumerate physical devices : \n" +
+					 VksErrorString(err), "Fatal error");
 	}
 
 	// GPU selection
@@ -853,11 +854,11 @@ void VKRadialBlur::initVulkan()
 	// Vulkan device creation
 	// This is handled by a separate class that gets a logical device representation
 	// and encapsulates functions related to a device
-	vulkanDevice = new vks::VulkanDevice(physicalDevice);
+	vulkanDevice = new VulkanDevice(physicalDevice);
 	VkResult res = vulkanDevice->createLogicalDevice(enabledFeatures, enabledExtensions);
 	if (res != VK_SUCCESS) {
-		HExitFatal("Could not create Vulkan device: \n" + HErrorString(res),
-							   "Fatal error");
+		VksExitFatal("Could not create Vulkan device: \n" + VksErrorString(res),
+					 "Fatal error");
 	}
 	device = vulkanDevice->logicalDevice;
 
@@ -865,7 +866,7 @@ void VKRadialBlur::initVulkan()
 	vkGetDeviceQueue(device, vulkanDevice->queueFamilyIndices.graphics, 0, &queue);
 
 	// Find a suitable depth format
-	VkBool32 validDepthFormat = HGetSupportedDepthFormat(physicalDevice, &depthFormat);
+	VkBool32 validDepthFormat = VksGetSupportedDepthFormat(physicalDevice, &depthFormat);
 	assert(validDepthFormat);
 
 	swapChain.connect(instance, physicalDevice, device);
@@ -2120,7 +2121,7 @@ void VKRadialBlur::prepareOffscreen()
 
 	// Find a suitable depth format
 	VkFormat fbDepthFormat;
-	VkBool32 validDepthFormat = HGetSupportedDepthFormat(physicalDevice, &fbDepthFormat);
+	VkBool32 validDepthFormat = VksGetSupportedDepthFormat(physicalDevice, &fbDepthFormat);
 	assert(validDepthFormat);
 
 	// Color attachment

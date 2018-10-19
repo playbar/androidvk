@@ -19,9 +19,9 @@
 
 
 /** @brief Vulkan texture base class */
-class Texture {
+class VksTexture {
 public:
-	vks::VulkanDevice *device;
+	VulkanDevice *device;
 	VkImage image;
 	VkImageLayout imageLayout;
 	VkDeviceMemory deviceMemory;
@@ -38,13 +38,13 @@ public:
 };
 
 /** @brief 2D texture */
-class Texture2D : public Texture {
+class Texture2D : public VksTexture {
 public:
 
 	void loadFromFile(
 			std::string filename,
 			VkFormat format,
-			vks::VulkanDevice *device,
+			VulkanDevice *device,
 			VkQueue copyQueue,
 			VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
 			VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -56,7 +56,7 @@ public:
 			VkFormat format,
 			uint32_t width,
 			uint32_t height,
-			vks::VulkanDevice *device,
+			VulkanDevice *device,
 			VkQueue copyQueue,
 			VkFilter filter = VK_FILTER_LINEAR,
 			VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -64,12 +64,12 @@ public:
 
 };
 
-class Texture2DArray : public Texture {
+class Texture2DArray : public VksTexture {
 public:
 	void loadFromFile(
 			std::string filename,
 			VkFormat format,
-			vks::VulkanDevice *device,
+			VulkanDevice *device,
 			VkQueue copyQueue,
 			VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
 			VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -77,13 +77,13 @@ public:
 };
 
 /** @brief Cube map texture */
-class TextureCubeMap : public Texture {
+class TextureCubeMap : public VksTexture {
 public:
 
 	void loadFromFile(
 			std::string filename,
 			VkFormat format,
-			vks::VulkanDevice *device,
+			VulkanDevice *device,
 			VkQueue copyQueue,
 			VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
 			VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);

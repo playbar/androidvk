@@ -100,61 +100,16 @@ public:
 	* @param window The xcb window to create the surface for
 	* @note Targets other than XCB ar not yet supported
 	*/
-	void initSurface(
-#ifdef _WIN32
-		void* platformHandle, void* platformWindow
-#else
-#ifdef __ANDROID__
-		ANativeWindow* window
-#else
-#ifdef _DIRECT2DISPLAY
-	uint32_t width, uint32_t height
-#else
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
-	wl_display *display, wl_surface *window
-#else
-	xcb_connection_t* connection, xcb_window_t window
-#endif
-#endif
-#endif
-#endif
-	)
+	void initSurface(ANativeWindow* window)
 	{
 		VkResult err;
 
 		// Create the os-specific surface
-#ifdef _WIN32
-		VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {};
-		surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-		surfaceCreateInfo.hinstance = (HINSTANCE)platformHandle;
-		surfaceCreateInfo.hwnd = (HWND)platformWindow;
-		err = vkCreateWin32SurfaceKHR(instance, &surfaceCreateInfo, nullptr, &surface);
-#else
-#ifdef __ANDROID__
+
 		VkAndroidSurfaceCreateInfoKHR surfaceCreateInfo = {};
 		surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
 		surfaceCreateInfo.window = window;
 		err = vkCreateAndroidSurfaceKHR(instance, &surfaceCreateInfo, NULL, &surface);
-#else
-#if defined(_DIRECT2DISPLAY)
-		createDirect2DisplaySurface(width, height);
-#else
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
-		VkWaylandSurfaceCreateInfoKHR surfaceCreateInfo = {};
-		surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
-		surfaceCreateInfo.display = display;
-		surfaceCreateInfo.surface = window;
-		err = vkCreateWaylandSurfaceKHR(instance, &surfaceCreateInfo, nullptr, &surface);
-#else
-		VkXcbSurfaceCreateInfoKHR surfaceCreateInfo = {};
-		surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-		surfaceCreateInfo.connection = connection;
-		surfaceCreateInfo.window = window;
-		err = vkCreateXcbSurfaceKHR(instance, &surfaceCreateInfo, nullptr, &surface);
-#endif
-#endif
-#endif
-#endif
 
 		// Get available queue family properties
 		uint32_t queueCount;
@@ -211,15 +166,15 @@ public:
 		// Exit if either a graphics or a presenting queue hasn't been found
 		if (graphicsQueueNodeIndex == UINT32_MAX || presentQueueNodeIndex == UINT32_MAX) 
 		{
-			HExitFatal("Could not find a graphics and/or presenting queue!",
-								   "Fatal error");
+			VksExitFatal("Could not find a graphics and/or presenting queue!",
+						 "Fatal error");
 		}
 
 		// todo : Add support for separate graphics and presenting queue
 		if (graphicsQueueNodeIndex != presentQueueNodeIndex) 
 		{
-			HExitFatal("Separate graphics and presenting queues are not supported yet!",
-								   "Fatal error");
+			VksExitFatal("Separate graphics and presenting queues are not supported yet!",
+						 "Fatal error");
 		}
 
 		queueNodeIndex = graphicsQueueNodeIndex;
