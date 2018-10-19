@@ -229,25 +229,25 @@ public:
 		copyRegion.size = vertexBufferSize;
 		vkCmdCopyBuffer(
 				copyCmd,
-				vertexStaging.buffer,
-				vertexBuffer.buffer,
+				vertexStaging.mBuffer,
+				vertexBuffer.mBuffer,
 				1,
 				&copyRegion);
 
 		copyRegion.size = indexBufferSize;
 		vkCmdCopyBuffer(
 				copyCmd,
-				indexStaging.buffer,
-				indexBuffer.buffer,
+				indexStaging.mBuffer,
+				indexBuffer.mBuffer,
 				1,
 				&copyRegion);
 
 		device->flushCommandBuffer(copyCmd, copyQueue, true);
 
-		vkDestroyBuffer(device->logicalDevice, vertexStaging.buffer, nullptr);
-		vkFreeMemory(device->logicalDevice, vertexStaging.memory, nullptr);
-		vkDestroyBuffer(device->logicalDevice, indexStaging.buffer, nullptr);
-		vkFreeMemory(device->logicalDevice, indexStaging.memory, nullptr);
+		vkDestroyBuffer(device->logicalDevice, vertexStaging.mBuffer, nullptr);
+		vkFreeMemory(device->logicalDevice, vertexStaging.mMemory, nullptr);
+		vkDestroyBuffer(device->logicalDevice, indexStaging.mBuffer, nullptr);
+		vkFreeMemory(device->logicalDevice, indexStaging.mMemory, nullptr);
 	}
 };
 

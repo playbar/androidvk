@@ -354,24 +354,24 @@ VkResult VulkanDevice::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPrope
 VkResult VulkanDevice::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VksBuffer *buffer,
 									VkDeviceSize size, void *data)
 {
-	buffer->device = logicalDevice;
+	buffer->mDevice = logicalDevice;
 
 	// Create the buffer handle
 	VkBufferCreateInfo bufferCreateInfo = InitBufferCreateInfo(
 			usageFlags, size);
-	VK_CHECK_RESULT(vkCreateBuffer(logicalDevice, &bufferCreateInfo, nullptr, &buffer->buffer));
+	VK_CHECK_RESULT(vkCreateBuffer(logicalDevice, &bufferCreateInfo, nullptr, &buffer->mBuffer));
 
 	// Create the memory backing up the buffer handle
 	VkMemoryRequirements memReqs;
 	VkMemoryAllocateInfo memAlloc = InitMemoryAllocateInfo();
-	vkGetBufferMemoryRequirements(logicalDevice, buffer->buffer, &memReqs);
+	vkGetBufferMemoryRequirements(logicalDevice, buffer->mBuffer, &memReqs);
 	memAlloc.allocationSize = memReqs.size;
 	// Find a memory type index that fits the properties of the buffer
 	memAlloc.memoryTypeIndex = getMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags);
-	VK_CHECK_RESULT(vkAllocateMemory(logicalDevice, &memAlloc, nullptr, &buffer->memory));
+	VK_CHECK_RESULT(vkAllocateMemory(logicalDevice, &memAlloc, nullptr, &buffer->mMemory));
 
-	buffer->alignment = memReqs.alignment;
-	buffer->size = memAlloc.allocationSize;
+	buffer->mAlignment = memReqs.alignment;
+	buffer->mSize = memAlloc.allocationSize;
 	buffer->usageFlags = usageFlags;
 	buffer->memoryPropertyFlags = memoryPropertyFlags;
 
@@ -379,7 +379,7 @@ VkResult VulkanDevice::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPrope
 	if (data != nullptr)
 	{
 		VK_CHECK_RESULT(buffer->map());
-		memcpy(buffer->mapped, data, size);
+		memcpy(buffer->mMapped, data, size);
 		buffer->unmap();
 	}
 
@@ -402,20 +402,20 @@ VkResult VulkanDevice::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPrope
 */
 void VulkanDevice::copyBuffer(VksBuffer *src, VksBuffer *dst, VkQueue queue, VkBufferCopy *copyRegion )
 {
-	assert(dst->size <= src->size);
-	assert(src->buffer && src->buffer);
+	assert(dst->mSize <= src->mSize);
+	assert(src->mBuffer && src->mBuffer);
 	VkCommandBuffer copyCmd = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 	VkBufferCopy bufferCopy{};
 	if (copyRegion == nullptr)
 	{
-		bufferCopy.size = src->size;
+		bufferCopy.size = src->mSize;
 	}
 	else
 	{
 		bufferCopy = *copyRegion;
 	}
 
-	vkCmdCopyBuffer(copyCmd, src->buffer, dst->buffer, 1, &bufferCopy);
+	vkCmdCopyBuffer(copyCmd, src->mBuffer, dst->mBuffer, 1, &bufferCopy);
 
 	flushCommandBuffer(copyCmd, queue);
 }

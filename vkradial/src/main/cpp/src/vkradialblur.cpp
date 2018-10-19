@@ -2323,8 +2323,8 @@ void VKRadialBlur::buildOffscreenCommandBuffer()
 	vkCmdBindPipeline(offscreenPass.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.colorPass);
 
 	VkDeviceSize offsets[1] = { 0 };
-	vkCmdBindVertexBuffers(offscreenPass.commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &models.vertices.buffer, offsets);
-	vkCmdBindIndexBuffer(offscreenPass.commandBuffer, models.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindVertexBuffers(offscreenPass.commandBuffer, VERTEX_BUFFER_BIND_ID, 1, &models.vertices.mBuffer, offsets);
+	vkCmdBindIndexBuffer(offscreenPass.commandBuffer, models.indices.mBuffer, 0, VK_INDEX_TYPE_UINT32);
 	vkCmdDrawIndexed(offscreenPass.commandBuffer, models.indexCount, 1, 0, 0, 0);
 
 	vkCmdEndRenderPass(offscreenPass.commandBuffer);
@@ -2383,8 +2383,8 @@ void VKRadialBlur::buildCommandBuffers()
 		vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayouts.scene, 0, 1, &descriptorSets.scene, 0, NULL);
 		vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.phongPass);
 
-		vkCmdBindVertexBuffers(drawCmdBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &models.vertices.buffer, offsets);
-		vkCmdBindIndexBuffer(drawCmdBuffers[i], models.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdBindVertexBuffers(drawCmdBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &models.vertices.mBuffer, offsets);
+		vkCmdBindIndexBuffer(drawCmdBuffers[i], models.indices.mBuffer, 0, VK_INDEX_TYPE_UINT32);
 		vkCmdDrawIndexed(drawCmdBuffers[i], models.indexCount, 1, 0, 0, 0);
 
 		// Fullscreen triangle (clipped to a quad) with radial blur
@@ -2545,7 +2545,7 @@ void VKRadialBlur::setupDescriptorSet()
 							descriptorSets.scene,
 							VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 							0,
-							&uniformBuffers.scene.descriptor),
+							&uniformBuffers.scene.mDescriptor),
 					// Binding 1: Color gradient sampler
 					InitWriteDescriptorSet(
 							descriptorSets.scene,
@@ -2568,7 +2568,7 @@ void VKRadialBlur::setupDescriptorSet()
 							descriptorSets.radialBlur,
 							VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 							0,
-							&uniformBuffers.blurParams.descriptor),
+							&uniformBuffers.blurParams.mDescriptor),
 					// Binding 0: Fragment shader texture sampler
 					InitWriteDescriptorSet(
 							descriptorSets.radialBlur,
@@ -2728,7 +2728,7 @@ void VKRadialBlur::updateUniformBuffersScene()
 		uboScene.gradientPos += frameTimer * 0.1f;
 	}
 
-	memcpy(uniformBuffers.scene.mapped, &uboScene, sizeof(uboScene));
+	memcpy(uniformBuffers.scene.mMapped, &uboScene, sizeof(uboScene));
 }
 
 

@@ -49,12 +49,12 @@ ModelCreateInfo::ModelCreateInfo(float scale, float uvscale, float center)
 void VksModel::destroy()
 {
     assert(device);
-    vkDestroyBuffer(device, vertices.buffer, nullptr);
-    vkFreeMemory(device, vertices.memory, nullptr);
-    if (indices.buffer != VK_NULL_HANDLE)
+    vkDestroyBuffer(device, vertices.mBuffer, nullptr);
+    vkFreeMemory(device, vertices.mMemory, nullptr);
+    if (indices.mBuffer != VK_NULL_HANDLE)
     {
-        vkDestroyBuffer(device, indices.buffer, nullptr);
-        vkFreeMemory(device, indices.memory, nullptr);
+        vkDestroyBuffer(device, indices.mBuffer, nullptr);
+        vkFreeMemory(device, indices.mMemory, nullptr);
     }
 }
 
@@ -263,19 +263,19 @@ bool VksModel::loadFromFile(const std::string& filename, VertexLayout layout, Mo
 
         VkBufferCopy copyRegion{};
 
-        copyRegion.size = vertices.size;
-        vkCmdCopyBuffer(copyCmd, vertexStaging.buffer, vertices.buffer, 1, &copyRegion);
+        copyRegion.size = vertices.mSize;
+        vkCmdCopyBuffer(copyCmd, vertexStaging.mBuffer, vertices.mBuffer, 1, &copyRegion);
 
-        copyRegion.size = indices.size;
-        vkCmdCopyBuffer(copyCmd, indexStaging.buffer, indices.buffer, 1, &copyRegion);
+        copyRegion.size = indices.mSize;
+        vkCmdCopyBuffer(copyCmd, indexStaging.mBuffer, indices.mBuffer, 1, &copyRegion);
 
         device->flushCommandBuffer(copyCmd, copyQueue);
 
         // Destroy staging resources
-        vkDestroyBuffer(device->logicalDevice, vertexStaging.buffer, nullptr);
-        vkFreeMemory(device->logicalDevice, vertexStaging.memory, nullptr);
-        vkDestroyBuffer(device->logicalDevice, indexStaging.buffer, nullptr);
-        vkFreeMemory(device->logicalDevice, indexStaging.memory, nullptr);
+        vkDestroyBuffer(device->logicalDevice, vertexStaging.mBuffer, nullptr);
+        vkFreeMemory(device->logicalDevice, vertexStaging.mMemory, nullptr);
+        vkDestroyBuffer(device->logicalDevice, indexStaging.mBuffer, nullptr);
+        vkFreeMemory(device->logicalDevice, indexStaging.mMemory, nullptr);
 
         return true;
     }

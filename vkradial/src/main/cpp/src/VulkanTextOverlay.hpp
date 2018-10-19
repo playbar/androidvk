@@ -214,7 +214,7 @@ public:
 			allocInfo.allocationSize));
 
 		stagingBuffer.map();
-		memcpy(stagingBuffer.mapped, &font24pixels[0][0], STB_FONT_WIDTH * STB_FONT_HEIGHT);	// Only one channel, so data size = W * H (*R8)
+		memcpy(stagingBuffer.mMapped, &font24pixels[0][0], STB_FONT_WIDTH * STB_FONT_HEIGHT);	// Only one channel, so data size = W * H (*R8)
 		stagingBuffer.unmap();
 
 		// Copy to image
@@ -243,7 +243,7 @@ public:
 
 		vkCmdCopyBufferToImage(
 			copyCmd,
-			stagingBuffer.buffer,
+			stagingBuffer.mBuffer,
 			image,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			1,
@@ -549,7 +549,7 @@ public:
 	*/
 	void beginTextUpdate()
 	{
-		mappedLocal = (glm::vec4*)vertexBuffer.mapped;
+		mappedLocal = (glm::vec4*)vertexBuffer.mMapped;
 		numLetters = 0;
 	}
 
@@ -563,7 +563,7 @@ public:
 	*/
 	void addText(std::string text, float x, float y, TextAlign align)
 	{
-		assert(vertexBuffer.mapped != nullptr);
+		assert(vertexBuffer.mMapped != nullptr);
 
 		if (align == alignLeft) {
 			x *= scale;
@@ -682,8 +682,8 @@ public:
 			vkCmdBindDescriptorSets(cmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
 
 			VkDeviceSize offsets = 0;
-			vkCmdBindVertexBuffers(cmdBuffers[i], 0, 1, &vertexBuffer.buffer, &offsets);
-			vkCmdBindVertexBuffers(cmdBuffers[i], 1, 1, &vertexBuffer.buffer, &offsets);
+			vkCmdBindVertexBuffers(cmdBuffers[i], 0, 1, &vertexBuffer.mBuffer, &offsets);
+			vkCmdBindVertexBuffers(cmdBuffers[i], 1, 1, &vertexBuffer.mBuffer, &offsets);
 			for (uint32_t j = 0; j < numLetters; j++)
 			{
 				vkCmdDraw(cmdBuffers[i], 4, 1, j * 4, 0);

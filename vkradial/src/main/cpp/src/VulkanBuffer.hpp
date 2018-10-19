@@ -22,41 +22,53 @@
 */
 struct VksBuffer
 {
-	VkBuffer buffer;
-	VkDevice device;
-	VkDeviceMemory memory;
-	VkDescriptorBufferInfo descriptor;
-	VkDeviceSize size = 0;
-	VkDeviceSize alignment = 0;
-	void* mapped = nullptr;
+	VkBuffer mBuffer;
+	VkDevice mDevice;
+	VkDeviceMemory mMemory;
+	VkDescriptorBufferInfo mDescriptor;
+	VkDeviceSize mSize = 0;
+	VkDeviceSize mAlignment = 0;
+	void* mMapped = nullptr;
 
 	VkBufferUsageFlags usageFlags;
 	VkMemoryPropertyFlags memoryPropertyFlags;
 
+    VksBuffer()
+    {
+        mBuffer= NULL;
+        mDevice = NULL;
+        mMemory = NULL;
+		mSize = 0;
+        mAlignment = 0;
+        mMapped = NULL;
+        usageFlags = 0;
+        memoryPropertyFlags = 0;
+    }
+
 	VkResult map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0)
 	{
-		return vkMapMemory(device, memory, offset, size, 0, &mapped);
+		return vkMapMemory(mDevice, mMemory, offset, size, 0, &mMapped);
 	}
 
 	void unmap()
 	{
-		if (mapped)
+		if (mMapped)
 		{
-			vkUnmapMemory(device, memory);
-			mapped = nullptr;
+			vkUnmapMemory(mDevice, mMemory);
+			mMapped = nullptr;
 		}
 	}
 
 	VkResult bind(VkDeviceSize offset = 0)
 	{
-		return vkBindBufferMemory(device, buffer, memory, offset);
+		return vkBindBufferMemory(mDevice, mBuffer, mMemory, offset);
 	}
 
 	void setupDescriptor(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0)
 	{
-		descriptor.offset = offset;
-		descriptor.buffer = buffer;
-		descriptor.range = size;
+		mDescriptor.offset = offset;
+		mDescriptor.buffer = mBuffer;
+		mDescriptor.range = size;
 		if( size < 1000000 ){
 			LOGE("size:%d", size);
 		}
@@ -64,39 +76,41 @@ struct VksBuffer
 
 	void copyTo(void* data, VkDeviceSize size)
 	{
-		assert(mapped);
-		memcpy(mapped, data, size);
+		assert(mMapped);
+		memcpy(mMapped, data, size);
 	}
 
 	VkResult flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0)
 	{
 		VkMappedMemoryRange mappedRange = {};
 		mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-		mappedRange.memory = memory;
+		mappedRange.memory = mMemory;
 		mappedRange.offset = offset;
 		mappedRange.size = size;
-		return vkFlushMappedMemoryRanges(device, 1, &mappedRange);
+		return vkFlushMappedMemoryRanges(mDevice, 1, &mappedRange);
 	}
 
 	VkResult invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0)
 	{
 		VkMappedMemoryRange mappedRange = {};
 		mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-		mappedRange.memory = memory;
+		mappedRange.memory = mMemory;
 		mappedRange.offset = offset;
 		mappedRange.size = size;
-		return vkInvalidateMappedMemoryRanges(device, 1, &mappedRange);
+		return vkInvalidateMappedMemoryRanges(mDevice, 1, &mappedRange);
 	}
 
 	void destroy()
 	{
-		if (buffer)
+		if (mBuffer)
 		{
-			vkDestroyBuffer(device, buffer, nullptr);
+			vkDestroyBuffer(mDevice, mBuffer, nullptr);
+			mBuffer = NULL;
 		}
-		if (memory)
+		if (mMemory)
 		{
-			vkFreeMemory(device, memory, nullptr);
+			vkFreeMemory(mDevice, mMemory, nullptr);
+			mMemory = NULL;
 		}
 	}
 
