@@ -163,7 +163,7 @@ public:
 		VK_CHECK_RESULT(vkCreateCommandPool(vulkanDevice->logicalDevice, &cmdPoolInfo, nullptr, &commandPool));
 
 		VkCommandBufferAllocateInfo cmdBufAllocateInfo =
-                vks::initializers::InitCommandBufferAllocateInfo(
+                InitCommandBufferAllocateInfo(
                         commandPool,
                         VK_COMMAND_BUFFER_LEVEL_PRIMARY,
                         (uint32_t) cmdBuffers.size());
@@ -181,7 +181,7 @@ public:
 		vertexBuffer.map();
 
 		// Font texture
-		VkImageCreateInfo imageInfo = vks::initializers::InitImageCreateInfo();
+		VkImageCreateInfo imageInfo = InitImageCreateInfo();
 		imageInfo.imageType = VK_IMAGE_TYPE_2D;
 		imageInfo.format = VK_FORMAT_R8_UNORM;
 		imageInfo.extent.width = STB_FONT_WIDTH;
@@ -197,7 +197,7 @@ public:
 		VK_CHECK_RESULT(vkCreateImage(vulkanDevice->logicalDevice, &imageInfo, nullptr, &image));
 
 		VkMemoryRequirements memReqs;
-		VkMemoryAllocateInfo allocInfo = vks::initializers::InitMemoryAllocateInfo();
+		VkMemoryAllocateInfo allocInfo = InitMemoryAllocateInfo();
 		vkGetImageMemoryRequirements(vulkanDevice->logicalDevice, image, &memReqs);
 		allocInfo.allocationSize = memReqs.size;
 		allocInfo.memoryTypeIndex = vulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -222,7 +222,7 @@ public:
 		cmdBufAllocateInfo.commandBufferCount = 1;
 		VK_CHECK_RESULT(vkAllocateCommandBuffers(vulkanDevice->logicalDevice, &cmdBufAllocateInfo, &copyCmd));
 
-		VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::InitCommandBufferBeginInfo();
+		VkCommandBufferBeginInfo cmdBufInfo = InitCommandBufferBeginInfo();
 		VK_CHECK_RESULT(vkBeginCommandBuffer(copyCmd, &cmdBufInfo));
 
 		// Prepare for transfer
@@ -260,7 +260,7 @@ public:
 
 		VK_CHECK_RESULT(vkEndCommandBuffer(copyCmd));
 
-		VkSubmitInfo submitInfo = vks::initializers::InitSubmitInfo();
+		VkSubmitInfo submitInfo = InitSubmitInfo();
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &copyCmd;
 
@@ -271,7 +271,7 @@ public:
 
 		vkFreeCommandBuffers(vulkanDevice->logicalDevice, commandPool, 1, &copyCmd);
 
-		VkImageViewCreateInfo imageViewInfo = vks::initializers::InitImageViewCreateInfo();
+		VkImageViewCreateInfo imageViewInfo = InitImageViewCreateInfo();
 		imageViewInfo.image = image;
 		imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		imageViewInfo.format = imageInfo.format;
@@ -280,7 +280,7 @@ public:
 		VK_CHECK_RESULT(vkCreateImageView(vulkanDevice->logicalDevice, &imageViewInfo, nullptr, &view));
 
 		// Sampler
-		VkSamplerCreateInfo samplerInfo = vks::initializers::InitSamplerCreateInfo();
+		VkSamplerCreateInfo samplerInfo = InitSamplerCreateInfo();
 		samplerInfo.magFilter = VK_FILTER_LINEAR;
 		samplerInfo.minFilter = VK_FILTER_LINEAR;
 		samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
@@ -297,52 +297,56 @@ public:
 		// Descriptor
 		// Font uses a separate descriptor pool
 		std::array<VkDescriptorPoolSize, 1> poolSizes;
-		poolSizes[0] = vks::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1);
+		poolSizes[0] = InitDescriptorPoolSize(
+				VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1);
 
 		VkDescriptorPoolCreateInfo descriptorPoolInfo =
-			vks::initializers::descriptorPoolCreateInfo(
-				static_cast<uint32_t>(poolSizes.size()),
-				poolSizes.data(),
-				1);
+				InitDescriptorPoolCreateInfo(
+						static_cast<uint32_t>(poolSizes.size()),
+						poolSizes.data(),
+						1);
 
 		VK_CHECK_RESULT(vkCreateDescriptorPool(vulkanDevice->logicalDevice, &descriptorPoolInfo, nullptr, &descriptorPool));
 
 		// Descriptor set layout
 		std::array<VkDescriptorSetLayoutBinding, 1> setLayoutBindings;
-		setLayoutBindings[0] = vks::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
+		setLayoutBindings[0] = InitDescriptorSetLayoutBinding(
+				VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
 
 		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo =
-			vks::initializers::descriptorSetLayoutCreateInfo(
-				setLayoutBindings.data(),
-				static_cast<uint32_t>(setLayoutBindings.size()));
+				InitDescriptorSetLayoutCreateInfo(
+						setLayoutBindings.data(),
+						static_cast<uint32_t>(setLayoutBindings.size()));
 
 		VK_CHECK_RESULT(vkCreateDescriptorSetLayout(vulkanDevice->logicalDevice, &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout));
 
 		// Pipeline layout
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo =
-			vks::initializers::pipelineLayoutCreateInfo(
-				&descriptorSetLayout,
-				1);
+				InitPipelineLayoutCreateInfo(
+						&descriptorSetLayout,
+						1);
 
 		VK_CHECK_RESULT(vkCreatePipelineLayout(vulkanDevice->logicalDevice, &pipelineLayoutInfo, nullptr, &pipelineLayout));
 
 		// Descriptor set
 		VkDescriptorSetAllocateInfo descriptorSetAllocInfo =
-			vks::initializers::descriptorSetAllocateInfo(
-				descriptorPool,
-				&descriptorSetLayout,
-				1);
+				InitDescriptorSetAllocateInfo(
+						descriptorPool,
+						&descriptorSetLayout,
+						1);
 
 		VK_CHECK_RESULT(vkAllocateDescriptorSets(vulkanDevice->logicalDevice, &descriptorSetAllocInfo, &descriptorSet));
 
 		VkDescriptorImageInfo texDescriptor =
-			vks::initializers::descriptorImageInfo(
-				sampler,
-				view,
-				VK_IMAGE_LAYOUT_GENERAL);
+				InitDescriptorImageInfo(
+						sampler,
+						view,
+						VK_IMAGE_LAYOUT_GENERAL);
 
 		std::array<VkWriteDescriptorSet, 1> writeDescriptorSets;
-		writeDescriptorSets[0] = vks::initializers::writeDescriptorSet(descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, &texDescriptor);
+		writeDescriptorSets[0] = InitWriteDescriptorSet(descriptorSet,
+                                                                           VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                                           0, &texDescriptor);
 		vkUpdateDescriptorSets(vulkanDevice->logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, NULL);
 
 		// Pipeline cache
@@ -351,7 +355,7 @@ public:
 		VK_CHECK_RESULT(vkCreatePipelineCache(vulkanDevice->logicalDevice, &pipelineCacheCreateInfo, nullptr, &pipelineCache));
 
 		// Command buffer execution fence
-		VkFenceCreateInfo fenceCreateInfo = vks::initializers::InitFenceCreateInfo();
+		VkFenceCreateInfo fenceCreateInfo = InitFenceCreateInfo();
 		VK_CHECK_RESULT(vkCreateFence(vulkanDevice->logicalDevice, &fenceCreateInfo, nullptr, &fence));
 	}
 
@@ -361,21 +365,21 @@ public:
 	void preparePipeline()
 	{
 		VkPipelineInputAssemblyStateCreateInfo inputAssemblyState =
-			vks::initializers::pipelineInputAssemblyStateCreateInfo(
-				VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
-				0,
-				VK_FALSE);
+                InitPipelineInputAssemblyStateCreateInfo(
+                        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+                        0,
+                        VK_FALSE);
 
 		VkPipelineRasterizationStateCreateInfo rasterizationState =
-			vks::initializers::pipelineRasterizationStateCreateInfo(
-				VK_POLYGON_MODE_FILL,
-				VK_CULL_MODE_BACK_BIT,
-				VK_FRONT_FACE_CLOCKWISE,
-				0);
+                InitPipelineRasterizationStateCreateInfo(
+                        VK_POLYGON_MODE_FILL,
+                        VK_CULL_MODE_BACK_BIT,
+                        VK_FRONT_FACE_CLOCKWISE,
+                        0);
 
 		// Enable blending
 		VkPipelineColorBlendAttachmentState blendAttachmentState =
-			vks::initializers::pipelineColorBlendAttachmentState(0xf, VK_TRUE);
+				InitPipelineColorBlendAttachmentState(0xf, VK_TRUE);
 
 		blendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
 		blendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
@@ -386,23 +390,23 @@ public:
 		blendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
 		VkPipelineColorBlendStateCreateInfo colorBlendState =
-			vks::initializers::pipelineColorBlendStateCreateInfo(
-				1,
-				&blendAttachmentState);
+                InitPipelineColorBlendStateCreateInfo(
+                        1,
+                        &blendAttachmentState);
 
 		VkPipelineDepthStencilStateCreateInfo depthStencilState =
-			vks::initializers::pipelineDepthStencilStateCreateInfo(
-				VK_FALSE,
-				VK_FALSE,
-				VK_COMPARE_OP_LESS_OR_EQUAL);
+                InitPipelineDepthStencilStateCreateInfo(
+                        VK_FALSE,
+                        VK_FALSE,
+                        VK_COMPARE_OP_LESS_OR_EQUAL);
 
 		VkPipelineViewportStateCreateInfo viewportState =
-			vks::initializers::pipelineViewportStateCreateInfo(1, 1, 0);
+                InitPipelineViewportStateCreateInfo(1, 1, 0);
 
 		VkPipelineMultisampleStateCreateInfo multisampleState =
-			vks::initializers::pipelineMultisampleStateCreateInfo(
-				VK_SAMPLE_COUNT_1_BIT,
-				0);
+                InitPipelineMultisampleStateCreateInfo(
+                        VK_SAMPLE_COUNT_1_BIT,
+                        0);
 
 		std::vector<VkDynamicState> dynamicStateEnables = {
 			VK_DYNAMIC_STATE_VIEWPORT,
@@ -410,32 +414,40 @@ public:
 		};
 
 		VkPipelineDynamicStateCreateInfo dynamicState =
-			vks::initializers::pipelineDynamicStateCreateInfo(
-				dynamicStateEnables.data(),
-				static_cast<uint32_t>(dynamicStateEnables.size()),
-				0);
+                InitPipelineDynamicStateCreateInfo(
+                        dynamicStateEnables.data(),
+                        static_cast<uint32_t>(dynamicStateEnables.size()),
+                        0);
 
 		std::array<VkVertexInputBindingDescription, 2> vertexBindings = {};
-		vertexBindings[0] = vks::initializers::vertexInputBindingDescription(0, sizeof(glm::vec4), VK_VERTEX_INPUT_RATE_VERTEX);
-		vertexBindings[1] = vks::initializers::vertexInputBindingDescription(1, sizeof(glm::vec4), VK_VERTEX_INPUT_RATE_VERTEX);
+		vertexBindings[0] = InitVertexInputBindingDescription(0,
+                                                                                 sizeof(glm::vec4),
+                                                                                 VK_VERTEX_INPUT_RATE_VERTEX);
+		vertexBindings[1] = InitVertexInputBindingDescription(1,
+                                                                                 sizeof(glm::vec4),
+                                                                                 VK_VERTEX_INPUT_RATE_VERTEX);
 
 		std::array<VkVertexInputAttributeDescription, 2> vertexAttribs = {};
 		// Position
-		vertexAttribs[0] = vks::initializers::vertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32_SFLOAT, 0);
+		vertexAttribs[0] = InitVertexInputAttributeDescription(0, 0,
+                                                                                  VK_FORMAT_R32G32_SFLOAT,
+                                                                                  0);
 		// UV
-		vertexAttribs[1] = vks::initializers::vertexInputAttributeDescription(1, 1, VK_FORMAT_R32G32_SFLOAT, sizeof(glm::vec2));
+		vertexAttribs[1] = InitVertexInputAttributeDescription(1, 1,
+                                                                                  VK_FORMAT_R32G32_SFLOAT,
+                                                                                  sizeof(glm::vec2));
 
-		VkPipelineVertexInputStateCreateInfo inputState = vks::initializers::pipelineVertexInputStateCreateInfo();
+		VkPipelineVertexInputStateCreateInfo inputState = InitPipelineVertexInputStateCreateInfo();
 		inputState.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexBindings.size());
 		inputState.pVertexBindingDescriptions = vertexBindings.data();
 		inputState.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttribs.size());
 		inputState.pVertexAttributeDescriptions = vertexAttribs.data();
 
 		VkGraphicsPipelineCreateInfo pipelineCreateInfo =
-			vks::initializers::pipelineCreateInfo(
-				pipelineLayout,
-				renderPass,
-				0);
+				InitPipelineCreateInfo(
+						pipelineLayout,
+						renderPass,
+						0);
 
 		pipelineCreateInfo.pVertexInputState = &inputState;
 		pipelineCreateInfo.pInputAssemblyState = &inputAssemblyState;
@@ -635,9 +647,9 @@ public:
 	*/
 	void updateCommandBuffers()
 	{
-		VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::InitCommandBufferBeginInfo();
+		VkCommandBufferBeginInfo cmdBufInfo = InitCommandBufferBeginInfo();
 
-		VkRenderPassBeginInfo renderPassBeginInfo = vks::initializers::InitRenderPassBeginInfo();
+		VkRenderPassBeginInfo renderPassBeginInfo = InitRenderPassBeginInfo();
 		renderPassBeginInfo.renderPass = renderPass;
 		renderPassBeginInfo.renderArea.extent.width = *frameBufferWidth;
 		renderPassBeginInfo.renderArea.extent.height = *frameBufferHeight;
@@ -659,10 +671,11 @@ public:
 
 			vkCmdBeginRenderPass(cmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-			VkViewport viewport = vks::initializers::InitViewport((float)*frameBufferWidth, (float)*frameBufferHeight, 0.0f, 1.0f);
+			VkViewport viewport = InitViewport((float)*frameBufferWidth, (float)*frameBufferHeight, 0.0f, 1.0f);
 			vkCmdSetViewport(cmdBuffers[i], 0, 1, &viewport);
 
-			VkRect2D scissor = vks::initializers::rect2D(*frameBufferWidth, *frameBufferHeight, 0, 0);
+			VkRect2D scissor = InitRect2D(*frameBufferWidth, *frameBufferHeight,
+															 0, 0);
 			vkCmdSetScissor(cmdBuffers[i], 0, 1, &scissor);
 			
 			vkCmdBindPipeline(cmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
@@ -715,7 +728,7 @@ public:
 		vkFreeCommandBuffers(vulkanDevice->logicalDevice, commandPool, static_cast<uint32_t>(cmdBuffers.size()), cmdBuffers.data());
 
 		VkCommandBufferAllocateInfo cmdBufAllocateInfo =
-                vks::initializers::InitCommandBufferAllocateInfo(
+                InitCommandBufferAllocateInfo(
                         commandPool,
                         VK_COMMAND_BUFFER_LEVEL_PRIMARY,
                         static_cast<uint32_t>(cmdBuffers.size()));

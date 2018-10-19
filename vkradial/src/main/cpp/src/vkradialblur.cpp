@@ -96,7 +96,7 @@ void VKRadialBlur::createCommandBuffers()
 	drawCmdBuffers.resize(swapChain.imageCount);
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
-			vks::initializers::InitCommandBufferAllocateInfo(
+			InitCommandBufferAllocateInfo(
 					cmdPool,
 					VK_COMMAND_BUFFER_LEVEL_PRIMARY,
 					static_cast<uint32_t>(drawCmdBuffers.size()));
@@ -114,7 +114,7 @@ VkCommandBuffer VKRadialBlur::createCommandBuffer(VkCommandBufferLevel level, bo
 	VkCommandBuffer cmdBuffer;
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
-			vks::initializers::InitCommandBufferAllocateInfo(
+			InitCommandBufferAllocateInfo(
 					cmdPool,
 					level,
 					1);
@@ -124,7 +124,7 @@ VkCommandBuffer VKRadialBlur::createCommandBuffer(VkCommandBufferLevel level, bo
 	// If requested, also start the new command buffer
 	if (begin)
 	{
-		VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::InitCommandBufferBeginInfo();
+		VkCommandBufferBeginInfo cmdBufInfo = InitCommandBufferBeginInfo();
 		VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
 	}
 
@@ -871,7 +871,7 @@ void VKRadialBlur::initVulkan()
 	swapChain.connect(instance, physicalDevice, device);
 
 	// Create synchronization objects
-	VkSemaphoreCreateInfo semaphoreCreateInfo = vks::initializers::InitSemaphoreCreateInfo();
+	VkSemaphoreCreateInfo semaphoreCreateInfo = InitSemaphoreCreateInfo();
 	// Create a semaphore used to synchronize image presentation
 	// Ensures that the image is displayed before we start submitting new commands to the queu
 	VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphores.presentComplete));
@@ -886,7 +886,7 @@ void VKRadialBlur::initVulkan()
 	// Set up submit info structure
 	// Semaphores will stay the same during application lifetime
 	// Command buffer submission info is set by each example
-	submitInfo = vks::initializers::InitSubmitInfo();
+	submitInfo = InitSubmitInfo();
 	submitInfo.pWaitDstStageMask = &submitPipelineStages;
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = &semaphores.presentComplete;
@@ -2124,7 +2124,7 @@ void VKRadialBlur::prepareOffscreen()
 	assert(validDepthFormat);
 
 	// Color attachment
-	VkImageCreateInfo image = vks::initializers::InitImageCreateInfo();
+	VkImageCreateInfo image = InitImageCreateInfo();
 	image.imageType = VK_IMAGE_TYPE_2D;
 	image.format = FB_COLOR_FORMAT;
 	image.extent.width = offscreenPass.width;
@@ -2137,7 +2137,7 @@ void VKRadialBlur::prepareOffscreen()
 	// We will sample directly from the color attachment
 	image.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
-	VkMemoryAllocateInfo memAlloc = vks::initializers::InitMemoryAllocateInfo();
+	VkMemoryAllocateInfo memAlloc = InitMemoryAllocateInfo();
 	VkMemoryRequirements memReqs;
 
 	VK_CHECK_RESULT(vkCreateImage(device, &image, nullptr, &offscreenPass.color.image));
@@ -2147,7 +2147,7 @@ void VKRadialBlur::prepareOffscreen()
 	VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &offscreenPass.color.mem));
 	VK_CHECK_RESULT(vkBindImageMemory(device, offscreenPass.color.image, offscreenPass.color.mem, 0));
 
-	VkImageViewCreateInfo colorImageView = vks::initializers::InitImageViewCreateInfo();
+	VkImageViewCreateInfo colorImageView = InitImageViewCreateInfo();
 	colorImageView.viewType = VK_IMAGE_VIEW_TYPE_2D;
 	colorImageView.format = FB_COLOR_FORMAT;
 	colorImageView.subresourceRange = {};
@@ -2160,7 +2160,7 @@ void VKRadialBlur::prepareOffscreen()
 	VK_CHECK_RESULT(vkCreateImageView(device, &colorImageView, nullptr, &offscreenPass.color.view));
 
 	// Create sampler to sample from the attachment in the fragment shader
-	VkSamplerCreateInfo samplerInfo = vks::initializers::InitSamplerCreateInfo();
+	VkSamplerCreateInfo samplerInfo = InitSamplerCreateInfo();
 	samplerInfo.magFilter = VK_FILTER_LINEAR;
 	samplerInfo.minFilter = VK_FILTER_LINEAR;
 	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
@@ -2185,7 +2185,7 @@ void VKRadialBlur::prepareOffscreen()
 	VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &offscreenPass.depth.mem));
 	VK_CHECK_RESULT(vkBindImageMemory(device, offscreenPass.depth.image, offscreenPass.depth.mem, 0));
 
-	VkImageViewCreateInfo depthStencilView = vks::initializers::InitImageViewCreateInfo();
+	VkImageViewCreateInfo depthStencilView = InitImageViewCreateInfo();
 	depthStencilView.viewType = VK_IMAGE_VIEW_TYPE_2D;
 	depthStencilView.format = fbDepthFormat;
 	depthStencilView.flags = 0;
@@ -2264,7 +2264,7 @@ void VKRadialBlur::prepareOffscreen()
 	attachments[0] = offscreenPass.color.view;
 	attachments[1] = offscreenPass.depth.view;
 
-	VkFramebufferCreateInfo fbufCreateInfo = vks::initializers::InitFramebufferCreateInfo();
+	VkFramebufferCreateInfo fbufCreateInfo = InitFramebufferCreateInfo();
 	fbufCreateInfo.renderPass = offscreenPass.renderPass;
 	fbufCreateInfo.attachmentCount = 2;
 	fbufCreateInfo.pAttachments = attachments;
@@ -2289,17 +2289,17 @@ void VKRadialBlur::buildOffscreenCommandBuffer()
 	}
 	if (offscreenPass.semaphore == VK_NULL_HANDLE)
 	{
-		VkSemaphoreCreateInfo semaphoreCreateInfo = vks::initializers::InitSemaphoreCreateInfo();
+		VkSemaphoreCreateInfo semaphoreCreateInfo = InitSemaphoreCreateInfo();
 		VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &offscreenPass.semaphore));
 	}
 
-	VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::InitCommandBufferBeginInfo();
+	VkCommandBufferBeginInfo cmdBufInfo = InitCommandBufferBeginInfo();
 
 	VkClearValue clearValues[2];
 	clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 0.0f } };
 	clearValues[1].depthStencil = { 1.0f, 0 };
 
-	VkRenderPassBeginInfo renderPassBeginInfo = vks::initializers::InitRenderPassBeginInfo();
+	VkRenderPassBeginInfo renderPassBeginInfo = InitRenderPassBeginInfo();
 	renderPassBeginInfo.renderPass = offscreenPass.renderPass;
 	renderPassBeginInfo.framebuffer = offscreenPass.frameBuffer;
 	renderPassBeginInfo.renderArea.extent.width = offscreenPass.width;
@@ -2309,10 +2309,11 @@ void VKRadialBlur::buildOffscreenCommandBuffer()
 
 	VK_CHECK_RESULT(vkBeginCommandBuffer(offscreenPass.commandBuffer, &cmdBufInfo));
 
-	VkViewport viewport = vks::initializers::InitViewport((float)offscreenPass.width, (float)offscreenPass.height, 0.0f, 1.0f);
+	VkViewport viewport = InitViewport((float)offscreenPass.width, (float)offscreenPass.height, 0.0f, 1.0f);
 	vkCmdSetViewport(offscreenPass.commandBuffer, 0, 1, &viewport);
 
-	VkRect2D scissor = vks::initializers::rect2D(offscreenPass.width, offscreenPass.height, 0, 0);
+	VkRect2D scissor = InitRect2D(offscreenPass.width, offscreenPass.height, 0,
+													 0);
 	vkCmdSetScissor(offscreenPass.commandBuffer, 0, 1, &scissor);
 
 	vkCmdBeginRenderPass(offscreenPass.commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -2345,13 +2346,13 @@ void VKRadialBlur::reBuildCommandBuffers()
 
 void VKRadialBlur::buildCommandBuffers()
 {
-	VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::InitCommandBufferBeginInfo();
+	VkCommandBufferBeginInfo cmdBufInfo = InitCommandBufferBeginInfo();
 
 	VkClearValue clearValues[2];
 	clearValues[0].color = defaultClearColor;
 	clearValues[1].depthStencil = { 1.0f, 0 };
 
-	VkRenderPassBeginInfo renderPassBeginInfo = vks::initializers::InitRenderPassBeginInfo();
+	VkRenderPassBeginInfo renderPassBeginInfo = InitRenderPassBeginInfo();
 	renderPassBeginInfo.renderPass = renderPass;
 	renderPassBeginInfo.renderArea.offset.x = 0;
 	renderPassBeginInfo.renderArea.offset.y = 0;
@@ -2369,10 +2370,10 @@ void VKRadialBlur::buildCommandBuffers()
 
 		vkCmdBeginRenderPass(drawCmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		VkViewport viewport = vks::initializers::InitViewport((float)width, (float)height, 0.0f, 1.0f);
+		VkViewport viewport = InitViewport((float)width, (float)height, 0.0f, 1.0f);
 		vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
 
-		VkRect2D scissor = vks::initializers::rect2D(width, height, 0, 0);
+		VkRect2D scissor = InitRect2D(width, height, 0, 0);
 		vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);
 
 		VkDeviceSize offsets[1] = { 0 };
@@ -2410,7 +2411,7 @@ void VKRadialBlur::setupVertexDescriptions()
 	// Binding description
 	vertices.bindingDescriptions.resize(1);
 	vertices.bindingDescriptions[0] =
-			vks::initializers::vertexInputBindingDescription(
+			InitVertexInputBindingDescription(
 					VERTEX_BUFFER_BIND_ID,
 					vertexLayout.stride(),
 					VK_VERTEX_INPUT_RATE_VERTEX);
@@ -2419,34 +2420,34 @@ void VKRadialBlur::setupVertexDescriptions()
 	vertices.attributeDescriptions.resize(4);
 	// Location 0 : Position
 	vertices.attributeDescriptions[0] =
-			vks::initializers::vertexInputAttributeDescription(
+			InitVertexInputAttributeDescription(
 					VERTEX_BUFFER_BIND_ID,
 					0,
 					VK_FORMAT_R32G32B32_SFLOAT,
 					0);
 	// Location 1 : Texture coordinates
 	vertices.attributeDescriptions[1] =
-			vks::initializers::vertexInputAttributeDescription(
+			InitVertexInputAttributeDescription(
 					VERTEX_BUFFER_BIND_ID,
 					1,
 					VK_FORMAT_R32G32_SFLOAT,
 					sizeof(float) * 3);
 	// Location 2 : Color
 	vertices.attributeDescriptions[2] =
-			vks::initializers::vertexInputAttributeDescription(
+			InitVertexInputAttributeDescription(
 					VERTEX_BUFFER_BIND_ID,
 					2,
 					VK_FORMAT_R32G32B32_SFLOAT,
 					sizeof(float) * 5);
 	// Location 3 : Normal
 	vertices.attributeDescriptions[3] =
-			vks::initializers::vertexInputAttributeDescription(
+			InitVertexInputAttributeDescription(
 					VERTEX_BUFFER_BIND_ID,
 					3,
 					VK_FORMAT_R32G32B32_SFLOAT,
 					sizeof(float) * 8);
 
-	vertices.inputState = vks::initializers::pipelineVertexInputStateCreateInfo();
+	vertices.inputState = InitPipelineVertexInputStateCreateInfo();
 	vertices.inputState.vertexBindingDescriptionCount = vertices.bindingDescriptions.size();
 	vertices.inputState.pVertexBindingDescriptions = vertices.bindingDescriptions.data();
 	vertices.inputState.vertexAttributeDescriptionCount = vertices.attributeDescriptions.size();
@@ -2458,12 +2459,13 @@ void VKRadialBlur::setupDescriptorPool()
 	// Example uses three ubos and one image sampler
 	std::vector<VkDescriptorPoolSize> poolSizes =
 			{
-					vks::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4),
-					vks::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6)
+					InitDescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4),
+					InitDescriptorPoolSize(
+							VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6)
 			};
 
 	VkDescriptorPoolCreateInfo descriptorPoolInfo =
-			vks::initializers::descriptorPoolCreateInfo(
+			InitDescriptorPoolCreateInfo(
 					poolSizes.size(),
 					poolSizes.data(),
 					2);
@@ -2481,43 +2483,47 @@ void VKRadialBlur::setupDescriptorSetLayout()
 	setLayoutBindings =
 			{
 					// Binding 0: Vertex shader uniform buffer
-					vks::initializers::descriptorSetLayoutBinding(
+					InitDescriptorSetLayoutBinding(
 							VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 							VK_SHADER_STAGE_VERTEX_BIT,
 							0),
 					// Binding 1: Fragment shader image sampler
-					vks::initializers::descriptorSetLayoutBinding(
+					InitDescriptorSetLayoutBinding(
 							VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 							VK_SHADER_STAGE_FRAGMENT_BIT,
 							1),
 					// Binding 2: Fragment shader uniform buffer
-					vks::initializers::descriptorSetLayoutBinding(
+					InitDescriptorSetLayoutBinding(
 							VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 							VK_SHADER_STAGE_FRAGMENT_BIT,
 							2)
 			};
-	descriptorLayout = vks::initializers::descriptorSetLayoutCreateInfo(setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
+	descriptorLayout = InitDescriptorSetLayoutCreateInfo(
+			setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
 	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &descriptorLayout, nullptr, &descriptorSetLayouts.scene));
-	pPipelineLayoutCreateInfo = vks::initializers::pipelineLayoutCreateInfo(&descriptorSetLayouts.scene, 1);
+	pPipelineLayoutCreateInfo = InitPipelineLayoutCreateInfo(
+			&descriptorSetLayouts.scene, 1);
 	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pPipelineLayoutCreateInfo, nullptr, &pipelineLayouts.scene));
 
 	// Fullscreen radial blur
 	setLayoutBindings =
 			{
 					// Binding 0 : Vertex shader uniform buffer
-					vks::initializers::descriptorSetLayoutBinding(
+					InitDescriptorSetLayoutBinding(
 							VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 							VK_SHADER_STAGE_FRAGMENT_BIT,
 							0),
 					// Binding 0: Fragment shader image sampler
-					vks::initializers::descriptorSetLayoutBinding(
+					InitDescriptorSetLayoutBinding(
 							VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 							VK_SHADER_STAGE_FRAGMENT_BIT,
 							1)
 			};
-	descriptorLayout = vks::initializers::descriptorSetLayoutCreateInfo(setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
+	descriptorLayout = InitDescriptorSetLayoutCreateInfo(
+			setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
 	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &descriptorLayout, nullptr, &descriptorSetLayouts.radialBlur));
-	pPipelineLayoutCreateInfo = vks::initializers::pipelineLayoutCreateInfo(&descriptorSetLayouts.radialBlur, 1);
+	pPipelineLayoutCreateInfo = InitPipelineLayoutCreateInfo(
+			&descriptorSetLayouts.radialBlur, 1);
 	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pPipelineLayoutCreateInfo, nullptr, &pipelineLayouts.radialBlur));
 }
 
@@ -2526,19 +2532,21 @@ void VKRadialBlur::setupDescriptorSet()
 	VkDescriptorSetAllocateInfo descriptorSetAllocInfo;
 
 	// Scene rendering
-	descriptorSetAllocInfo = vks::initializers::descriptorSetAllocateInfo(descriptorPool, &descriptorSetLayouts.scene, 1);
+	descriptorSetAllocInfo = InitDescriptorSetAllocateInfo(descriptorPool,
+																			  &descriptorSetLayouts.scene,
+																			  1);
 	VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &descriptorSetAllocInfo, &descriptorSets.scene));
 
 	std::vector<VkWriteDescriptorSet> offScreenWriteDescriptorSets =
 			{
 					// Binding 0: Vertex shader uniform buffer
-					vks::initializers::writeDescriptorSet(
+					InitWriteDescriptorSet(
 							descriptorSets.scene,
 							VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 							0,
 							&uniformBuffers.scene.descriptor),
 					// Binding 1: Color gradient sampler
-					vks::initializers::writeDescriptorSet(
+					InitWriteDescriptorSet(
 							descriptorSets.scene,
 							VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 							1,
@@ -2547,19 +2555,21 @@ void VKRadialBlur::setupDescriptorSet()
 	vkUpdateDescriptorSets(device, offScreenWriteDescriptorSets.size(), offScreenWriteDescriptorSets.data(), 0, NULL);
 
 	// Fullscreen radial blur
-	descriptorSetAllocInfo = vks::initializers::descriptorSetAllocateInfo(descriptorPool, &descriptorSetLayouts.radialBlur, 1);
+	descriptorSetAllocInfo = InitDescriptorSetAllocateInfo(descriptorPool,
+																			  &descriptorSetLayouts.radialBlur,
+																			  1);
 	VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &descriptorSetAllocInfo, &descriptorSets.radialBlur));
 
 	std::vector<VkWriteDescriptorSet> writeDescriptorSets =
 			{
 					// Binding 0: Vertex shader uniform buffer
-					vks::initializers::writeDescriptorSet(
+					InitWriteDescriptorSet(
 							descriptorSets.radialBlur,
 							VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 							0,
 							&uniformBuffers.blurParams.descriptor),
 					// Binding 0: Fragment shader texture sampler
-					vks::initializers::writeDescriptorSet(
+					InitWriteDescriptorSet(
 							descriptorSets.radialBlur,
 							VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 							1,
@@ -2572,39 +2582,39 @@ void VKRadialBlur::setupDescriptorSet()
 void VKRadialBlur::preparePipelines()
 {
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyState =
-			vks::initializers::pipelineInputAssemblyStateCreateInfo(
+			InitPipelineInputAssemblyStateCreateInfo(
 					VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 					0,
 					VK_FALSE);
 
 	VkPipelineRasterizationStateCreateInfo rasterizationState =
-			vks::initializers::pipelineRasterizationStateCreateInfo(
+			InitPipelineRasterizationStateCreateInfo(
 					VK_POLYGON_MODE_FILL,
 					VK_CULL_MODE_NONE,
 					VK_FRONT_FACE_COUNTER_CLOCKWISE,
 					0);
 
 	VkPipelineColorBlendAttachmentState blendAttachmentState =
-			vks::initializers::pipelineColorBlendAttachmentState(
+			InitPipelineColorBlendAttachmentState(
 					0xf,
 					VK_FALSE);
 
 	VkPipelineColorBlendStateCreateInfo colorBlendState =
-			vks::initializers::pipelineColorBlendStateCreateInfo(
+			InitPipelineColorBlendStateCreateInfo(
 					1,
 					&blendAttachmentState);
 
 	VkPipelineDepthStencilStateCreateInfo depthStencilState =
-			vks::initializers::pipelineDepthStencilStateCreateInfo(
+			InitPipelineDepthStencilStateCreateInfo(
 					VK_TRUE,
 					VK_TRUE,
 					VK_COMPARE_OP_LESS_OR_EQUAL);
 
 	VkPipelineViewportStateCreateInfo viewportState =
-			vks::initializers::pipelineViewportStateCreateInfo(1, 1, 0);
+			InitPipelineViewportStateCreateInfo(1, 1, 0);
 
 	VkPipelineMultisampleStateCreateInfo multisampleState =
-			vks::initializers::pipelineMultisampleStateCreateInfo(
+			InitPipelineMultisampleStateCreateInfo(
 					VK_SAMPLE_COUNT_1_BIT,
 					0);
 
@@ -2613,7 +2623,7 @@ void VKRadialBlur::preparePipelines()
 			VK_DYNAMIC_STATE_SCISSOR
 	};
 	VkPipelineDynamicStateCreateInfo dynamicState =
-			vks::initializers::pipelineDynamicStateCreateInfo(
+			InitPipelineDynamicStateCreateInfo(
 					dynamicStateEnables.data(),
 					dynamicStateEnables.size(),
 					0);
@@ -2621,7 +2631,7 @@ void VKRadialBlur::preparePipelines()
 	std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
 
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo =
-			vks::initializers::pipelineCreateInfo(
+			InitPipelineCreateInfo(
 					pipelineLayouts.radialBlur,
 					renderPass,
 					0);
@@ -2640,7 +2650,7 @@ void VKRadialBlur::preparePipelines()
 	shaderStages[0] = loadShader(getAssetPath() + "shaders/radialblur/radialblur.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 	shaderStages[1] = loadShader(getAssetPath() + "shaders/radialblur/radialblur.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 	// Empty vertex input state
-	VkPipelineVertexInputStateCreateInfo emptyInputState = vks::initializers::pipelineVertexInputStateCreateInfo();
+	VkPipelineVertexInputStateCreateInfo emptyInputState = InitPipelineVertexInputStateCreateInfo();
 	pipelineCreateInfo.pVertexInputState = &emptyInputState;
 	pipelineCreateInfo.layout = pipelineLayouts.radialBlur;
 	// Additive blending

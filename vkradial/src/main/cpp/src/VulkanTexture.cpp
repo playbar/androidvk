@@ -68,7 +68,7 @@ void Texture2D::loadFromFile(
 	// limited amount of formats and features (mip maps, cubemaps, arrays, etc.)
 	VkBool32 useStaging = !forceLinear;
 
-	VkMemoryAllocateInfo memAllocInfo = vks::initializers::InitMemoryAllocateInfo();
+	VkMemoryAllocateInfo memAllocInfo = InitMemoryAllocateInfo();
 	VkMemoryRequirements memReqs;
 
 	// Use a separate command buffer for texture loading
@@ -80,7 +80,7 @@ void Texture2D::loadFromFile(
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingMemory;
 
-		VkBufferCreateInfo bufferCreateInfo = vks::initializers::bufferCreateInfo();
+		VkBufferCreateInfo bufferCreateInfo = InitBufferCreateInfo();
 		bufferCreateInfo.size = tex2D.size();
 		// This buffer is used as a transfer source for the buffer copy
 		bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -126,7 +126,7 @@ void Texture2D::loadFromFile(
 		}
 
 		// Create optimal tiled target image
-		VkImageCreateInfo imageCreateInfo = vks::initializers::InitImageCreateInfo();
+		VkImageCreateInfo imageCreateInfo = InitImageCreateInfo();
 		imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 		imageCreateInfo.format = format;
 		imageCreateInfo.mipLevels = mipLevels;
@@ -206,7 +206,7 @@ void Texture2D::loadFromFile(
 		VkImage mappableImage;
 		VkDeviceMemory mappableMemory;
 
-		VkImageCreateInfo imageCreateInfo = vks::initializers::InitImageCreateInfo();
+		VkImageCreateInfo imageCreateInfo = InitImageCreateInfo();
 		imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 		imageCreateInfo.format = format;
 		imageCreateInfo.extent = { width, height, 1 };
@@ -343,7 +343,7 @@ void Texture2D::fromBuffer(
 	height = height;
 	mipLevels = 1;
 
-	VkMemoryAllocateInfo memAllocInfo = vks::initializers::InitMemoryAllocateInfo();
+	VkMemoryAllocateInfo memAllocInfo = InitMemoryAllocateInfo();
 	VkMemoryRequirements memReqs;
 
 	// Use a separate command buffer for texture loading
@@ -353,7 +353,7 @@ void Texture2D::fromBuffer(
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingMemory;
 
-	VkBufferCreateInfo bufferCreateInfo = vks::initializers::bufferCreateInfo();
+	VkBufferCreateInfo bufferCreateInfo = InitBufferCreateInfo();
 	bufferCreateInfo.size = bufferSize;
 	// This buffer is used as a transfer source for the buffer copy
 	bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -388,7 +388,7 @@ void Texture2D::fromBuffer(
 	bufferCopyRegion.bufferOffset = 0;
 
 	// Create optimal tiled target image
-	VkImageCreateInfo imageCreateInfo = vks::initializers::InitImageCreateInfo();
+	VkImageCreateInfo imageCreateInfo = InitImageCreateInfo();
 	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 	imageCreateInfo.format = format;
 	imageCreateInfo.mipLevels = mipLevels;
@@ -525,14 +525,14 @@ void Texture2DArray::loadFromFile(
 	layerCount = static_cast<uint32_t>(tex2DArray.layers());
 	mipLevels = static_cast<uint32_t>(tex2DArray.levels());
 
-	VkMemoryAllocateInfo memAllocInfo = vks::initializers::InitMemoryAllocateInfo();
+	VkMemoryAllocateInfo memAllocInfo = InitMemoryAllocateInfo();
 	VkMemoryRequirements memReqs;
 
 	// Create a host-visible staging buffer that contains the raw image data
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingMemory;
 
-	VkBufferCreateInfo bufferCreateInfo = vks::initializers::bufferCreateInfo();
+	VkBufferCreateInfo bufferCreateInfo = InitBufferCreateInfo();
 	bufferCreateInfo.size = tex2DArray.size();
 	// This buffer is used as a transfer source for the buffer copy
 	bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -582,7 +582,7 @@ void Texture2DArray::loadFromFile(
 	}
 
 	// Create optimal tiled target image
-	VkImageCreateInfo imageCreateInfo = vks::initializers::InitImageCreateInfo();
+	VkImageCreateInfo imageCreateInfo = InitImageCreateInfo();
 	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 	imageCreateInfo.format = format;
 	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -650,7 +650,7 @@ void Texture2DArray::loadFromFile(
 	device->flushCommandBuffer(copyCmd, copyQueue);
 
 	// Create sampler
-	VkSamplerCreateInfo samplerCreateInfo = vks::initializers::InitSamplerCreateInfo();
+	VkSamplerCreateInfo samplerCreateInfo = InitSamplerCreateInfo();
 	samplerCreateInfo.magFilter = VK_FILTER_LINEAR;
 	samplerCreateInfo.minFilter = VK_FILTER_LINEAR;
 	samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
@@ -666,7 +666,7 @@ void Texture2DArray::loadFromFile(
 	VK_CHECK_RESULT(vkCreateSampler(device->logicalDevice, &samplerCreateInfo, nullptr, &sampler));
 
 	// Create image view
-	VkImageViewCreateInfo viewCreateInfo = vks::initializers::InitImageViewCreateInfo();
+	VkImageViewCreateInfo viewCreateInfo = InitImageViewCreateInfo();
 	viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 	viewCreateInfo.format = format;
 	viewCreateInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
@@ -719,14 +719,14 @@ void TextureCubeMap::loadFromFile(
 	height = static_cast<uint32_t>(texCube.extent().y);
 	mipLevels = static_cast<uint32_t>(texCube.levels());
 
-	VkMemoryAllocateInfo memAllocInfo = vks::initializers::InitMemoryAllocateInfo();
+	VkMemoryAllocateInfo memAllocInfo = InitMemoryAllocateInfo();
 	VkMemoryRequirements memReqs;
 
 	// Create a host-visible staging buffer that contains the raw image data
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingMemory;
 
-	VkBufferCreateInfo bufferCreateInfo = vks::initializers::bufferCreateInfo();
+	VkBufferCreateInfo bufferCreateInfo = InitBufferCreateInfo();
 	bufferCreateInfo.size = texCube.size();
 	// This buffer is used as a transfer source for the buffer copy
 	bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -776,7 +776,7 @@ void TextureCubeMap::loadFromFile(
 	}
 
 	// Create optimal tiled target image
-	VkImageCreateInfo imageCreateInfo = vks::initializers::InitImageCreateInfo();
+	VkImageCreateInfo imageCreateInfo = InitImageCreateInfo();
 	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 	imageCreateInfo.format = format;
 	imageCreateInfo.mipLevels = mipLevels;
@@ -848,7 +848,7 @@ void TextureCubeMap::loadFromFile(
 	device->flushCommandBuffer(copyCmd, copyQueue);
 
 	// Create sampler
-	VkSamplerCreateInfo samplerCreateInfo = vks::initializers::InitSamplerCreateInfo();
+	VkSamplerCreateInfo samplerCreateInfo = InitSamplerCreateInfo();
 	samplerCreateInfo.magFilter = VK_FILTER_LINEAR;
 	samplerCreateInfo.minFilter = VK_FILTER_LINEAR;
 	samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
@@ -864,7 +864,7 @@ void TextureCubeMap::loadFromFile(
 	VK_CHECK_RESULT(vkCreateSampler(device->logicalDevice, &samplerCreateInfo, nullptr, &sampler));
 
 	// Create image view
-	VkImageViewCreateInfo viewCreateInfo = vks::initializers::InitImageViewCreateInfo();
+	VkImageViewCreateInfo viewCreateInfo = InitImageViewCreateInfo();
 	viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
 	viewCreateInfo.format = format;
 	viewCreateInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
