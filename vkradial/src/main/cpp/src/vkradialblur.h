@@ -68,10 +68,10 @@ public:
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
     } vertices;
 
-    struct {
-        VksBuffer scene;
-        VksBuffer blurParams;
-    } uniformBuffers;
+
+	VksBuffer uniformBufferScene;
+	VksBuffer uniformBufferBlurParams;
+
 
     struct UboVS {
         glm::mat4 projection;
@@ -112,7 +112,7 @@ public:
         VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
         // Semaphore used to synchronize between offscreen and final scene render pass
         VkSemaphore semaphore = VK_NULL_HANDLE;
-    } offscreenPass;
+    } mOffscreenPass;
 
 private:	
 	// fps timer (one second interval)
@@ -165,7 +165,7 @@ protected:
 	/** @brief Pipeline stages used to wait at for graphics queue submissions */
 	VkPipelineStageFlags submitPipelineStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	// Contains command buffers and semaphores to be presented to the queue
-	VkSubmitInfo submitInfo;
+	VkSubmitInfo mSubmitInfo;
 	// Command buffers used for rendering
 	std::vector<VkCommandBuffer> drawCmdBuffers;
 	// Global render pass for frame buffer writes
@@ -400,15 +400,6 @@ public:
 	void renderLoop();
 
 	void updateTextOverlay();
-
-	// Called when the text overlay is updating
-	// Can be overriden in derived class to add custom text to the overlay
-	virtual void getOverlayText(VulkanTextOverlay * textOverlay);
-
-	// Prepare the frame for workload submission
-	// - Acquires the next image from the swap chain 
-	// - Sets the default wait and signal semaphores
-	void prepareFrame();
 
 	// Submit the frames' workload 
 	// - Submits the text overlay (if enabled)

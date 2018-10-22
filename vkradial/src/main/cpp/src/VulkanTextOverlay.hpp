@@ -64,7 +64,7 @@ private:
 	VkPipeline pipeline;
 	VkRenderPass renderPass;
 	VkCommandPool commandPool;
-	std::vector<VkFramebuffer*> frameBuffers;
+	std::vector<VkFramebuffer*> mFrameBuffers;
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 	VkFence fence;
 
@@ -81,9 +81,9 @@ public:
 	bool visible = true;
 	bool invalidated = false;
 
-	float scale = 1.0f;
+	float scale = 2.0f;
 
-	std::vector<VkCommandBuffer> cmdBuffers;
+	std::vector<VkCommandBuffer> mCmdBuffers;
 
 	/**
 	* Default constructor
