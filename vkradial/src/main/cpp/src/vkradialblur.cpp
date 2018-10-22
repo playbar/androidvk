@@ -678,16 +678,16 @@ VKRadialBlur::~VKRadialBlur()
 	vkDestroySampler(device, offscreenPass.sampler, nullptr);
 	vkDestroyFramebuffer(device, offscreenPass.frameBuffer, nullptr);
 
-	vkDestroyPipeline(device, pipelines.radialBlur, nullptr);
+	vkDestroyPipeline(device, mRadialBlur.mPipeLine, nullptr);
 	vkDestroyPipeline(device, pipelines.phongPass, nullptr);
 	vkDestroyPipeline(device, pipelines.colorPass, nullptr);
 	vkDestroyPipeline(device, pipelines.offscreenDisplay, nullptr);
 
-	vkDestroyPipelineLayout(device, pipelineLayouts.radialBlur, nullptr);
+	vkDestroyPipelineLayout(device, mRadialBlur.mPipeLayout, nullptr);
 	vkDestroyPipelineLayout(device, pipelineLayouts.scene, nullptr);
 
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayouts.scene, nullptr);
-	vkDestroyDescriptorSetLayout(device, descriptorSetLayouts.radialBlur, nullptr);
+	vkDestroyDescriptorSetLayout(device, mRadialBlur.mDescritptorSetLayout, nullptr);
 
 	mModels.destroy();
 
@@ -2391,8 +2391,8 @@ void VKRadialBlur::buildCommandBuffers()
 		// Fullscreen triangle (clipped to a quad) with radial blur
 		if (mBlur)
 		{
-			vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayouts.radialBlur, 0, 1, &descriptorSets.radialBlur, 0, NULL);
-			vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, (mDisplayTexture) ? pipelines.offscreenDisplay : pipelines.radialBlur);
+			vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mRadialBlur.mPipeLayout, 0, 1, &mRadialBlur.mDescriptorSet, 0, NULL);
+			vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, (mDisplayTexture) ? pipelines.offscreenDisplay : mRadialBlur.mPipeLine);
 			vkCmdDraw(drawCmdBuffers[i], 3, 1, 0, 0);
 		}
 
@@ -2523,10 +2523,10 @@ void VKRadialBlur::setupDescriptorSetLayout()
 			};
 	descriptorLayout = InitDescriptorSetLayoutCreateInfo(
 			setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
-	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &descriptorLayout, nullptr, &descriptorSetLayouts.radialBlur));
+	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &descriptorLayout, nullptr, &mRadialBlur.mDescritptorSetLayout));
 	pPipelineLayoutCreateInfo = InitPipelineLayoutCreateInfo(
-			&descriptorSetLayouts.radialBlur, 1);
-	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pPipelineLayoutCreateInfo, nullptr, &pipelineLayouts.radialBlur));
+			&mRadialBlur.mDescritptorSetLayout, 1);
+	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pPipelineLayoutCreateInfo, nullptr, &mRadialBlur.mPipeLayout));
 }
 
 void VKRadialBlur::setupDescriptorSet()
@@ -2558,21 +2558,21 @@ void VKRadialBlur::setupDescriptorSet()
 
 	// Fullscreen radial blur
 	descriptorSetAllocInfo = InitDescriptorSetAllocateInfo(descriptorPool,
-																			  &descriptorSetLayouts.radialBlur,
+																			  &mRadialBlur.mDescritptorSetLayout,
 																			  1);
-	VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &descriptorSetAllocInfo, &descriptorSets.radialBlur));
+	VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &descriptorSetAllocInfo, &mRadialBlur.mDescriptorSet));
 
 	std::vector<VkWriteDescriptorSet> writeDescriptorSets =
 			{
 					// Binding 0: Vertex shader uniform buffer
 					InitWriteDescriptorSet(
-							descriptorSets.radialBlur,
+							mRadialBlur.mDescriptorSet,
 							VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 							0,
 							&uniformBuffers.blurParams.mDescriptor),
 					// Binding 0: Fragment shader texture sampler
 					InitWriteDescriptorSet(
-							descriptorSets.radialBlur,
+							mRadialBlur.mDescriptorSet,
 							VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 							1,
 							&offscreenPass.descriptor),
@@ -2634,7 +2634,7 @@ void VKRadialBlur::preparePipelines()
 
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo =
 			InitPipelineCreateInfo(
-					pipelineLayouts.radialBlur,
+					mRadialBlur.mPipeLayout,
 					renderPass,
 					0);
 
@@ -2654,7 +2654,7 @@ void VKRadialBlur::preparePipelines()
 	// Empty vertex input state
 	VkPipelineVertexInputStateCreateInfo emptyInputState = InitPipelineVertexInputStateCreateInfo();
 	pipelineCreateInfo.pVertexInputState = &emptyInputState;
-	pipelineCreateInfo.layout = pipelineLayouts.radialBlur;
+	pipelineCreateInfo.layout = mRadialBlur.mPipeLayout;
 	// Additive blending
 	blendAttachmentState.colorWriteMask = 0xF;
 	blendAttachmentState.blendEnable = VK_TRUE;
@@ -2664,7 +2664,7 @@ void VKRadialBlur::preparePipelines()
 	blendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
 	blendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
 	blendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_DST_ALPHA;
-	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, VksPipeLine::mPipelineCache, 1, &pipelineCreateInfo, nullptr, &pipelines.radialBlur));
+	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, VksPipeLine::mPipelineCache, 1, &pipelineCreateInfo, nullptr, &mRadialBlur.mPipeLine));
 
 	// No blending (for debug display)
 	blendAttachmentState.blendEnable = VK_FALSE;

@@ -34,6 +34,7 @@ add_library(vkvulkan SHARED
             src/vkradialblur.cpp
             src/VulkanModel.cpp
             src/VulkanPipeLine.cpp
+            src/VulkanSwapChain.cpp
             src/VulkanTextOverlay.cpp
             src/VulkanTexture.cpp
             src/VulkanTools.cpp

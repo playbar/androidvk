@@ -43,6 +43,7 @@
 #include "VulkanTextOverlay.hpp"
 #include "VulkanTexture.hpp"
 #include "VulkanTools.h"
+#include "VulkanPipeLine.h"
 
 class VKRadialBlur
 {
@@ -85,26 +86,28 @@ public:
     } uboBlurParams;
 
     struct {
-        VkPipeline radialBlur;
+//        VkPipeline radialBlur;
         VkPipeline colorPass;
         VkPipeline phongPass;
         VkPipeline offscreenDisplay;
     } pipelines;
 
     struct {
-        VkPipelineLayout radialBlur;
+//        VkPipelineLayout radialBlur;
         VkPipelineLayout scene;
     } pipelineLayouts;
 
     struct {
         VkDescriptorSet scene;
-        VkDescriptorSet radialBlur;
+//        VkDescriptorSet radialBlur;
     } descriptorSets;
 
     struct {
         VkDescriptorSetLayout scene;
-        VkDescriptorSetLayout radialBlur;
+//        VkDescriptorSetLayout radialBlur;
     } descriptorSetLayouts;
+
+	VksPipeLine mRadialBlur;
 
     // Framebuffer for offscreen rendering
     struct FrameBufferAttachment {
