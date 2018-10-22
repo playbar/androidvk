@@ -166,7 +166,7 @@ protected:
 	// Contains command buffers and semaphores to be presented to the queue
 	VkSubmitInfo mSubmitInfo;
 	// Command buffers used for rendering
-	std::vector<VkCommandBuffer> drawCmdBuffers;
+	std::vector<VkCommandBuffer> mDrawCmdBuffers;
 	// Global render pass for frame buffer writes
 	VkRenderPass renderPass;
 	// List of available frame buffers (same as number of swap chain images)
@@ -181,14 +181,14 @@ protected:
 	// Wraps the swap chain to present images (framebuffers) to the windowing system
 	VulkanSwapChain mSwapChain;
 	// Synchronization semaphores
-	struct {
-		// Swap chain image presentation
-		VkSemaphore presentComplete;
-		// Command buffer submission and execution
-		VkSemaphore renderComplete;
-		// Text overlay submission and execution
-		VkSemaphore textOverlayComplete;
-	} semaphores;
+
+	// Swap chain image presentation
+	VkSemaphore mPresentComplete;
+	// Command buffer submission and execution
+	VkSemaphore mRenderComplete;
+	// Text overlay submission and execution
+	VkSemaphore mTextOverlayComplete;
+
 	// Simple texture loader
 	//vks::tools::VulkanTextureLoader *textureLoader = nullptr;
 	// Returns the base asset path (for shaders, models, textures) depending on the os
@@ -344,9 +344,7 @@ public:
 	// Called if a key is pressed
 	// Can be overriden in derived class to do custom key handling
 	virtual void keyPressed(uint32_t keyCode);
-	// Called when the window has been resized
-	// Can be overriden in derived class to recreate or rebuild resources attached to the frame buffer / swapchain
-	virtual void windowResized();
+
 	// Pure virtual function to be overriden by the dervice class
 	// Called in case of an event where e.g. the framebuffer has to be rebuild and thus
 	// all command buffers that may reference this
@@ -362,9 +360,6 @@ public:
 	// Setup a default render pass
 	// Can be overriden in derived class to setup a custom render pass (e.g. for MSAA)
 	virtual void setupRenderPass();
-
-	/** @brief (Virtual) called after the physical device features have been read, used to set features to enable on the device */
-	virtual void getEnabledFeatures();
 
 	// Connect and prepare the swap chain
 	void initSwapchain();

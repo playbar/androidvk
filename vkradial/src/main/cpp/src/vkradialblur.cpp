@@ -81,7 +81,7 @@ const std::string VKRadialBlur::getAssetPath()
 
 bool VKRadialBlur::checkCommandBuffers()
 {
-	for (auto& cmdBuffer : drawCmdBuffers)
+	for (auto& cmdBuffer : mDrawCmdBuffers)
 	{
 		if (cmdBuffer == VK_NULL_HANDLE)
 		{
@@ -94,20 +94,20 @@ bool VKRadialBlur::checkCommandBuffers()
 void VKRadialBlur::createCommandBuffers()
 {
 	// Create one command buffer for each swap chain image and reuse for rendering
-	drawCmdBuffers.resize(mSwapChain.mImageCount);
+    mDrawCmdBuffers.resize(mSwapChain.mImageCount);
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
 			InitCommandBufferAllocateInfo(
 					cmdPool,
 					VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-					static_cast<uint32_t>(drawCmdBuffers.size()));
+					static_cast<uint32_t>(mDrawCmdBuffers.size()));
 
-	VK_CHECK_RESULT(vkAllocateCommandBuffers(mVulkanDevice->mLogicalDevice, &cmdBufAllocateInfo, drawCmdBuffers.data()));
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(mVulkanDevice->mLogicalDevice, &cmdBufAllocateInfo, mDrawCmdBuffers.data()));
 }
 
 void VKRadialBlur::destroyCommandBuffers()
 {
-	vkFreeCommandBuffers(mVulkanDevice->mLogicalDevice, cmdPool, static_cast<uint32_t>(drawCmdBuffers.size()), drawCmdBuffers.data());
+	vkFreeCommandBuffers(mVulkanDevice->mLogicalDevice, cmdPool, static_cast<uint32_t>(mDrawCmdBuffers.size()), mDrawCmdBuffers.data());
 }
 
 VkCommandBuffer VKRadialBlur::createCommandBuffer(VkCommandBufferLevel level, bool begin)
@@ -382,10 +382,10 @@ void VKRadialBlur::submitFrame()
 		// Set semaphores
 		// Wait for render complete semaphore
 		mSubmitInfo.waitSemaphoreCount = 1;
-		mSubmitInfo.pWaitSemaphores = &semaphores.renderComplete;
+		mSubmitInfo.pWaitSemaphores = &mRenderComplete;
 		// Signal ready with text overlay complete semaphpre
 		mSubmitInfo.signalSemaphoreCount = 1;
-		mSubmitInfo.pSignalSemaphores = &semaphores.textOverlayComplete;
+		mSubmitInfo.pSignalSemaphores = &mTextOverlayComplete;
 
 		// Submit current text overlay command buffer
 		mSubmitInfo.commandBufferCount = 1;
@@ -397,13 +397,14 @@ void VKRadialBlur::submitFrame()
 		// Reset wait and signal semaphores for rendering next frame
 		// Wait for swap chain presentation to finish
 		mSubmitInfo.waitSemaphoreCount = 1;
-		mSubmitInfo.pWaitSemaphores = &semaphores.presentComplete;
+		mSubmitInfo.pWaitSemaphores = &mPresentComplete;
 		// Signal ready with offscreen semaphore
 		mSubmitInfo.signalSemaphoreCount = 1;
-		mSubmitInfo.pSignalSemaphores = &semaphores.renderComplete;
+		mSubmitInfo.pSignalSemaphores = &mRenderComplete;
 	}
 
-	VK_CHECK_RESULT(mSwapChain.queuePresent(mQueue, currentBuffer, submitTextOverlay ? semaphores.textOverlayComplete : semaphores.renderComplete));
+	VK_CHECK_RESULT(mSwapChain.queuePresent(mQueue, currentBuffer,
+											submitTextOverlay ? mTextOverlayComplete : mRenderComplete));
 
 	VK_CHECK_RESULT(vkQueueWaitIdle(mQueue));
 }
@@ -519,9 +520,9 @@ VKRadialBlur::~VKRadialBlur()
 
 	vkDestroyCommandPool(mVulkanDevice->mLogicalDevice, cmdPool, nullptr);
 
-	vkDestroySemaphore(mVulkanDevice->mLogicalDevice, semaphores.presentComplete, nullptr);
-	vkDestroySemaphore(mVulkanDevice->mLogicalDevice, semaphores.renderComplete, nullptr);
-	vkDestroySemaphore(mVulkanDevice->mLogicalDevice, semaphores.textOverlayComplete, nullptr);
+	vkDestroySemaphore(mVulkanDevice->mLogicalDevice, mPresentComplete, nullptr);
+	vkDestroySemaphore(mVulkanDevice->mLogicalDevice, mRenderComplete, nullptr);
+	vkDestroySemaphore(mVulkanDevice->mLogicalDevice, mTextOverlayComplete, nullptr);
 
 	if (enableTextOverlay)
 	{
@@ -591,9 +592,6 @@ void VKRadialBlur::initVulkan()
 	vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
 	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &deviceMemoryProperties);
 
-	// Derived examples can override this to set actual features (based on above readings) to enable for logical device creation
-	getEnabledFeatures();
-
 	// Vulkan device creation
 	// This is handled by a separate class that gets a logical device representation
 	// and encapsulates functions related to a device
@@ -616,14 +614,14 @@ void VKRadialBlur::initVulkan()
 	VkSemaphoreCreateInfo semaphoreCreateInfo = InitSemaphoreCreateInfo();
 	// Create a semaphore used to synchronize image presentation
 	// Ensures that the image is displayed before we start submitting new commands to the queu
-	VK_CHECK_RESULT(vkCreateSemaphore(mVulkanDevice->mLogicalDevice, &semaphoreCreateInfo, nullptr, &semaphores.presentComplete));
+	VK_CHECK_RESULT(vkCreateSemaphore(mVulkanDevice->mLogicalDevice, &semaphoreCreateInfo, nullptr, &mPresentComplete));
 	// Create a semaphore used to synchronize command submission
 	// Ensures that the image is not presented until all commands have been sumbitted and executed
-	VK_CHECK_RESULT(vkCreateSemaphore(mVulkanDevice->mLogicalDevice, &semaphoreCreateInfo, nullptr, &semaphores.renderComplete));
+	VK_CHECK_RESULT(vkCreateSemaphore(mVulkanDevice->mLogicalDevice, &semaphoreCreateInfo, nullptr, &mRenderComplete));
 	// Create a semaphore used to synchronize command submission
 	// Ensures that the image is not presented until all commands for the text overlay have been sumbitted and executed
 	// Will be inserted after the render complete semaphore if the text overlay is enabled
-	VK_CHECK_RESULT(vkCreateSemaphore(mVulkanDevice->mLogicalDevice, &semaphoreCreateInfo, nullptr, &semaphores.textOverlayComplete));
+	VK_CHECK_RESULT(vkCreateSemaphore(mVulkanDevice->mLogicalDevice, &semaphoreCreateInfo, nullptr, &mTextOverlayComplete));
 
 	// Set up submit info structure
 	// Semaphores will stay the same during application lifetime
@@ -631,9 +629,9 @@ void VKRadialBlur::initVulkan()
 	mSubmitInfo = InitSubmitInfo();
 	mSubmitInfo.pWaitDstStageMask = &submitPipelineStages;
 	mSubmitInfo.waitSemaphoreCount = 1;
-	mSubmitInfo.pWaitSemaphores = &semaphores.presentComplete;
+	mSubmitInfo.pWaitSemaphores = &mPresentComplete;
 	mSubmitInfo.signalSemaphoreCount = 1;
-	mSubmitInfo.pSignalSemaphores = &semaphores.renderComplete;
+	mSubmitInfo.pSignalSemaphores = &mRenderComplete;
 
 #if defined(__ANDROID__)
 	// Get Android device name and manufacturer (to display along GPU name)
@@ -975,11 +973,6 @@ void VKRadialBlur::setupRenderPass()
 	VK_CHECK_RESULT(vkCreateRenderPass(mVulkanDevice->mLogicalDevice, &renderPassInfo, nullptr, &renderPass));
 }
 
-void VKRadialBlur::getEnabledFeatures()
-{
-	// Can be overriden in derived class
-}
-
 void VKRadialBlur::windowResize()
 {
 	if (!prepared)
@@ -1025,16 +1018,9 @@ void VKRadialBlur::windowResize()
 
 	camera.updateAspectRatio((float)width / (float)height);
 
-	// Notify derived class
-	windowResized();
 	viewChanged();
 
 	prepared = true;
-}
-
-void VKRadialBlur::windowResized()
-{
-	// Can be overriden in derived class
 }
 
 void VKRadialBlur::initSwapchain()
@@ -1308,39 +1294,39 @@ void VKRadialBlur::buildCommandBuffers()
 	renderPassBeginInfo.pClearValues = clearValues;
 
 
-	for (int32_t i = 0; i < drawCmdBuffers.size(); ++i)
+	for (int32_t i = 0; i < mDrawCmdBuffers.size(); ++i)
 	{
         renderPassBeginInfo.framebuffer = mFrameBuffers[i];
-        VK_CHECK_RESULT(vkBeginCommandBuffer(drawCmdBuffers[i], &cmdBufInfo));
-        vkCmdBeginRenderPass(drawCmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+        VK_CHECK_RESULT(vkBeginCommandBuffer(mDrawCmdBuffers[i], &cmdBufInfo));
+        vkCmdBeginRenderPass(mDrawCmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         VkViewport viewport = InitViewport((float)width, (float)height, 0.0f, 1.0f);
-        vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
+        vkCmdSetViewport(mDrawCmdBuffers[i], 0, 1, &viewport);
 
         VkRect2D scissor = InitRect2D(width, height, 0, 0);
-        vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);
+        vkCmdSetScissor(mDrawCmdBuffers[i], 0, 1, &scissor);
 
 		VkDeviceSize offsets[1] = { 0 };
 
 		// 3D scene
-		vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mDescriptorSet, 0, NULL);
-		vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeLinePhong);
+		vkCmdBindDescriptorSets(mDrawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mDescriptorSet, 0, NULL);
+		vkCmdBindPipeline(mDrawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeLinePhong);
 
-		vkCmdBindVertexBuffers(drawCmdBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &mModels.vertices.mBuffer, offsets);
-		vkCmdBindIndexBuffer(drawCmdBuffers[i], mModels.indices.mBuffer, 0, VK_INDEX_TYPE_UINT32);
-		vkCmdDrawIndexed(drawCmdBuffers[i], mModels.indexCount, 1, 0, 0, 0);
+		vkCmdBindVertexBuffers(mDrawCmdBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &mModels.vertices.mBuffer, offsets);
+		vkCmdBindIndexBuffer(mDrawCmdBuffers[i], mModels.indices.mBuffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdDrawIndexed(mDrawCmdBuffers[i], mModels.indexCount, 1, 0, 0, 0);
 
 		// Fullscreen triangle (clipped to a quad) with radial blur
 		if (mBlur)
 		{
-			vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mRadialBlur.mPipeLayout, 0, 1, &mRadialBlur.mDescriptorSet, 0, NULL);
-			vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, (mDisplayTexture) ? mPipeLineOffscreenDisplay : mRadialBlur.mPipeLine);
-			vkCmdDraw(drawCmdBuffers[i], 3, 1, 0, 0);
+			vkCmdBindDescriptorSets(mDrawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mRadialBlur.mPipeLayout, 0, 1, &mRadialBlur.mDescriptorSet, 0, NULL);
+			vkCmdBindPipeline(mDrawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, (mDisplayTexture) ? mPipeLineOffscreenDisplay : mRadialBlur.mPipeLine);
+			vkCmdDraw(mDrawCmdBuffers[i], 3, 1, 0, 0);
 		}
 
-		vkCmdEndRenderPass(drawCmdBuffers[i]);
+		vkCmdEndRenderPass(mDrawCmdBuffers[i]);
 
-		VK_CHECK_RESULT(vkEndCommandBuffer(drawCmdBuffers[i]));
+		VK_CHECK_RESULT(vkEndCommandBuffer(mDrawCmdBuffers[i]));
 	}
 
 
@@ -1476,9 +1462,7 @@ void VKRadialBlur::setupDescriptorSet()
 	VkDescriptorSetAllocateInfo descriptorSetAllocInfo;
 
 	// Scene rendering
-	descriptorSetAllocInfo = InitDescriptorSetAllocateInfo(descriptorPool,
-																			  &mDescriptorSetLayout,
-																			  1);
+	descriptorSetAllocInfo = InitDescriptorSetAllocateInfo(descriptorPool, &mDescriptorSetLayout, 1);
 	VK_CHECK_RESULT(vkAllocateDescriptorSets(mVulkanDevice->mLogicalDevice, &descriptorSetAllocInfo, &mDescriptorSet));
 
 	std::vector<VkWriteDescriptorSet> offScreenWriteDescriptorSets =
@@ -1503,20 +1487,16 @@ void VKRadialBlur::setupDescriptorSet()
 	VK_CHECK_RESULT(vkAllocateDescriptorSets(mVulkanDevice->mLogicalDevice, &descriptorSetAllocInfo, &mRadialBlur.mDescriptorSet));
 
 	std::vector<VkWriteDescriptorSet> writeDescriptorSets =
-			{
-					// Binding 0: Vertex shader uniform buffer
-					InitWriteDescriptorSet(
-							mRadialBlur.mDescriptorSet,
-							VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-							0,
-							&uniformBufferBlurParams.mDescriptor),
-					// Binding 0: Fragment shader texture sampler
-					InitWriteDescriptorSet(
-							mRadialBlur.mDescriptorSet,
-							VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-							1,
-							&mOffscreenPass.descriptor),
-			};
+            {
+                    // Binding 0: Vertex shader uniform buffer
+                    InitWriteDescriptorSet(mRadialBlur.mDescriptorSet,
+                                           VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0,
+                                           &uniformBufferBlurParams.mDescriptor),
+                    // Binding 0: Fragment shader texture sampler
+                    InitWriteDescriptorSet(mRadialBlur.mDescriptorSet,
+                                           VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1,
+                                           &mOffscreenPass.descriptor),
+            };
 
 	vkUpdateDescriptorSets(mVulkanDevice->mLogicalDevice, writeDescriptorSets.size(), writeDescriptorSets.data(), 0, NULL);
 }
@@ -1676,12 +1656,12 @@ void VKRadialBlur::updateUniformBuffersScene()
 void VKRadialBlur::draw()
 {
 	// Acquire the next image from the swap chaing
-	VK_CHECK_RESULT(mSwapChain.acquireNextImage(semaphores.presentComplete, &currentBuffer));
+	VK_CHECK_RESULT(mSwapChain.acquireNextImage(mPresentComplete, &currentBuffer));
 
 	// Offscreen rendering
 
 	// Wait for swap chain presentation to finish
-	mSubmitInfo.pWaitSemaphores = &semaphores.presentComplete;
+	mSubmitInfo.pWaitSemaphores = &mPresentComplete;
 	// Signal ready with offscreen semaphore
 	mSubmitInfo.pSignalSemaphores = &mOffscreenPass.semaphore;
 
@@ -1695,10 +1675,10 @@ void VKRadialBlur::draw()
 	// Wait for offscreen semaphore
 	mSubmitInfo.pWaitSemaphores = &mOffscreenPass.semaphore;
 	// Signal ready with render complete semaphpre
-	mSubmitInfo.pSignalSemaphores = &semaphores.renderComplete;
+	mSubmitInfo.pSignalSemaphores = &mRenderComplete;
 
 	// Submit work
-	mSubmitInfo.pCommandBuffers = &drawCmdBuffers[currentBuffer];
+	mSubmitInfo.pCommandBuffers = &mDrawCmdBuffers[currentBuffer];
 	VK_CHECK_RESULT(vkQueueSubmit(mQueue, 1, &mSubmitInfo, VK_NULL_HANDLE));
 
 	submitFrame();
