@@ -85,27 +85,13 @@ public:
         glm::vec2 radialOrigin = glm::vec2(0.5f, 0.5f);
     } uboBlurParams;
 
-    struct {
-//        VkPipeline radialBlur;
-        VkPipeline colorPass;
-        VkPipeline phongPass;
-        VkPipeline offscreenDisplay;
-    } pipelines;
 
-    struct {
-//        VkPipelineLayout radialBlur;
-        VkPipelineLayout scene;
-    } pipelineLayouts;
-
-    struct {
-        VkDescriptorSet scene;
-//        VkDescriptorSet radialBlur;
-    } descriptorSets;
-
-    struct {
-        VkDescriptorSetLayout scene;
-//        VkDescriptorSetLayout radialBlur;
-    } descriptorSetLayouts;
+	VkPipeline mPipeLineColor;
+	VkPipeline mPipeLinePhong;
+	VkPipeline mPipeLineOffscreenDisplay;
+	VkPipelineLayout mPipelineLayout;
+	VkDescriptorSet mDescriptorSet;
+	VkDescriptorSetLayout mDescriptorSetLayout;
 
 	VksPipeLine mRadialBlur;
 
@@ -116,7 +102,8 @@ public:
         VkImageView view;
     };
     struct OffscreenPass {
-        int32_t width, height;
+        int32_t width;
+        int32_t height;
         VkFramebuffer frameBuffer;
         FrameBufferAttachment color, depth;
         VkRenderPass renderPass;
@@ -193,7 +180,7 @@ protected:
 	std::vector<VkShaderModule> shaderModules;
 
 	// Wraps the swap chain to present images (framebuffers) to the windowing system
-	VulkanSwapChain swapChain;
+	VulkanSwapChain mSwapChain;
 	// Synchronization semaphores
 	struct {
 		// Swap chain image presentation
