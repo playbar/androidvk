@@ -102,12 +102,12 @@ void VKRadialBlur::createCommandBuffers()
 					VK_COMMAND_BUFFER_LEVEL_PRIMARY,
 					static_cast<uint32_t>(drawCmdBuffers.size()));
 
-	VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, drawCmdBuffers.data()));
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(mVulkanDevice->mLogicalDevice, &cmdBufAllocateInfo, drawCmdBuffers.data()));
 }
 
 void VKRadialBlur::destroyCommandBuffers()
 {
-	vkFreeCommandBuffers(device, cmdPool, static_cast<uint32_t>(drawCmdBuffers.size()), drawCmdBuffers.data());
+	vkFreeCommandBuffers(mVulkanDevice->mLogicalDevice, cmdPool, static_cast<uint32_t>(drawCmdBuffers.size()), drawCmdBuffers.data());
 }
 
 VkCommandBuffer VKRadialBlur::createCommandBuffer(VkCommandBufferLevel level, bool begin)
@@ -116,7 +116,7 @@ VkCommandBuffer VKRadialBlur::createCommandBuffer(VkCommandBufferLevel level, bo
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo = InitCommandBufferAllocateInfo(cmdPool, level, 1);
 
-	VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, &cmdBuffer));
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(mVulkanDevice->mLogicalDevice, &cmdBufAllocateInfo, &cmdBuffer));
 
 	// If requested, also start the new command buffer
 	if (begin)
@@ -147,7 +147,7 @@ void VKRadialBlur::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue que
 
 	if (free)
 	{
-		vkFreeCommandBuffers(device, cmdPool, 1, &commandBuffer);
+		vkFreeCommandBuffers(mVulkanDevice->mLogicalDevice, cmdPool, 1, &commandBuffer);
 	}
 }
 
@@ -155,14 +155,14 @@ void VKRadialBlur::createPipelineCache()
 {
 	VkPipelineCacheCreateInfo pipelineCacheCreateInfo = {};
 	pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-	VK_CHECK_RESULT(vkCreatePipelineCache(device, &pipelineCacheCreateInfo, nullptr, &VksPipeLine::mPipelineCache));
+	VK_CHECK_RESULT(vkCreatePipelineCache(mVulkanDevice->mLogicalDevice, &pipelineCacheCreateInfo, nullptr, &VksPipeLine::mPipelineCache));
 }
 
 void VKRadialBlur::prepare()
 {
-	if (vulkanDevice->enableDebugMarkers)
+	if (mVulkanDevice->enableDebugMarkers)
 	{
-		DebugMarkerSetup(device);
+		DebugMarkerSetup(mVulkanDevice->mLogicalDevice);
 	}
 	createCommandPool();
 	setupSwapChain();
@@ -179,9 +179,9 @@ void VKRadialBlur::prepare()
 		shaderStages.push_back(loadShader(getAssetPath() + "shaders/base/textoverlay.vert.spv", VK_SHADER_STAGE_VERTEX_BIT));
 		shaderStages.push_back(loadShader(getAssetPath() + "shaders/base/textoverlay.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT));
 		textOverlay = new VulkanTextOverlay(
-			vulkanDevice,
-			queue,
-			frameBuffers,
+                mVulkanDevice,
+			mQueue,
+			mFrameBuffers,
 			mSwapChain.colorFormat,
 			depthFormat,
 			&width,
@@ -199,6 +199,7 @@ void VKRadialBlur::prepare()
 	preparePipelines();
 	setupDescriptorPool();
 	setupDescriptorSet();
+
 	buildCommandBuffers();
 	buildOffscreenCommandBuffer();
 	prepared = true;
@@ -211,10 +212,10 @@ VkPipelineShaderStageCreateInfo VKRadialBlur::loadShader(std::string fileName, V
 	shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	shaderStage.stage = stage;
 #if defined(__ANDROID__)
-	shaderStage.module = VksLoadShader(androidApp->activity->assetManager, fileName.c_str(), device,
+	shaderStage.module = VksLoadShader(androidApp->activity->assetManager, fileName.c_str(), mVulkanDevice->mLogicalDevice,
 									   stage);
 #else
-	shaderStage.module = loadShader(fileName.c_str(), device, stage);
+	shaderStage.module = loadShader(fileName.c_str(), mVulkanDevice->mLogicalDevice, stage);
 #endif
 	shaderStage.pName = "main"; // todo : make param
 	assert(shaderStage.module != VK_NULL_HANDLE);
@@ -338,7 +339,7 @@ void VKRadialBlur::renderLoop()
 	}
 
 	// Flush device to make sure all resources can be freed 
-	vkDeviceWaitIdle(device);
+	vkDeviceWaitIdle(mVulkanDevice->mLogicalDevice);
 }
 
 void VKRadialBlur::updateTextOverlay()
@@ -389,7 +390,7 @@ void VKRadialBlur::submitFrame()
 		// Submit current text overlay command buffer
 		mSubmitInfo.commandBufferCount = 1;
 		mSubmitInfo.pCommandBuffers = &textOverlay->mCmdBuffers[currentBuffer];
-		VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &mSubmitInfo, VK_NULL_HANDLE));
+		VK_CHECK_RESULT(vkQueueSubmit(mQueue, 1, &mSubmitInfo, VK_NULL_HANDLE));
 
 		// Reset stage mask
 		mSubmitInfo.pWaitDstStageMask = &submitPipelineStages;
@@ -402,9 +403,9 @@ void VKRadialBlur::submitFrame()
 		mSubmitInfo.pSignalSemaphores = &semaphores.renderComplete;
 	}
 
-	VK_CHECK_RESULT(mSwapChain.queuePresent(queue, currentBuffer, submitTextOverlay ? semaphores.textOverlayComplete : semaphores.renderComplete));
+	VK_CHECK_RESULT(mSwapChain.queuePresent(mQueue, currentBuffer, submitTextOverlay ? semaphores.textOverlayComplete : semaphores.renderComplete));
 
-	VK_CHECK_RESULT(vkQueueWaitIdle(queue));
+	VK_CHECK_RESULT(vkQueueWaitIdle(mQueue));
 }
 
 VKRadialBlur::VKRadialBlur(bool enableValidation)
@@ -458,37 +459,37 @@ VKRadialBlur::~VKRadialBlur()
 {
 
 	// Color attachment
-	vkDestroyImageView(device, mOffscreenPass.color.view, nullptr);
-	vkDestroyImage(device, mOffscreenPass.color.image, nullptr);
-	vkFreeMemory(device, mOffscreenPass.color.mem, nullptr);
+	vkDestroyImageView(mVulkanDevice->mLogicalDevice, mOffscreenPass.color.view, nullptr);
+	vkDestroyImage(mVulkanDevice->mLogicalDevice, mOffscreenPass.color.image, nullptr);
+	vkFreeMemory(mVulkanDevice->mLogicalDevice, mOffscreenPass.color.mem, nullptr);
 
 	// Depth attachment
-	vkDestroyImageView(device, mOffscreenPass.depth.view, nullptr);
-	vkDestroyImage(device, mOffscreenPass.depth.image, nullptr);
-	vkFreeMemory(device, mOffscreenPass.depth.mem, nullptr);
+	vkDestroyImageView(mVulkanDevice->mLogicalDevice, mOffscreenPass.depth.view, nullptr);
+	vkDestroyImage(mVulkanDevice->mLogicalDevice, mOffscreenPass.depth.image, nullptr);
+	vkFreeMemory(mVulkanDevice->mLogicalDevice, mOffscreenPass.depth.mem, nullptr);
 
-	vkDestroyRenderPass(device, mOffscreenPass.renderPass, nullptr);
-	vkDestroySampler(device, mOffscreenPass.sampler, nullptr);
-	vkDestroyFramebuffer(device, mOffscreenPass.frameBuffer, nullptr);
+	vkDestroyRenderPass(mVulkanDevice->mLogicalDevice, mOffscreenPass.renderPass, nullptr);
+	vkDestroySampler(mVulkanDevice->mLogicalDevice, mOffscreenPass.sampler, nullptr);
+	vkDestroyFramebuffer(mVulkanDevice->mLogicalDevice, mOffscreenPass.frameBuffer, nullptr);
 
-	vkDestroyPipeline(device, mRadialBlur.mPipeLine, nullptr);
-	vkDestroyPipeline(device, mPipeLinePhong, nullptr);
-	vkDestroyPipeline(device, mPipeLineColor, nullptr);
-	vkDestroyPipeline(device, mPipeLineOffscreenDisplay, nullptr);
+	vkDestroyPipeline(mVulkanDevice->mLogicalDevice, mRadialBlur.mPipeLine, nullptr);
+	vkDestroyPipeline(mVulkanDevice->mLogicalDevice, mPipeLinePhong, nullptr);
+	vkDestroyPipeline(mVulkanDevice->mLogicalDevice, mPipeLineColor, nullptr);
+	vkDestroyPipeline(mVulkanDevice->mLogicalDevice, mPipeLineOffscreenDisplay, nullptr);
 
-	vkDestroyPipelineLayout(device, mRadialBlur.mPipeLayout, nullptr);
-	vkDestroyPipelineLayout(device, mPipelineLayout, nullptr);
+	vkDestroyPipelineLayout(mVulkanDevice->mLogicalDevice, mRadialBlur.mPipeLayout, nullptr);
+	vkDestroyPipelineLayout(mVulkanDevice->mLogicalDevice, mPipelineLayout, nullptr);
 
-	vkDestroyDescriptorSetLayout(device, mDescriptorSetLayout, nullptr);
-	vkDestroyDescriptorSetLayout(device, mRadialBlur.mDescritptorSetLayout, nullptr);
+	vkDestroyDescriptorSetLayout(mVulkanDevice->mLogicalDevice, mDescriptorSetLayout, nullptr);
+	vkDestroyDescriptorSetLayout(mVulkanDevice->mLogicalDevice, mRadialBlur.mDescritptorSetLayout, nullptr);
 
 	mModels.destroy();
 
 	uniformBufferScene.destroy();
 	uniformBufferBlurParams.destroy();
 
-	vkFreeCommandBuffers(device, cmdPool, 1, &mOffscreenPass.commandBuffer);
-	vkDestroySemaphore(device, mOffscreenPass.semaphore, nullptr);
+	vkFreeCommandBuffers(mVulkanDevice->mLogicalDevice, cmdPool, 1, &mOffscreenPass.commandBuffer);
+	vkDestroySemaphore(mVulkanDevice->mLogicalDevice, mOffscreenPass.semaphore, nullptr);
 
 	mTextures.destroy();
 
@@ -497,37 +498,37 @@ VKRadialBlur::~VKRadialBlur()
 	mSwapChain.cleanup();
 	if (descriptorPool != VK_NULL_HANDLE)
 	{
-		vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+		vkDestroyDescriptorPool(mVulkanDevice->mLogicalDevice, descriptorPool, nullptr);
 	}
 	destroyCommandBuffers();
-	vkDestroyRenderPass(device, renderPass, nullptr);
-	for (uint32_t i = 0; i < frameBuffers.size(); i++)
+	vkDestroyRenderPass(mVulkanDevice->mLogicalDevice, renderPass, nullptr);
+	for (uint32_t i = 0; i < mFrameBuffers.size(); i++)
 	{
-		vkDestroyFramebuffer(device, frameBuffers[i], nullptr);
+		vkDestroyFramebuffer(mVulkanDevice->mLogicalDevice, mFrameBuffers[i], nullptr);
 	}
 
 	for (auto& shaderModule : shaderModules)
 	{
-		vkDestroyShaderModule(device, shaderModule, nullptr);
+		vkDestroyShaderModule(mVulkanDevice->mLogicalDevice, shaderModule, nullptr);
 	}
-	vkDestroyImageView(device, depthStencil.view, nullptr);
-	vkDestroyImage(device, depthStencil.image, nullptr);
-	vkFreeMemory(device, depthStencil.mem, nullptr);
+	vkDestroyImageView(mVulkanDevice->mLogicalDevice, depthStencil.view, nullptr);
+	vkDestroyImage(mVulkanDevice->mLogicalDevice, depthStencil.image, nullptr);
+	vkFreeMemory(mVulkanDevice->mLogicalDevice, depthStencil.mem, nullptr);
 
-	vkDestroyPipelineCache(device, VksPipeLine::mPipelineCache, nullptr);
+	vkDestroyPipelineCache(mVulkanDevice->mLogicalDevice, VksPipeLine::mPipelineCache, nullptr);
 
-	vkDestroyCommandPool(device, cmdPool, nullptr);
+	vkDestroyCommandPool(mVulkanDevice->mLogicalDevice, cmdPool, nullptr);
 
-	vkDestroySemaphore(device, semaphores.presentComplete, nullptr);
-	vkDestroySemaphore(device, semaphores.renderComplete, nullptr);
-	vkDestroySemaphore(device, semaphores.textOverlayComplete, nullptr);
+	vkDestroySemaphore(mVulkanDevice->mLogicalDevice, semaphores.presentComplete, nullptr);
+	vkDestroySemaphore(mVulkanDevice->mLogicalDevice, semaphores.renderComplete, nullptr);
+	vkDestroySemaphore(mVulkanDevice->mLogicalDevice, semaphores.textOverlayComplete, nullptr);
 
 	if (enableTextOverlay)
 	{
 		delete textOverlay;
 	}
 
-	delete vulkanDevice;
+	delete mVulkanDevice;
 
 	if (settings.validation)
 	{
@@ -596,34 +597,33 @@ void VKRadialBlur::initVulkan()
 	// Vulkan device creation
 	// This is handled by a separate class that gets a logical device representation
 	// and encapsulates functions related to a device
-	vulkanDevice = new VulkanDevice(physicalDevice);
-	VkResult res = vulkanDevice->createLogicalDevice(enabledFeatures, enabledExtensions);
+    mVulkanDevice = new VulkanDevice(physicalDevice);
+	VkResult res = mVulkanDevice->createLogicalDevice(enabledFeatures, enabledExtensions);
 	if (res != VK_SUCCESS) {
 		VksExitFatal("Could not create Vulkan device: \n" + VksErrorString(res), "Fatal error");
 	}
-	device = vulkanDevice->logicalDevice;
 
 	// Get a graphics queue from the device
-	vkGetDeviceQueue(device, vulkanDevice->queueFamilyIndices.graphics, 0, &queue);
+	vkGetDeviceQueue(mVulkanDevice->mLogicalDevice, mVulkanDevice->queueFamilyIndices.graphics, 0, &mQueue);
 
 	// Find a suitable depth format
 	VkBool32 validDepthFormat = VksGetSupportedDepthFormat(physicalDevice, &depthFormat);
 	assert(validDepthFormat);
 
-	mSwapChain.connect(instance, physicalDevice, device);
+	mSwapChain.connect(instance, physicalDevice, mVulkanDevice->mLogicalDevice);
 
 	// Create synchronization objects
 	VkSemaphoreCreateInfo semaphoreCreateInfo = InitSemaphoreCreateInfo();
 	// Create a semaphore used to synchronize image presentation
 	// Ensures that the image is displayed before we start submitting new commands to the queu
-	VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphores.presentComplete));
+	VK_CHECK_RESULT(vkCreateSemaphore(mVulkanDevice->mLogicalDevice, &semaphoreCreateInfo, nullptr, &semaphores.presentComplete));
 	// Create a semaphore used to synchronize command submission
 	// Ensures that the image is not presented until all commands have been sumbitted and executed
-	VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphores.renderComplete));
+	VK_CHECK_RESULT(vkCreateSemaphore(mVulkanDevice->mLogicalDevice, &semaphoreCreateInfo, nullptr, &semaphores.renderComplete));
 	// Create a semaphore used to synchronize command submission
 	// Ensures that the image is not presented until all commands for the text overlay have been sumbitted and executed
 	// Will be inserted after the render complete semaphore if the text overlay is enabled
-	VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphores.textOverlayComplete));
+	VK_CHECK_RESULT(vkCreateSemaphore(mVulkanDevice->mLogicalDevice, &semaphoreCreateInfo, nullptr, &semaphores.textOverlayComplete));
 
 	// Set up submit info structure
 	// Semaphores will stay the same during application lifetime
@@ -827,7 +827,7 @@ void VKRadialBlur::createCommandPool()
 	cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	cmdPoolInfo.queueFamilyIndex = mSwapChain.queueNodeIndex;
 	cmdPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	VK_CHECK_RESULT(vkCreateCommandPool(device, &cmdPoolInfo, nullptr, &cmdPool));
+	VK_CHECK_RESULT(vkCreateCommandPool(mVulkanDevice->mLogicalDevice, &cmdPoolInfo, nullptr, &cmdPool));
 }
 
 void VKRadialBlur::setupDepthStencil()
@@ -866,15 +866,15 @@ void VKRadialBlur::setupDepthStencil()
 
 	VkMemoryRequirements memReqs;
 
-	VK_CHECK_RESULT(vkCreateImage(device, &image, nullptr, &depthStencil.image));
-	vkGetImageMemoryRequirements(device, depthStencil.image, &memReqs);
+	VK_CHECK_RESULT(vkCreateImage(mVulkanDevice->mLogicalDevice, &image, nullptr, &depthStencil.image));
+	vkGetImageMemoryRequirements(mVulkanDevice->mLogicalDevice, depthStencil.image, &memReqs);
 	mem_alloc.allocationSize = memReqs.size;
-	mem_alloc.memoryTypeIndex = vulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	VK_CHECK_RESULT(vkAllocateMemory(device, &mem_alloc, nullptr, &depthStencil.mem));
-	VK_CHECK_RESULT(vkBindImageMemory(device, depthStencil.image, depthStencil.mem, 0));
+	mem_alloc.memoryTypeIndex = mVulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	VK_CHECK_RESULT(vkAllocateMemory(mVulkanDevice->mLogicalDevice, &mem_alloc, nullptr, &depthStencil.mem));
+	VK_CHECK_RESULT(vkBindImageMemory(mVulkanDevice->mLogicalDevice, depthStencil.image, depthStencil.mem, 0));
 
 	depthStencilView.image = depthStencil.image;
-	VK_CHECK_RESULT(vkCreateImageView(device, &depthStencilView, nullptr, &depthStencil.view));
+	VK_CHECK_RESULT(vkCreateImageView(mVulkanDevice->mLogicalDevice, &depthStencilView, nullptr, &depthStencil.view));
 }
 
 void VKRadialBlur::setupFrameBuffer()
@@ -895,11 +895,11 @@ void VKRadialBlur::setupFrameBuffer()
 	frameBufferCreateInfo.layers = 1;
 
 	// Create frame buffers for every swap chain image
-	frameBuffers.resize(mSwapChain.mImageCount);
-	for (uint32_t i = 0; i < frameBuffers.size(); i++)
+    mFrameBuffers.resize(mSwapChain.mImageCount);
+	for (uint32_t i = 0; i < mFrameBuffers.size(); i++)
 	{
 		attachments[0] = mSwapChain.mBuffers[i].view;
-		VK_CHECK_RESULT(vkCreateFramebuffer(device, &frameBufferCreateInfo, nullptr, &frameBuffers[i]));
+		VK_CHECK_RESULT(vkCreateFramebuffer(mVulkanDevice->mLogicalDevice, &frameBufferCreateInfo, nullptr, &mFrameBuffers[i]));
 	}
 }
 
@@ -972,7 +972,7 @@ void VKRadialBlur::setupRenderPass()
 	renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
 	renderPassInfo.pDependencies = dependencies.data();
 
-	VK_CHECK_RESULT(vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass));
+	VK_CHECK_RESULT(vkCreateRenderPass(mVulkanDevice->mLogicalDevice, &renderPassInfo, nullptr, &renderPass));
 }
 
 void VKRadialBlur::getEnabledFeatures()
@@ -989,7 +989,7 @@ void VKRadialBlur::windowResize()
 	prepared = false;
 
 	// Ensure all operations on the device have been finished before destroying resources
-	vkDeviceWaitIdle(device);
+	vkDeviceWaitIdle(mVulkanDevice->mLogicalDevice);
 
 	// Recreate swap chain
 	width = destWidth;
@@ -998,14 +998,14 @@ void VKRadialBlur::windowResize()
 
 	// Recreate the frame buffers
 
-	vkDestroyImageView(device, depthStencil.view, nullptr);
-	vkDestroyImage(device, depthStencil.image, nullptr);
-	vkFreeMemory(device, depthStencil.mem, nullptr);
+	vkDestroyImageView(mVulkanDevice->mLogicalDevice, depthStencil.view, nullptr);
+	vkDestroyImage(mVulkanDevice->mLogicalDevice, depthStencil.image, nullptr);
+	vkFreeMemory(mVulkanDevice->mLogicalDevice, depthStencil.mem, nullptr);
 	setupDepthStencil();
 	
-	for (uint32_t i = 0; i < frameBuffers.size(); i++)
+	for (uint32_t i = 0; i < mFrameBuffers.size(); i++)
 	{
-		vkDestroyFramebuffer(device, frameBuffers[i], nullptr);
+		vkDestroyFramebuffer(mVulkanDevice->mLogicalDevice, mFrameBuffers[i], nullptr);
 	}
 	setupFrameBuffer();
 
@@ -1015,7 +1015,7 @@ void VKRadialBlur::windowResize()
 	createCommandBuffers();
 	buildCommandBuffers();
 
-	vkDeviceWaitIdle(device);
+	vkDeviceWaitIdle(mVulkanDevice->mLogicalDevice);
 
 	if (enableTextOverlay)
 	{
@@ -1085,12 +1085,12 @@ void VKRadialBlur::prepareOffscreen()
 	VkMemoryAllocateInfo memAlloc = InitMemoryAllocateInfo();
 	VkMemoryRequirements memReqs;
 
-	VK_CHECK_RESULT(vkCreateImage(device, &image, nullptr, &mOffscreenPass.color.image));
-	vkGetImageMemoryRequirements(device, mOffscreenPass.color.image, &memReqs);
+	VK_CHECK_RESULT(vkCreateImage(mVulkanDevice->mLogicalDevice, &image, nullptr, &mOffscreenPass.color.image));
+	vkGetImageMemoryRequirements(mVulkanDevice->mLogicalDevice, mOffscreenPass.color.image, &memReqs);
 	memAlloc.allocationSize = memReqs.size;
-	memAlloc.memoryTypeIndex = vulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &mOffscreenPass.color.mem));
-	VK_CHECK_RESULT(vkBindImageMemory(device, mOffscreenPass.color.image, mOffscreenPass.color.mem, 0));
+	memAlloc.memoryTypeIndex = mVulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	VK_CHECK_RESULT(vkAllocateMemory(mVulkanDevice->mLogicalDevice, &memAlloc, nullptr, &mOffscreenPass.color.mem));
+	VK_CHECK_RESULT(vkBindImageMemory(mVulkanDevice->mLogicalDevice, mOffscreenPass.color.image, mOffscreenPass.color.mem, 0));
 
 	VkImageViewCreateInfo colorImageView = InitImageViewCreateInfo();
 	colorImageView.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -1102,7 +1102,7 @@ void VKRadialBlur::prepareOffscreen()
 	colorImageView.subresourceRange.baseArrayLayer = 0;
 	colorImageView.subresourceRange.layerCount = 1;
 	colorImageView.image = mOffscreenPass.color.image;
-	VK_CHECK_RESULT(vkCreateImageView(device, &colorImageView, nullptr, &mOffscreenPass.color.view));
+	VK_CHECK_RESULT(vkCreateImageView(mVulkanDevice->mLogicalDevice, &colorImageView, nullptr, &mOffscreenPass.color.view));
 
 	// Create sampler to sample from the attachment in the fragment shader
 	VkSamplerCreateInfo samplerInfo = InitSamplerCreateInfo();
@@ -1117,18 +1117,18 @@ void VKRadialBlur::prepareOffscreen()
 	samplerInfo.minLod = 0.0f;
 	samplerInfo.maxLod = 1.0f;
 	samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-	VK_CHECK_RESULT(vkCreateSampler(device, &samplerInfo, nullptr, &mOffscreenPass.sampler));
+	VK_CHECK_RESULT(vkCreateSampler(mVulkanDevice->mLogicalDevice, &samplerInfo, nullptr, &mOffscreenPass.sampler));
 
 	// Depth stencil attachment
 	image.format = fbDepthFormat;
 	image.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-	VK_CHECK_RESULT(vkCreateImage(device, &image, nullptr, &mOffscreenPass.depth.image));
-	vkGetImageMemoryRequirements(device, mOffscreenPass.depth.image, &memReqs);
+	VK_CHECK_RESULT(vkCreateImage(mVulkanDevice->mLogicalDevice, &image, nullptr, &mOffscreenPass.depth.image));
+	vkGetImageMemoryRequirements(mVulkanDevice->mLogicalDevice, mOffscreenPass.depth.image, &memReqs);
 	memAlloc.allocationSize = memReqs.size;
-	memAlloc.memoryTypeIndex = vulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &mOffscreenPass.depth.mem));
-	VK_CHECK_RESULT(vkBindImageMemory(device, mOffscreenPass.depth.image, mOffscreenPass.depth.mem, 0));
+	memAlloc.memoryTypeIndex = mVulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	VK_CHECK_RESULT(vkAllocateMemory(mVulkanDevice->mLogicalDevice, &memAlloc, nullptr, &mOffscreenPass.depth.mem));
+	VK_CHECK_RESULT(vkBindImageMemory(mVulkanDevice->mLogicalDevice, mOffscreenPass.depth.image, mOffscreenPass.depth.mem, 0));
 
 	VkImageViewCreateInfo depthStencilView = InitImageViewCreateInfo();
 	depthStencilView.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -1141,7 +1141,7 @@ void VKRadialBlur::prepareOffscreen()
 	depthStencilView.subresourceRange.baseArrayLayer = 0;
 	depthStencilView.subresourceRange.layerCount = 1;
 	depthStencilView.image = mOffscreenPass.depth.image;
-	VK_CHECK_RESULT(vkCreateImageView(device, &depthStencilView, nullptr, &mOffscreenPass.depth.view));
+	VK_CHECK_RESULT(vkCreateImageView(mVulkanDevice->mLogicalDevice, &depthStencilView, nullptr, &mOffscreenPass.depth.view));
 
 	// Create a separate render pass for the offscreen rendering as it may differ from the one used for scene rendering
 
@@ -1203,7 +1203,7 @@ void VKRadialBlur::prepareOffscreen()
 	renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
 	renderPassInfo.pDependencies = dependencies.data();
 
-	VK_CHECK_RESULT(vkCreateRenderPass(device, &renderPassInfo, nullptr, &mOffscreenPass.renderPass));
+	VK_CHECK_RESULT(vkCreateRenderPass(mVulkanDevice->mLogicalDevice, &renderPassInfo, nullptr, &mOffscreenPass.renderPass));
 
 	VkImageView attachments[2];
 	attachments[0] = mOffscreenPass.color.view;
@@ -1217,7 +1217,7 @@ void VKRadialBlur::prepareOffscreen()
 	fbufCreateInfo.height = mOffscreenPass.height;
 	fbufCreateInfo.layers = 1;
 
-	VK_CHECK_RESULT(vkCreateFramebuffer(device, &fbufCreateInfo, nullptr, &mOffscreenPass.frameBuffer));
+	VK_CHECK_RESULT(vkCreateFramebuffer(mVulkanDevice->mLogicalDevice, &fbufCreateInfo, nullptr, &mOffscreenPass.frameBuffer));
 
 	// Fill a descriptor for later use in a descriptor set
 	mOffscreenPass.descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1235,7 +1235,7 @@ void VKRadialBlur::buildOffscreenCommandBuffer()
 	if (mOffscreenPass.semaphore == VK_NULL_HANDLE)
 	{
 		VkSemaphoreCreateInfo semaphoreCreateInfo = InitSemaphoreCreateInfo();
-		VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &mOffscreenPass.semaphore));
+		VK_CHECK_RESULT(vkCreateSemaphore(mVulkanDevice->mLogicalDevice, &semaphoreCreateInfo, nullptr, &mOffscreenPass.semaphore));
 	}
 
 	VkCommandBufferBeginInfo cmdBufInfo = InitCommandBufferBeginInfo();
@@ -1288,8 +1288,10 @@ void VKRadialBlur::reBuildCommandBuffers()
 	buildCommandBuffers();
 }
 
+
 void VKRadialBlur::buildCommandBuffers()
 {
+
 	VkCommandBufferBeginInfo cmdBufInfo = InitCommandBufferBeginInfo();
 
 	VkClearValue clearValues[2];
@@ -1308,7 +1310,7 @@ void VKRadialBlur::buildCommandBuffers()
 
 	for (int32_t i = 0; i < drawCmdBuffers.size(); ++i)
 	{
-        renderPassBeginInfo.framebuffer = frameBuffers[i];
+        renderPassBeginInfo.framebuffer = mFrameBuffers[i];
         VK_CHECK_RESULT(vkBeginCommandBuffer(drawCmdBuffers[i], &cmdBufInfo));
         vkCmdBeginRenderPass(drawCmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -1346,8 +1348,8 @@ void VKRadialBlur::buildCommandBuffers()
 
 void VKRadialBlur::loadAssets()
 {
-	mModels.loadFromFile(getAssetPath() + "models/glowsphere.dae", vertexLayout, 0.05f, vulkanDevice, queue);
-	mTextures.loadFromFile(getAssetPath() + "textures/particle_gradient_rgba.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice, queue);
+	mModels.loadFromFile(getAssetPath() + "models/glowsphere.dae", vertexLayout, 0.05f, mVulkanDevice, mQueue);
+	mTextures.loadFromFile(getAssetPath() + "textures/particle_gradient_rgba.ktx", VK_FORMAT_R8G8B8A8_UNORM, mVulkanDevice, mQueue);
 }
 
 void VKRadialBlur::setupVertexDescriptions()
@@ -1413,7 +1415,7 @@ void VKRadialBlur::setupDescriptorPool()
 					poolSizes.data(),
 					2);
 
-	VK_CHECK_RESULT(vkCreateDescriptorPool(device, &descriptorPoolInfo, nullptr, &descriptorPool));
+	VK_CHECK_RESULT(vkCreateDescriptorPool(mVulkanDevice->mLogicalDevice, &descriptorPoolInfo, nullptr, &descriptorPool));
 }
 
 void VKRadialBlur::setupDescriptorSetLayout()
@@ -1443,9 +1445,9 @@ void VKRadialBlur::setupDescriptorSetLayout()
 			};
 	descriptorLayout = InitDescriptorSetLayoutCreateInfo(
 			setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
-	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &descriptorLayout, nullptr, &mDescriptorSetLayout));
+	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(mVulkanDevice->mLogicalDevice, &descriptorLayout, nullptr, &mDescriptorSetLayout));
 	pPipelineLayoutCreateInfo = InitPipelineLayoutCreateInfo(&mDescriptorSetLayout, 1);
-	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pPipelineLayoutCreateInfo, nullptr, &mPipelineLayout));
+	VK_CHECK_RESULT(vkCreatePipelineLayout(mVulkanDevice->mLogicalDevice, &pPipelineLayoutCreateInfo, nullptr, &mPipelineLayout));
 
 	// Fullscreen radial blur
 	setLayoutBindings =
@@ -1463,10 +1465,10 @@ void VKRadialBlur::setupDescriptorSetLayout()
 			};
 	descriptorLayout = InitDescriptorSetLayoutCreateInfo(
 			setLayoutBindings.data(), static_cast<uint32_t>(setLayoutBindings.size()));
-	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &descriptorLayout, nullptr, &mRadialBlur.mDescritptorSetLayout));
+	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(mVulkanDevice->mLogicalDevice, &descriptorLayout, nullptr, &mRadialBlur.mDescritptorSetLayout));
 	pPipelineLayoutCreateInfo = InitPipelineLayoutCreateInfo(
 			&mRadialBlur.mDescritptorSetLayout, 1);
-	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pPipelineLayoutCreateInfo, nullptr, &mRadialBlur.mPipeLayout));
+	VK_CHECK_RESULT(vkCreatePipelineLayout(mVulkanDevice->mLogicalDevice, &pPipelineLayoutCreateInfo, nullptr, &mRadialBlur.mPipeLayout));
 }
 
 void VKRadialBlur::setupDescriptorSet()
@@ -1477,7 +1479,7 @@ void VKRadialBlur::setupDescriptorSet()
 	descriptorSetAllocInfo = InitDescriptorSetAllocateInfo(descriptorPool,
 																			  &mDescriptorSetLayout,
 																			  1);
-	VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &descriptorSetAllocInfo, &mDescriptorSet));
+	VK_CHECK_RESULT(vkAllocateDescriptorSets(mVulkanDevice->mLogicalDevice, &descriptorSetAllocInfo, &mDescriptorSet));
 
 	std::vector<VkWriteDescriptorSet> offScreenWriteDescriptorSets =
 			{
@@ -1494,11 +1496,11 @@ void VKRadialBlur::setupDescriptorSet()
 							1,
 							&mTextures.descriptor),
 			};
-	vkUpdateDescriptorSets(device, offScreenWriteDescriptorSets.size(), offScreenWriteDescriptorSets.data(), 0, NULL);
+	vkUpdateDescriptorSets(mVulkanDevice->mLogicalDevice, offScreenWriteDescriptorSets.size(), offScreenWriteDescriptorSets.data(), 0, NULL);
 
 	// Fullscreen radial blur
 	descriptorSetAllocInfo = InitDescriptorSetAllocateInfo(descriptorPool, &mRadialBlur.mDescritptorSetLayout, 1);
-	VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &descriptorSetAllocInfo, &mRadialBlur.mDescriptorSet));
+	VK_CHECK_RESULT(vkAllocateDescriptorSets(mVulkanDevice->mLogicalDevice, &descriptorSetAllocInfo, &mRadialBlur.mDescriptorSet));
 
 	std::vector<VkWriteDescriptorSet> writeDescriptorSets =
 			{
@@ -1516,7 +1518,7 @@ void VKRadialBlur::setupDescriptorSet()
 							&mOffscreenPass.descriptor),
 			};
 
-	vkUpdateDescriptorSets(device, writeDescriptorSets.size(), writeDescriptorSets.data(), 0, NULL);
+	vkUpdateDescriptorSets(mVulkanDevice->mLogicalDevice, writeDescriptorSets.size(), writeDescriptorSets.data(), 0, NULL);
 }
 
 void VKRadialBlur::preparePipelines()
@@ -1602,11 +1604,11 @@ void VKRadialBlur::preparePipelines()
 	blendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
 	blendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
 	blendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_DST_ALPHA;
-	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, VksPipeLine::mPipelineCache, 1, &pipelineCreateInfo, nullptr, &mRadialBlur.mPipeLine));
+	VK_CHECK_RESULT(vkCreateGraphicsPipelines(mVulkanDevice->mLogicalDevice, VksPipeLine::mPipelineCache, 1, &pipelineCreateInfo, nullptr, &mRadialBlur.mPipeLine));
 
 	// No blending (for debug display)
 	blendAttachmentState.blendEnable = VK_FALSE;
-	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, VksPipeLine::mPipelineCache, 1, &pipelineCreateInfo, nullptr, &mPipeLineOffscreenDisplay));
+	VK_CHECK_RESULT(vkCreateGraphicsPipelines(mVulkanDevice->mLogicalDevice, VksPipeLine::mPipelineCache, 1, &pipelineCreateInfo, nullptr, &mPipeLineOffscreenDisplay));
 
 	// Phong pass
 	pipelineCreateInfo.layout = mPipelineLayout;
@@ -1615,27 +1617,27 @@ void VKRadialBlur::preparePipelines()
 	pipelineCreateInfo.pVertexInputState = &vertices.inputState;
 	blendAttachmentState.blendEnable = VK_FALSE;
 	depthStencilState.depthWriteEnable = VK_TRUE;
-	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, VksPipeLine::mPipelineCache, 1, &pipelineCreateInfo, nullptr, &mPipeLinePhong));
+	VK_CHECK_RESULT(vkCreateGraphicsPipelines(mVulkanDevice->mLogicalDevice, VksPipeLine::mPipelineCache, 1, &pipelineCreateInfo, nullptr, &mPipeLinePhong));
 
 	// Color only pass (offscreen blur base)
 	shaderStages[0] = loadShader(getAssetPath() + "shaders/radialblur/colorpass.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 	shaderStages[1] = loadShader(getAssetPath() + "shaders/radialblur/colorpass.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 	pipelineCreateInfo.renderPass = mOffscreenPass.renderPass;
-	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, VksPipeLine::mPipelineCache, 1, &pipelineCreateInfo, nullptr, &mPipeLineColor));
+	VK_CHECK_RESULT(vkCreateGraphicsPipelines(mVulkanDevice->mLogicalDevice, VksPipeLine::mPipelineCache, 1, &pipelineCreateInfo, nullptr, &mPipeLineColor));
 }
 
 // Prepare and initialize uniform buffer containing shader uniforms
 void VKRadialBlur::prepareUniformBuffers()
 {
 	// Phong and color pass vertex shader uniform buffer
-	VK_CHECK_RESULT(vulkanDevice->createBuffer(
+	VK_CHECK_RESULT(mVulkanDevice->createBuffer(
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			&uniformBufferScene,
 			sizeof(uboScene)));
 
 	// Fullscreen radial blur parameters
-	VK_CHECK_RESULT(vulkanDevice->createBuffer(
+	VK_CHECK_RESULT(mVulkanDevice->createBuffer(
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			&uniformBufferBlurParams,
@@ -1686,7 +1688,7 @@ void VKRadialBlur::draw()
 	// Submit work
 	mSubmitInfo.commandBufferCount = 1;
 	mSubmitInfo.pCommandBuffers = &mOffscreenPass.commandBuffer;
-	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &mSubmitInfo, VK_NULL_HANDLE));
+	VK_CHECK_RESULT(vkQueueSubmit(mQueue, 1, &mSubmitInfo, VK_NULL_HANDLE));
 
 	// Scene rendering
 
@@ -1697,7 +1699,7 @@ void VKRadialBlur::draw()
 
 	// Submit work
 	mSubmitInfo.pCommandBuffers = &drawCmdBuffers[currentBuffer];
-	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &mSubmitInfo, VK_NULL_HANDLE));
+	VK_CHECK_RESULT(vkQueueSubmit(mQueue, 1, &mSubmitInfo, VK_NULL_HANDLE));
 
 	submitFrame();
 }

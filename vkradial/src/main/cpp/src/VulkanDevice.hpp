@@ -20,8 +20,8 @@
 
 struct VulkanDevice
 {
-	VkPhysicalDevice physicalDevice;
-	VkDevice logicalDevice;
+	VkPhysicalDevice mPhysicalDevice;
+	VkDevice mLogicalDevice;
 	VkPhysicalDeviceProperties properties;
 	VkPhysicalDeviceFeatures features;
 	VkPhysicalDeviceMemoryProperties memoryProperties;

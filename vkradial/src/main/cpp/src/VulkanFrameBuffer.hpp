@@ -114,13 +114,13 @@ public:
         assert(vulkanDevice);
         for (auto attachment : attachments)
         {
-            vkDestroyImage(vulkanDevice->logicalDevice, attachment.image, nullptr);
-            vkDestroyImageView(vulkanDevice->logicalDevice, attachment.view, nullptr);
-            vkFreeMemory(vulkanDevice->logicalDevice, attachment.memory, nullptr);
+            vkDestroyImage(vulkanDevice->mLogicalDevice, attachment.image, nullptr);
+            vkDestroyImageView(vulkanDevice->mLogicalDevice, attachment.view, nullptr);
+            vkFreeMemory(vulkanDevice->mLogicalDevice, attachment.memory, nullptr);
         }
-        vkDestroySampler(vulkanDevice->logicalDevice, sampler, nullptr);
-        vkDestroyRenderPass(vulkanDevice->logicalDevice, renderPass, nullptr);
-        vkDestroyFramebuffer(vulkanDevice->logicalDevice, framebuffer, nullptr);
+        vkDestroySampler(vulkanDevice->mLogicalDevice, sampler, nullptr);
+        vkDestroyRenderPass(vulkanDevice->mLogicalDevice, renderPass, nullptr);
+        vkDestroyFramebuffer(vulkanDevice->mLogicalDevice, framebuffer, nullptr);
     }
 
     /**
@@ -177,12 +177,12 @@ public:
         VkMemoryRequirements memReqs;
 
         // Create image for this attachment
-        VK_CHECK_RESULT(vkCreateImage(vulkanDevice->logicalDevice, &image, nullptr, &attachment.image));
-        vkGetImageMemoryRequirements(vulkanDevice->logicalDevice, attachment.image, &memReqs);
+        VK_CHECK_RESULT(vkCreateImage(vulkanDevice->mLogicalDevice, &image, nullptr, &attachment.image));
+        vkGetImageMemoryRequirements(vulkanDevice->mLogicalDevice, attachment.image, &memReqs);
         memAlloc.allocationSize = memReqs.size;
         memAlloc.memoryTypeIndex = vulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        VK_CHECK_RESULT(vkAllocateMemory(vulkanDevice->logicalDevice, &memAlloc, nullptr, &attachment.memory));
-        VK_CHECK_RESULT(vkBindImageMemory(vulkanDevice->logicalDevice, attachment.image, attachment.memory, 0));
+        VK_CHECK_RESULT(vkAllocateMemory(vulkanDevice->mLogicalDevice, &memAlloc, nullptr, &attachment.memory));
+        VK_CHECK_RESULT(vkBindImageMemory(vulkanDevice->mLogicalDevice, attachment.image, attachment.memory, 0));
 
         attachment.subresourceRange = {};
         attachment.subresourceRange.aspectMask = aspectMask;
@@ -196,7 +196,7 @@ public:
         //todo: workaround for depth+stencil attachments
         imageView.subresourceRange.aspectMask = (attachment.hasDepth()) ? VK_IMAGE_ASPECT_DEPTH_BIT : aspectMask;
         imageView.image = attachment.image;
-        VK_CHECK_RESULT(vkCreateImageView(vulkanDevice->logicalDevice, &imageView, nullptr, &attachment.view));
+        VK_CHECK_RESULT(vkCreateImageView(vulkanDevice->mLogicalDevice, &imageView, nullptr, &attachment.view));
 
         // Fill attachment description
         attachment.description = {};
@@ -247,7 +247,7 @@ public:
         samplerInfo.minLod = 0.0f;
         samplerInfo.maxLod = 1.0f;
         samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-        return vkCreateSampler(vulkanDevice->logicalDevice, &samplerInfo, nullptr, &sampler);
+        return vkCreateSampler(vulkanDevice->mLogicalDevice, &samplerInfo, nullptr, &sampler);
     }
 
     /**
@@ -330,7 +330,7 @@ public:
         renderPassInfo.pSubpasses = &subpass;
         renderPassInfo.dependencyCount = 2;
         renderPassInfo.pDependencies = dependencies.data();
-        VK_CHECK_RESULT(vkCreateRenderPass(vulkanDevice->logicalDevice, &renderPassInfo, nullptr, &renderPass));
+        VK_CHECK_RESULT(vkCreateRenderPass(vulkanDevice->mLogicalDevice, &renderPassInfo, nullptr, &renderPass));
 
         std::vector<VkImageView> attachmentViews;
         for (auto attachment : attachments)
@@ -356,7 +356,7 @@ public:
         framebufferInfo.width = width;
         framebufferInfo.height = height;
         framebufferInfo.layers = maxLayers;
-        VK_CHECK_RESULT(vkCreateFramebuffer(vulkanDevice->logicalDevice, &framebufferInfo, nullptr, &framebuffer));
+        VK_CHECK_RESULT(vkCreateFramebuffer(vulkanDevice->mLogicalDevice, &framebufferInfo, nullptr, &framebuffer));
 
         return VK_SUCCESS;
     }

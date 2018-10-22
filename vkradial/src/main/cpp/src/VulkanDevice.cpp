@@ -2,7 +2,7 @@
 
 
 /**  @brief Typecast to VkDevice */
-VulkanDevice::operator VkDevice() { return logicalDevice; };
+VulkanDevice::operator VkDevice() { return mLogicalDevice; };
 
 /**
 * Default constructor
@@ -12,29 +12,29 @@ VulkanDevice::operator VkDevice() { return logicalDevice; };
 VulkanDevice::VulkanDevice(VkPhysicalDevice physicalDevice)
 {
 	assert(physicalDevice);
-	this->physicalDevice = physicalDevice;
+	this->mPhysicalDevice = physicalDevice;
 
 	// Store Properties features, limits and properties of the physical device for later use
 	// Device properties also contain limits and sparse properties
-	vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+	vkGetPhysicalDeviceProperties(mPhysicalDevice, &properties);
 	// Features should be checked by the examples before using them
-	vkGetPhysicalDeviceFeatures(physicalDevice, &features);
+	vkGetPhysicalDeviceFeatures(mPhysicalDevice, &features);
 	// Memory properties are used regularly for creating all kinds of buffers
-	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
+	vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &memoryProperties);
 	// Queue family properties, used for setting up requested queues upon device creation
 	uint32_t queueFamilyCount;
-	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+	vkGetPhysicalDeviceQueueFamilyProperties(mPhysicalDevice, &queueFamilyCount, nullptr);
 	assert(queueFamilyCount > 0);
 	queueFamilyProperties.resize(queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilyProperties.data());
+	vkGetPhysicalDeviceQueueFamilyProperties(mPhysicalDevice, &queueFamilyCount, queueFamilyProperties.data());
 
 	// Get list of supported extensions
 	uint32_t extCount = 0;
-	vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extCount, nullptr);
+	vkEnumerateDeviceExtensionProperties(mPhysicalDevice, nullptr, &extCount, nullptr);
 	if (extCount > 0)
 	{
 		std::vector<VkExtensionProperties> extensions(extCount);
-		if (vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extCount, &extensions.front()) == VK_SUCCESS)
+		if (vkEnumerateDeviceExtensionProperties(mPhysicalDevice, nullptr, &extCount, &extensions.front()) == VK_SUCCESS)
 		{
 			for (auto ext : extensions)
 			{
@@ -53,11 +53,11 @@ VulkanDevice::~VulkanDevice()
 {
 	if (commandPool)
 	{
-		vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
+		vkDestroyCommandPool(mLogicalDevice, commandPool, nullptr);
 	}
-	if (logicalDevice)
+	if (mLogicalDevice)
 	{
-		vkDestroyDevice(logicalDevice, nullptr);
+		vkDestroyDevice(mLogicalDevice, nullptr);
 	}
 }
 
@@ -275,7 +275,7 @@ VkResult VulkanDevice::createLogicalDevice(VkPhysicalDeviceFeatures enabledFeatu
 		deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
 	}
 
-	VkResult result = vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &logicalDevice);
+	VkResult result = vkCreateDevice(mPhysicalDevice, &deviceCreateInfo, nullptr, &mLogicalDevice);
 
 	if (result == VK_SUCCESS)
 	{
@@ -305,22 +305,22 @@ VkResult VulkanDevice::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPrope
 	VkBufferCreateInfo bufferCreateInfo = InitBufferCreateInfo(
 			usageFlags, size);
 	bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	VK_CHECK_RESULT(vkCreateBuffer(logicalDevice, &bufferCreateInfo, nullptr, buffer));
+	VK_CHECK_RESULT(vkCreateBuffer(mLogicalDevice, &bufferCreateInfo, nullptr, buffer));
 
 	// Create the memory backing up the buffer handle
 	VkMemoryRequirements memReqs;
 	VkMemoryAllocateInfo memAlloc = InitMemoryAllocateInfo();
-	vkGetBufferMemoryRequirements(logicalDevice, *buffer, &memReqs);
+	vkGetBufferMemoryRequirements(mLogicalDevice, *buffer, &memReqs);
 	memAlloc.allocationSize = memReqs.size;
 	// Find a memory type index that fits the properties of the buffer
 	memAlloc.memoryTypeIndex = getMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags);
-	VK_CHECK_RESULT(vkAllocateMemory(logicalDevice, &memAlloc, nullptr, memory));
+	VK_CHECK_RESULT(vkAllocateMemory(mLogicalDevice, &memAlloc, nullptr, memory));
 
 	// If a pointer to the buffer data has been passed, map the buffer and copy over the data
 	if (data != nullptr)
 	{
 		void *mapped;
-		VK_CHECK_RESULT(vkMapMemory(logicalDevice, *memory, 0, size, 0, &mapped));
+		VK_CHECK_RESULT(vkMapMemory(mLogicalDevice, *memory, 0, size, 0, &mapped));
 		memcpy(mapped, data, size);
 		// If host coherency hasn't been requested, do a manual flush to make writes visible
 		if ((memoryPropertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0)
@@ -329,13 +329,13 @@ VkResult VulkanDevice::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPrope
 			mappedRange.memory = *memory;
 			mappedRange.offset = 0;
 			mappedRange.size = size;
-			vkFlushMappedMemoryRanges(logicalDevice, 1, &mappedRange);
+			vkFlushMappedMemoryRanges(mLogicalDevice, 1, &mappedRange);
 		}
-		vkUnmapMemory(logicalDevice, *memory);
+		vkUnmapMemory(mLogicalDevice, *memory);
 	}
 
 	// Attach the memory to the buffer object
-	VK_CHECK_RESULT(vkBindBufferMemory(logicalDevice, *buffer, *memory, 0));
+	VK_CHECK_RESULT(vkBindBufferMemory(mLogicalDevice, *buffer, *memory, 0));
 
 	return VK_SUCCESS;
 }
@@ -354,21 +354,21 @@ VkResult VulkanDevice::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPrope
 VkResult VulkanDevice::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VksBuffer *buffer,
 									VkDeviceSize size, void *data)
 {
-	buffer->mDevice = logicalDevice;
+	buffer->mDevice = mLogicalDevice;
 
 	// Create the buffer handle
 	VkBufferCreateInfo bufferCreateInfo = InitBufferCreateInfo(
 			usageFlags, size);
-	VK_CHECK_RESULT(vkCreateBuffer(logicalDevice, &bufferCreateInfo, nullptr, &buffer->mBuffer));
+	VK_CHECK_RESULT(vkCreateBuffer(mLogicalDevice, &bufferCreateInfo, nullptr, &buffer->mBuffer));
 
 	// Create the memory backing up the buffer handle
 	VkMemoryRequirements memReqs;
 	VkMemoryAllocateInfo memAlloc = InitMemoryAllocateInfo();
-	vkGetBufferMemoryRequirements(logicalDevice, buffer->mBuffer, &memReqs);
+	vkGetBufferMemoryRequirements(mLogicalDevice, buffer->mBuffer, &memReqs);
 	memAlloc.allocationSize = memReqs.size;
 	// Find a memory type index that fits the properties of the buffer
 	memAlloc.memoryTypeIndex = getMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags);
-	VK_CHECK_RESULT(vkAllocateMemory(logicalDevice, &memAlloc, nullptr, &buffer->mMemory));
+	VK_CHECK_RESULT(vkAllocateMemory(mLogicalDevice, &memAlloc, nullptr, &buffer->mMemory));
 
 	buffer->mAlignment = memReqs.alignment;
 	buffer->mSize = memAlloc.allocationSize;
@@ -437,7 +437,7 @@ VkCommandPool VulkanDevice::createCommandPool(uint32_t queueFamilyIndex, VkComma
 	cmdPoolInfo.queueFamilyIndex = queueFamilyIndex;
 	cmdPoolInfo.flags = createFlags;
 	VkCommandPool cmdPool;
-	VK_CHECK_RESULT(vkCreateCommandPool(logicalDevice, &cmdPoolInfo, nullptr, &cmdPool));
+	VK_CHECK_RESULT(vkCreateCommandPool(mLogicalDevice, &cmdPoolInfo, nullptr, &cmdPool));
 	return cmdPool;
 }
 
@@ -455,7 +455,7 @@ VkCommandBuffer VulkanDevice::createCommandBuffer(VkCommandBufferLevel level, bo
 			commandPool, level, 1);
 
 	VkCommandBuffer cmdBuffer;
-	VK_CHECK_RESULT(vkAllocateCommandBuffers(logicalDevice, &cmdBufAllocateInfo, &cmdBuffer));
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(mLogicalDevice, &cmdBufAllocateInfo, &cmdBuffer));
 
 	// If requested, also start recording for the new command buffer
 	if (begin)
@@ -493,18 +493,18 @@ void VulkanDevice::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue que
 	// Create fence to ensure that the command buffer has finished executing
 	VkFenceCreateInfo fenceInfo = InitFenceCreateInfo(VK_FLAGS_NONE);
 	VkFence fence;
-	VK_CHECK_RESULT(vkCreateFence(logicalDevice, &fenceInfo, nullptr, &fence));
+	VK_CHECK_RESULT(vkCreateFence(mLogicalDevice, &fenceInfo, nullptr, &fence));
 
 	// Submit to the queue
 	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, fence));
 	// Wait for the fence to signal that command buffer has finished executing
-	VK_CHECK_RESULT(vkWaitForFences(logicalDevice, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT));
+	VK_CHECK_RESULT(vkWaitForFences(mLogicalDevice, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT));
 
-	vkDestroyFence(logicalDevice, fence, nullptr);
+	vkDestroyFence(mLogicalDevice, fence, nullptr);
 
 	if (free)
 	{
-		vkFreeCommandBuffers(logicalDevice, commandPool, 1, &commandBuffer);
+		vkFreeCommandBuffers(mLogicalDevice, commandPool, 1, &commandBuffer);
 	}
 }
 

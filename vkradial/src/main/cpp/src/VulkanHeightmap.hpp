@@ -244,10 +244,10 @@ public:
 
 		device->flushCommandBuffer(copyCmd, copyQueue, true);
 
-		vkDestroyBuffer(device->logicalDevice, vertexStaging.mBuffer, nullptr);
-		vkFreeMemory(device->logicalDevice, vertexStaging.mMemory, nullptr);
-		vkDestroyBuffer(device->logicalDevice, indexStaging.mBuffer, nullptr);
-		vkFreeMemory(device->logicalDevice, indexStaging.mMemory, nullptr);
+		vkDestroyBuffer(device->mLogicalDevice, vertexStaging.mBuffer, nullptr);
+		vkFreeMemory(device->mLogicalDevice, vertexStaging.mMemory, nullptr);
+		vkDestroyBuffer(device->mLogicalDevice, indexStaging.mBuffer, nullptr);
+		vkFreeMemory(device->mLogicalDevice, indexStaging.mMemory, nullptr);
 	}
 };
 

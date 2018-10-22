@@ -71,7 +71,7 @@ void VksModel::destroy()
 bool VksModel::loadFromFile(const std::string& filename, VertexLayout layout, ModelCreateInfo *createInfo,
                             VulkanDevice *device, VkQueue copyQueue, const int flags)
 {
-    this->device = device->logicalDevice;
+    this->device = device->mLogicalDevice;
 
     Assimp::Importer Importer;
     const aiScene* pScene;
@@ -272,10 +272,10 @@ bool VksModel::loadFromFile(const std::string& filename, VertexLayout layout, Mo
         device->flushCommandBuffer(copyCmd, copyQueue);
 
         // Destroy staging resources
-        vkDestroyBuffer(device->logicalDevice, vertexStaging.mBuffer, nullptr);
-        vkFreeMemory(device->logicalDevice, vertexStaging.mMemory, nullptr);
-        vkDestroyBuffer(device->logicalDevice, indexStaging.mBuffer, nullptr);
-        vkFreeMemory(device->logicalDevice, indexStaging.mMemory, nullptr);
+        vkDestroyBuffer(device->mLogicalDevice, vertexStaging.mBuffer, nullptr);
+        vkFreeMemory(device->mLogicalDevice, vertexStaging.mMemory, nullptr);
+        vkDestroyBuffer(device->mLogicalDevice, indexStaging.mBuffer, nullptr);
+        vkFreeMemory(device->mLogicalDevice, indexStaging.mMemory, nullptr);
 
         return true;
     }
