@@ -936,7 +936,7 @@ void VulkanUtils::createDescriptorSet() {
     std::array<VkWriteDescriptorSet, 3> descriptorWrites = {};
 
 
-    descriptorWrites[01].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptorWrites[0].dstSet = descriptorSet;
     descriptorWrites[0].dstBinding = 0;
     descriptorWrites[0].dstArrayElement = 0;

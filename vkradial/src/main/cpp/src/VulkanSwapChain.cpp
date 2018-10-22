@@ -1,5 +1,24 @@
 #include "VulkanSwapChain.hpp"
 
+// Macro to get a procedure address based on a vulkan instance
+#define GET_INSTANCE_PROC_ADDR(inst, entrypoint)                        \
+{                                                                       \
+	fp##entrypoint = reinterpret_cast<PFN_vk##entrypoint>(vkGetInstanceProcAddr(inst, "vk"#entrypoint)); \
+	if (fp##entrypoint == NULL)                                         \
+	{																    \
+		exit(1);                                                        \
+	}                                                                   \
+}
+
+// Macro to get a procedure address based on a vulkan device
+#define GET_DEVICE_PROC_ADDR(dev, entrypoint)                           \
+{                                                                       \
+	fp##entrypoint = reinterpret_cast<PFN_vk##entrypoint>(vkGetDeviceProcAddr(dev, "vk"#entrypoint));   \
+	if (fp##entrypoint == NULL)                                         \
+	{																    \
+		exit(1);                                                        \
+	}                                                                   \
+}
 
 void VulkanSwapChain::initSurface(ANativeWindow* window)
 {
@@ -271,24 +290,24 @@ void VulkanSwapChain::create(uint32_t *width, uint32_t *height, bool vsync)
 	// This also cleans up all the presentable images
 	if (oldSwapchain != VK_NULL_HANDLE)
 	{
-		for (uint32_t i = 0; i < imageCount; i++)
+		for (uint32_t i = 0; i < mImageCount; i++)
 		{
-			vkDestroyImageView(device, buffers[i].view, nullptr);
+			vkDestroyImageView(device, mBuffers[i].view, nullptr);
 		}
 		fpDestroySwapchainKHR(device, oldSwapchain, nullptr);
 	}
 
-	err = fpGetSwapchainImagesKHR(device, swapChain, &imageCount, NULL);
+	err = fpGetSwapchainImagesKHR(device, swapChain, &mImageCount, NULL);
 	assert(!err);
 
 	// Get the swap chain images
-	images.resize(imageCount);
-	err = fpGetSwapchainImagesKHR(device, swapChain, &imageCount, images.data());
+	mImages.resize(mImageCount);
+	err = fpGetSwapchainImagesKHR(device, swapChain, &mImageCount, mImages.data());
 	assert(!err);
 
 	// Get the swap chain buffers containing the image and imageview
-	buffers.resize(imageCount);
-	for (uint32_t i = 0; i < imageCount; i++)
+	mBuffers.resize(mImageCount);
+	for (uint32_t i = 0; i < mImageCount; i++)
 	{
 		VkImageViewCreateInfo colorAttachmentView = {};
 		colorAttachmentView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -308,11 +327,11 @@ void VulkanSwapChain::create(uint32_t *width, uint32_t *height, bool vsync)
 		colorAttachmentView.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		colorAttachmentView.flags = 0;
 
-		buffers[i].image = images[i];
+		mBuffers[i].image = mImages[i];
 
-		colorAttachmentView.image = buffers[i].image;
+		colorAttachmentView.image = mBuffers[i].image;
 
-		err = vkCreateImageView(device, &colorAttachmentView, nullptr, &buffers[i].view);
+		err = vkCreateImageView(device, &colorAttachmentView, nullptr, &mBuffers[i].view);
 		assert(!err);
 	}
 }
@@ -368,9 +387,9 @@ void VulkanSwapChain::cleanup()
 {
 	if (swapChain != VK_NULL_HANDLE)
 	{
-		for (uint32_t i = 0; i < imageCount; i++)
+		for (uint32_t i = 0; i < mImageCount; i++)
 		{
-			vkDestroyImageView(device, buffers[i].view, nullptr);
+			vkDestroyImageView(device, mBuffers[i].view, nullptr);
 		}
 	}
 	if (surface != VK_NULL_HANDLE)

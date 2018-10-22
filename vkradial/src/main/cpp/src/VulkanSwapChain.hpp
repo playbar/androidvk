@@ -20,30 +20,11 @@
 #include "vulkanandroid.h"
 #endif
 
-// Macro to get a procedure address based on a vulkan instance
-#define GET_INSTANCE_PROC_ADDR(inst, entrypoint)                        \
-{                                                                       \
-	fp##entrypoint = reinterpret_cast<PFN_vk##entrypoint>(vkGetInstanceProcAddr(inst, "vk"#entrypoint)); \
-	if (fp##entrypoint == NULL)                                         \
-	{																    \
-		exit(1);                                                        \
-	}                                                                   \
-}
 
-// Macro to get a procedure address based on a vulkan device
-#define GET_DEVICE_PROC_ADDR(dev, entrypoint)                           \
-{                                                                       \
-	fp##entrypoint = reinterpret_cast<PFN_vk##entrypoint>(vkGetDeviceProcAddr(dev, "vk"#entrypoint));   \
-	if (fp##entrypoint == NULL)                                         \
-	{																    \
-		exit(1);                                                        \
-	}                                                                   \
-}
-
-typedef struct _SwapChainBuffers {
+struct SwapChainBuffer {
 	VkImage image;
 	VkImageView view;
-} SwapChainBuffer;
+} ;
 
 class VulkanSwapChain
 {
@@ -66,14 +47,15 @@ public:
 	VkFormat colorFormat;
 	VkColorSpaceKHR colorSpace;
 	/** @brief Handle to the current swap chain, required for recreation */
-	VkSwapchainKHR swapChain = VK_NULL_HANDLE;	
-	uint32_t imageCount;
-	std::vector<VkImage> images;
-	std::vector<SwapChainBuffer> buffers;
+	VkSwapchainKHR swapChain = VK_NULL_HANDLE;
+	uint32_t mImageCount;
+	std::vector<VkImage> mImages;
+	std::vector<SwapChainBuffer> mBuffers;
 	// Index of the deteced graphics and presenting device queue
 	/** @brief Queue family index of the detected graphics and presenting device queue */
 	uint32_t queueNodeIndex = UINT32_MAX;
 
+public:
 	// Creates an os specific surface
 	/**
 	* Create the surface object, an abstraction for the native platform window

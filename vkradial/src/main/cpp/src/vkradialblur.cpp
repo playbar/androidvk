@@ -94,7 +94,7 @@ bool VKRadialBlur::checkCommandBuffers()
 void VKRadialBlur::createCommandBuffers()
 {
 	// Create one command buffer for each swap chain image and reuse for rendering
-	drawCmdBuffers.resize(mSwapChain.imageCount);
+	drawCmdBuffers.resize(mSwapChain.mImageCount);
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
 			InitCommandBufferAllocateInfo(
@@ -791,56 +791,6 @@ void VKRadialBlur::initVulkan()
 	// Select physical device to be used for the Vulkan example
 	// Defaults to the first device unless specified by command line
 	uint32_t selectedDevice = 0;
-
-#if !defined(__ANDROID__)	
-	// GPU selection via command line argument
-	for (size_t i = 0; i < args.size(); i++)
-	{
-		// Select GPU
-		if ((args[i] == std::string("-g")) || (args[i] == std::string("-gpu")))
-		{
-			char* endptr;
-			uint32_t index = strtol(args[i + 1], &endptr, 10);
-			if (endptr != args[i + 1]) 
-			{ 
-				if (index > gpuCount - 1)
-				{
-					std::cerr << "Selected device index " << index << " is out of range, reverting to device 0 (use -listgpus to show available Vulkan devices)" << std::endl;
-				} 
-				else
-				{
-					std::cout << "Selected Vulkan device " << index << std::endl;
-					selectedDevice = index;
-				}
-			};
-			break;
-		}
-		// List available GPUs
-		if (args[i] == std::string("-listgpus"))
-		{
-			uint32_t gpuCount = 0;
-			VK_CHECK_RESULT(vkEnumeratePhysicalDevices(instance, &gpuCount, nullptr));
-			if (gpuCount == 0) 
-			{
-				std::cerr << "No Vulkan devices found!" << std::endl;
-			}
-			else 
-			{
-				// Enumerate devices
-				std::cout << "Available Vulkan devices" << std::endl;
-				std::vector<VkPhysicalDevice> devices(gpuCount);
-				VK_CHECK_RESULT(vkEnumeratePhysicalDevices(instance, &gpuCount, devices.data()));
-				for (uint32_t i = 0; i < gpuCount; i++) {
-					VkPhysicalDeviceProperties deviceProperties;
-					vkGetPhysicalDeviceProperties(devices[i], &deviceProperties);
-					std::cout << "Device [" << i << "] : " << deviceProperties.deviceName << std::endl;
-					std::cout << " Type: " << physicalDeviceTypeString(deviceProperties.deviceType) << std::endl;
-					std::cout << " API: " << (deviceProperties.apiVersion >> 22) << "." << ((deviceProperties.apiVersion >> 12) & 0x3ff) << "." << (deviceProperties.apiVersion & 0xfff) << std::endl;
-				}
-			}
-		}
-	}
-#endif
 
 	physicalDevice = physicalDevices[selectedDevice];
 
@@ -1952,10 +1902,10 @@ void VKRadialBlur::setupFrameBuffer()
 	frameBufferCreateInfo.layers = 1;
 
 	// Create frame buffers for every swap chain image
-	frameBuffers.resize(mSwapChain.imageCount);
+	frameBuffers.resize(mSwapChain.mImageCount);
 	for (uint32_t i = 0; i < frameBuffers.size(); i++)
 	{
-		attachments[0] = mSwapChain.buffers[i].view;
+		attachments[0] = mSwapChain.mBuffers[i].view;
 		VK_CHECK_RESULT(vkCreateFramebuffer(device, &frameBufferCreateInfo, nullptr, &frameBuffers[i]));
 	}
 }
@@ -2462,8 +2412,7 @@ void VKRadialBlur::setupDescriptorPool()
 	std::vector<VkDescriptorPoolSize> poolSizes =
 			{
 					InitDescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4),
-					InitDescriptorPoolSize(
-							VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6)
+					InitDescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6)
 			};
 
 	VkDescriptorPoolCreateInfo descriptorPoolInfo =
