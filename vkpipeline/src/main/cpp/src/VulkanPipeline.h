@@ -52,7 +52,7 @@
 
 #define VERTEX_BUFFER_BIND_ID 0
 
-class VulkanExampleBase
+class VulkanPipeLines
 {
 public:
 	// Vertex layout for the models
@@ -138,7 +138,7 @@ protected:
 	/** @brief Pipeline stages used to wait at for graphics queue submissions */
 	VkPipelineStageFlags submitPipelineStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	// Contains command buffers and semaphores to be presented to the queue
-	VkSubmitInfo submitInfo;
+	VkSubmitInfo mSubmitInfo;
 	// Command buffers used for rendering
 	std::vector<VkCommandBuffer> drawCmdBuffers;
 	// Global render pass for frame buffer writes
@@ -211,8 +211,8 @@ public:
 	glm::vec3 cameraPos = glm::vec3();
 	glm::vec2 mousePos;
 
-	std::string title = "VulkanExample";
-	std::string name = "vulkanExample";
+	std::string title = "VkPipeLine";
+	std::string name = "VkPipeLine";
 
 	struct 
 	{
@@ -273,10 +273,10 @@ public:
 #endif
 
 	// Default ctor
-	VulkanExampleBase(bool enableValidation);
+	VulkanPipeLines(bool enableValidation);
 
 	// dtor
-	~VulkanExampleBase();
+	~VulkanPipeLines();
 
 	// Setup the vulkan instance, enable required extensions and connect to the physical device (GPU)
 	void initVulkan();

@@ -8,9 +8,9 @@
 
 #include "VulkanPipeline.h"
 
-std::vector<const char*> VulkanExampleBase::args;
+std::vector<const char*> VulkanPipeLines::args;
 
-VkResult VulkanExampleBase::createInstance(bool enableValidation)
+VkResult VulkanPipeLines::createInstance(bool enableValidation)
 {
 	this->settings.validation = enableValidation;
 
@@ -56,7 +56,7 @@ VkResult VulkanExampleBase::createInstance(bool enableValidation)
 	return vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
 }
 
-std::string VulkanExampleBase::getWindowTitle()
+std::string VulkanPipeLines::getWindowTitle()
 {
 	std::string device(deviceProperties.deviceName);
 	std::string windowTitle;
@@ -70,7 +70,7 @@ std::string VulkanExampleBase::getWindowTitle()
 	return windowTitle;
 }
 
-const std::string VulkanExampleBase::getAssetPath()
+const std::string VulkanPipeLines::getAssetPath()
 {
 #if defined(__ANDROID__)
 	return "";
@@ -79,7 +79,7 @@ const std::string VulkanExampleBase::getAssetPath()
 #endif
 }
 
-bool VulkanExampleBase::checkCommandBuffers()
+bool VulkanPipeLines::checkCommandBuffers()
 {
 	for (auto& cmdBuffer : drawCmdBuffers)
 	{
@@ -91,13 +91,13 @@ bool VulkanExampleBase::checkCommandBuffers()
 	return true;
 }
 
-void VulkanExampleBase::createCommandBuffers()
+void VulkanPipeLines::createCommandBuffers()
 {
 	// Create one command buffer for each swap chain image and reuse for rendering
 	drawCmdBuffers.resize(swapChain.imageCount);
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
-            vks::initializers::InitCommandBufferAllocateInfo(
+            InitCommandBufferAllocateInfo(
                     cmdPool,
                     VK_COMMAND_BUFFER_LEVEL_PRIMARY,
                     static_cast<uint32_t>(drawCmdBuffers.size()));
@@ -105,17 +105,17 @@ void VulkanExampleBase::createCommandBuffers()
 	VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, drawCmdBuffers.data()));
 }
 
-void VulkanExampleBase::destroyCommandBuffers()
+void VulkanPipeLines::destroyCommandBuffers()
 {
 	vkFreeCommandBuffers(device, cmdPool, static_cast<uint32_t>(drawCmdBuffers.size()), drawCmdBuffers.data());
 }
 
-VkCommandBuffer VulkanExampleBase::createCommandBuffer(VkCommandBufferLevel level, bool begin)
+VkCommandBuffer VulkanPipeLines::createCommandBuffer(VkCommandBufferLevel level, bool begin)
 {
 	VkCommandBuffer cmdBuffer;
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
-            vks::initializers::InitCommandBufferAllocateInfo(
+            InitCommandBufferAllocateInfo(
                     cmdPool,
                     level,
                     1);
@@ -125,14 +125,14 @@ VkCommandBuffer VulkanExampleBase::createCommandBuffer(VkCommandBufferLevel leve
 	// If requested, also start the new command buffer
 	if (begin)
 	{
-		VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::InitCommandBufferBeginInfo();
+		VkCommandBufferBeginInfo cmdBufInfo = InitCommandBufferBeginInfo();
 		VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
 	}
 
 	return cmdBuffer;
 }
 
-void VulkanExampleBase::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free)
+void VulkanPipeLines::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free)
 {
 	if (commandBuffer == VK_NULL_HANDLE)
 	{
@@ -155,14 +155,14 @@ void VulkanExampleBase::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueu
 	}
 }
 
-void VulkanExampleBase::createPipelineCache()
+void VulkanPipeLines::createPipelineCache()
 {
 	VkPipelineCacheCreateInfo pipelineCacheCreateInfo = {};
 	pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
 	VK_CHECK_RESULT(vkCreatePipelineCache(device, &pipelineCacheCreateInfo, nullptr, &pipelineCache));
 }
 
-void VulkanExampleBase::prepare()
+void VulkanPipeLines::prepare()
 {
 	if (vulkanDevice->enableDebugMarkers)
 	{
@@ -206,13 +206,14 @@ void VulkanExampleBase::prepare()
 
 }
 
-VkPipelineShaderStageCreateInfo VulkanExampleBase::loadShader(std::string fileName, VkShaderStageFlagBits stage)
+VkPipelineShaderStageCreateInfo VulkanPipeLines::loadShader(std::string fileName, VkShaderStageFlagBits stage)
 {
 	VkPipelineShaderStageCreateInfo shaderStage = {};
 	shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	shaderStage.stage = stage;
 #if defined(__ANDROID__)
-	shaderStage.module = vks::tools::loadShader(androidApp->activity->assetManager, fileName.c_str(), device, stage);
+	shaderStage.module = vks::tools::VksLoadShader(androidApp->activity->assetManager,
+												   fileName.c_str(), device, stage);
 #else
 	shaderStage.module = vks::tools::loadShader(fileName.c_str(), device, stage);
 #endif
@@ -222,7 +223,7 @@ VkPipelineShaderStageCreateInfo VulkanExampleBase::loadShader(std::string fileNa
 	return shaderStage;
 }
 
-void VulkanExampleBase::renderLoop()
+void VulkanPipeLines::renderLoop()
 {
 	destWidth = width;
 	destHeight = height;
@@ -533,7 +534,7 @@ void VulkanExampleBase::renderLoop()
 	vkDeviceWaitIdle(device);
 }
 
-void VulkanExampleBase::updateTextOverlay()
+void VulkanPipeLines::updateTextOverlay()
 {
 	if (!enableTextOverlay)
 		return;
@@ -557,7 +558,7 @@ void VulkanExampleBase::updateTextOverlay()
 	textOverlay->endTextUpdate();
 }
 
-void VulkanExampleBase::getOverlayText(VulkanTextOverlay *textOverlay)
+void VulkanPipeLines::getOverlayText(VulkanTextOverlay *textOverlay)
 {
 	textOverlay->addText("Phong shading pipeline",(float)width / 6.0f, height - 35.0f, VulkanTextOverlay::alignCenter);
 	textOverlay->addText("Toon shading pipeline", (float)width / 2.0f, height - 35.0f, VulkanTextOverlay::alignCenter);
@@ -568,7 +569,7 @@ void VulkanExampleBase::getOverlayText(VulkanTextOverlay *textOverlay)
 }
 
 
-VulkanExampleBase::VulkanExampleBase(bool enableValidation)
+VulkanPipeLines::VulkanPipeLines(bool enableValidation)
 {
 	settings.validation = enableValidation;
 
@@ -612,7 +613,7 @@ VulkanExampleBase::VulkanExampleBase(bool enableValidation)
 	title = "Pipeline state objects";
 }
 
-VulkanExampleBase::~VulkanExampleBase()
+VulkanPipeLines::~VulkanPipeLines()
 {
 	// Clean up used Vulkan resources
 	// Note : Inherited destructor cleans up resources stored in base class
@@ -674,7 +675,7 @@ VulkanExampleBase::~VulkanExampleBase()
 
 }
 
-void VulkanExampleBase::initVulkan()
+void VulkanPipeLines::initVulkan()
 {
 	VkResult err;
 
@@ -682,7 +683,8 @@ void VulkanExampleBase::initVulkan()
 	err = createInstance(settings.validation);
 	if (err)
 	{
-		vks::tools::exitFatal("Could not create Vulkan instance : \n" + vks::tools::errorString(err), "Fatal error");
+		vks::tools::VksExitFatal("Could not create Vulkan instance : \n" +
+								 vks::tools::VksErrorString(err), "Fatal error");
 	}
 
 	loadVulkanFunctions(instance);
@@ -707,7 +709,8 @@ void VulkanExampleBase::initVulkan()
 	err = vkEnumeratePhysicalDevices(instance, &gpuCount, physicalDevices.data());
 	if (err)
 	{
-		vks::tools::exitFatal("Could not enumerate physical devices : \n" + vks::tools::errorString(err), "Fatal error");
+		vks::tools::VksExitFatal("Could not enumerate physical devices : \n" +
+								 vks::tools::VksErrorString(err), "Fatal error");
 	}
 
 	// GPU selection
@@ -732,7 +735,9 @@ void VulkanExampleBase::initVulkan()
 	vulkanDevice = new vks::VulkanDevice(physicalDevice);
 	VkResult res = vulkanDevice->createLogicalDevice(enabledFeatures, enabledExtensions);
 	if (res != VK_SUCCESS) {
-		vks::tools::exitFatal("Could not create Vulkan device: \n" + vks::tools::errorString(res), "Fatal error");
+		vks::tools::VksExitFatal(
+				"Could not create Vulkan device: \n" + vks::tools::VksErrorString(res),
+				"Fatal error");
 	}
 	device = vulkanDevice->logicalDevice;
 
@@ -740,13 +745,13 @@ void VulkanExampleBase::initVulkan()
 	vkGetDeviceQueue(device, vulkanDevice->queueFamilyIndices.graphics, 0, &queue);
 
 	// Find a suitable depth format
-	VkBool32 validDepthFormat = vks::tools::getSupportedDepthFormat(physicalDevice, &depthFormat);
+	VkBool32 validDepthFormat = vks::tools::VksGetSupportedDepthFormat(physicalDevice, &depthFormat);
 	assert(validDepthFormat);
 
 	swapChain.connect(instance, physicalDevice, device);
 
 	// Create synchronization objects
-	VkSemaphoreCreateInfo semaphoreCreateInfo = vks::initializers::InitSemaphoreCreateInfo();
+	VkSemaphoreCreateInfo semaphoreCreateInfo = InitSemaphoreCreateInfo();
 	// Create a semaphore used to synchronize image presentation
 	// Ensures that the image is displayed before we start submitting new commands to the queu
 	VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphores.presentComplete));
@@ -761,12 +766,12 @@ void VulkanExampleBase::initVulkan()
 	// Set up submit info structure
 	// Semaphores will stay the same during application lifetime
 	// Command buffer submission info is set by each example
-	submitInfo = vks::initializers::InitSubmitInfo();
-	submitInfo.pWaitDstStageMask = &submitPipelineStages;
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = &semaphores.presentComplete;
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = &semaphores.renderComplete;
+	mSubmitInfo = InitSubmitInfo();
+	mSubmitInfo.pWaitDstStageMask = &submitPipelineStages;
+	mSubmitInfo.waitSemaphoreCount = 1;
+	mSubmitInfo.pWaitSemaphores = &semaphores.presentComplete;
+	mSubmitInfo.signalSemaphoreCount = 1;
+	mSubmitInfo.pSignalSemaphores = &semaphores.renderComplete;
 
 #if defined(__ANDROID__)
 	// Get Android device name and manufacturer (to display along GPU name)
@@ -784,9 +789,9 @@ void VulkanExampleBase::initVulkan()
 #endif	
 }
 
-int32_t VulkanExampleBase::handleAppInput(struct android_app* app, AInputEvent* event)
+int32_t VulkanPipeLines::handleAppInput(struct android_app* app, AInputEvent* event)
 {
-	VulkanExampleBase* vulkanExample = reinterpret_cast<VulkanExampleBase*>(app->userData);
+	VulkanPipeLines* vulkanExample = reinterpret_cast<VulkanPipeLines*>(app->userData);
 	if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION)
 	{
 		int32_t eventSource = AInputEvent_getSource(event);
@@ -888,10 +893,10 @@ int32_t VulkanExampleBase::handleAppInput(struct android_app* app, AInputEvent* 
 	return 0;
 }
 
-void VulkanExampleBase::handleAppCommand(android_app * app, int32_t cmd)
+void VulkanPipeLines::handleAppCommand(android_app * app, int32_t cmd)
 {
 	assert(app->userData != NULL);
-	VulkanExampleBase* vulkanExample = reinterpret_cast<VulkanExampleBase*>(app->userData);
+	VulkanPipeLines* vulkanExample = reinterpret_cast<VulkanPipeLines*>(app->userData);
 	switch (cmd)
 	{
 	case APP_CMD_SAVE_STATE:
@@ -932,31 +937,31 @@ void VulkanExampleBase::handleAppCommand(android_app * app, int32_t cmd)
 	}
 }
 
-void VulkanExampleBase::render(){
+void VulkanPipeLines::render(){
 	if (!prepared)
 		return;
 	draw();
 }
 
-void VulkanExampleBase::viewChanged()
+void VulkanPipeLines::viewChanged()
 {
 	updateUniformBuffers();
 }
 
-void VulkanExampleBase::keyPressed(uint32_t keyCode)
+void VulkanPipeLines::keyPressed(uint32_t keyCode)
 {
 	// Can be overriden in derived class
 }
 
-void VulkanExampleBase::buildCommandBuffers()
+void VulkanPipeLines::buildCommandBuffers()
 {
-	VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::InitCommandBufferBeginInfo();
+	VkCommandBufferBeginInfo cmdBufInfo = InitCommandBufferBeginInfo();
 
 	VkClearValue clearValues[2];
 	clearValues[0].color = defaultClearColor;
 	clearValues[1].depthStencil = { 1.0f, 0 };
 
-	VkRenderPassBeginInfo renderPassBeginInfo = vks::initializers::InitRenderPassBeginInfo();
+	VkRenderPassBeginInfo renderPassBeginInfo = InitRenderPassBeginInfo();
 	renderPassBeginInfo.renderPass = renderPass;
 	renderPassBeginInfo.renderArea.offset.x = 0;
 	renderPassBeginInfo.renderArea.offset.y = 0;
@@ -974,11 +979,11 @@ void VulkanExampleBase::buildCommandBuffers()
 
 		vkCmdBeginRenderPass(drawCmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		VkViewport viewport = vks::initializers::InitViewport((float) width, (float) height, 0.0f,
+		VkViewport viewport = InitViewport((float) width, (float) height, 0.0f,
                                                               1.0f);
 		vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
 
-		VkRect2D scissor = vks::initializers::InitRect2D(width, height, 0, 0);
+		VkRect2D scissor = InitRect2D(width, height, 0, 0);
 		vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);
 
 		vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
@@ -1019,7 +1024,7 @@ void VulkanExampleBase::buildCommandBuffers()
 	}
 }
 
-void VulkanExampleBase::createCommandPool()
+void VulkanPipeLines::createCommandPool()
 {
 	VkCommandPoolCreateInfo cmdPoolInfo = {};
 	cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -1028,7 +1033,7 @@ void VulkanExampleBase::createCommandPool()
 	VK_CHECK_RESULT(vkCreateCommandPool(device, &cmdPoolInfo, nullptr, &cmdPool));
 }
 
-void VulkanExampleBase::setupDepthStencil()
+void VulkanPipeLines::setupDepthStencil()
 {
 	VkImageCreateInfo image = {};
 	image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -1075,7 +1080,7 @@ void VulkanExampleBase::setupDepthStencil()
 	VK_CHECK_RESULT(vkCreateImageView(device, &depthStencilView, nullptr, &depthStencil.view));
 }
 
-void VulkanExampleBase::setupFrameBuffer()
+void VulkanPipeLines::setupFrameBuffer()
 {
 	VkImageView attachments[2];
 
@@ -1101,7 +1106,7 @@ void VulkanExampleBase::setupFrameBuffer()
 	}
 }
 
-void VulkanExampleBase::setupRenderPass()
+void VulkanPipeLines::setupRenderPass()
 {
 	std::array<VkAttachmentDescription, 2> attachments = {};
 	// Color attachment
@@ -1173,7 +1178,7 @@ void VulkanExampleBase::setupRenderPass()
 	VK_CHECK_RESULT(vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass));
 }
 
-void VulkanExampleBase::getEnabledFeatures()
+void VulkanPipeLines::getEnabledFeatures()
 {
 	// Fill mode non solid is required for wireframe display
 	if (deviceFeatures.fillModeNonSolid) {
@@ -1185,7 +1190,7 @@ void VulkanExampleBase::getEnabledFeatures()
 	};
 }
 
-void VulkanExampleBase::windowResize()
+void VulkanPipeLines::windowResize()
 {
 	if (!prepared)
 	{
@@ -1237,12 +1242,12 @@ void VulkanExampleBase::windowResize()
 	prepared = true;
 }
 
-void VulkanExampleBase::windowResized()
+void VulkanPipeLines::windowResized()
 {
 	// Can be overriden in derived class
 }
 
-void VulkanExampleBase::initSwapchain()
+void VulkanPipeLines::initSwapchain()
 {
 #if defined(_WIN32)
 	swapChain.initSurface(windowInstance, window);
@@ -1257,25 +1262,25 @@ void VulkanExampleBase::initSwapchain()
 #endif
 }
 
-void VulkanExampleBase::setupSwapChain()
+void VulkanPipeLines::setupSwapChain()
 {
 	swapChain.create(&width, &height, settings.vsync);
 }
 
-void VulkanExampleBase::loadAssets()
+void VulkanPipeLines::loadAssets()
 {
 	models.cube.loadFromFile(getAssetPath() + "models/treasure_smooth.dae", vertexLayout, 1.0f, vulkanDevice, queue);
 }
 
-void VulkanExampleBase::setupDescriptorPool()
+void VulkanPipeLines::setupDescriptorPool()
 {
 	std::vector<VkDescriptorPoolSize> poolSizes =
 			{
-                    vks::initializers::InitDescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1)
+                    InitDescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1)
 			};
 
 	VkDescriptorPoolCreateInfo descriptorPoolInfo =
-            vks::initializers::InitDescriptorPoolCreateInfo(
+            InitDescriptorPoolCreateInfo(
                     poolSizes.size(),
                     poolSizes.data(),
                     2);
@@ -1283,36 +1288,36 @@ void VulkanExampleBase::setupDescriptorPool()
 	VK_CHECK_RESULT(vkCreateDescriptorPool(device, &descriptorPoolInfo, nullptr, &descriptorPool));
 }
 
-void VulkanExampleBase::setupDescriptorSetLayout()
+void VulkanPipeLines::setupDescriptorSetLayout()
 {
 	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings =
 			{
 					// Binding 0 : Vertex shader uniform buffer
-                    vks::initializers::InitDescriptorSetLayoutBinding(
+                    InitDescriptorSetLayoutBinding(
                             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                             VK_SHADER_STAGE_VERTEX_BIT,
                             0)
 			};
 
 	VkDescriptorSetLayoutCreateInfo descriptorLayout =
-            vks::initializers::InitDescriptorSetLayoutCreateInfo(
+            InitDescriptorSetLayoutCreateInfo(
                     setLayoutBindings.data(),
                     setLayoutBindings.size());
 
 	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &descriptorLayout, nullptr, &descriptorSetLayout));
 
 	VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo =
-            vks::initializers::InitPipelineLayoutCreateInfo(
+            InitPipelineLayoutCreateInfo(
                     &descriptorSetLayout,
                     1);
 
 	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pPipelineLayoutCreateInfo, nullptr, &pipelineLayout));
 }
 
-void VulkanExampleBase::setupDescriptorSet()
+void VulkanPipeLines::setupDescriptorSet()
 {
 	VkDescriptorSetAllocateInfo allocInfo =
-            vks::initializers::InitDescriptorSetAllocateInfo(
+            InitDescriptorSetAllocateInfo(
                     descriptorPool,
                     &descriptorSetLayout,
                     1);
@@ -1322,7 +1327,7 @@ void VulkanExampleBase::setupDescriptorSet()
 	std::vector<VkWriteDescriptorSet> writeDescriptorSets =
 			{
 					// Binding 0 : Vertex shader uniform buffer
-                    vks::initializers::InitWriteDescriptorSet(
+                    InitWriteDescriptorSet(
                             descriptorSet,
                             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                             0,
@@ -1332,42 +1337,42 @@ void VulkanExampleBase::setupDescriptorSet()
 	vkUpdateDescriptorSets(device, writeDescriptorSets.size(), writeDescriptorSets.data(), 0, NULL);
 }
 
-void VulkanExampleBase::preparePipelines()
+void VulkanPipeLines::preparePipelines()
 {
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyState =
-            vks::initializers::InitPipelineInputAssemblyStateCreateInfo(
+            InitPipelineInputAssemblyStateCreateInfo(
                     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
                     0,
                     VK_FALSE);
 
 	VkPipelineRasterizationStateCreateInfo rasterizationState =
-            vks::initializers::InitPipelineRasterizationStateCreateInfo(
+            InitPipelineRasterizationStateCreateInfo(
                     VK_POLYGON_MODE_FILL,
                     VK_CULL_MODE_BACK_BIT,
                     VK_FRONT_FACE_CLOCKWISE,
                     0);
 
 	VkPipelineColorBlendAttachmentState blendAttachmentState =
-            vks::initializers::InitPipelineColorBlendAttachmentState(
+            InitPipelineColorBlendAttachmentState(
                     0xf,
                     VK_FALSE);
 
 	VkPipelineColorBlendStateCreateInfo colorBlendState =
-            vks::initializers::InitPipelineColorBlendStateCreateInfo(
+            InitPipelineColorBlendStateCreateInfo(
                     1,
                     &blendAttachmentState);
 
 	VkPipelineDepthStencilStateCreateInfo depthStencilState =
-            vks::initializers::InitPipelineDepthStencilStateCreateInfo(
+            InitPipelineDepthStencilStateCreateInfo(
                     VK_TRUE,
                     VK_TRUE,
                     VK_COMPARE_OP_LESS_OR_EQUAL);
 
 	VkPipelineViewportStateCreateInfo viewportState =
-            vks::initializers::InitPipelineViewportStateCreateInfo(1, 1, 0);
+            InitPipelineViewportStateCreateInfo(1, 1, 0);
 
 	VkPipelineMultisampleStateCreateInfo multisampleState =
-            vks::initializers::InitPipelineMultisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT);
+            InitPipelineMultisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT);
 
 	std::vector<VkDynamicState> dynamicStateEnables = {
 			VK_DYNAMIC_STATE_VIEWPORT,
@@ -1375,10 +1380,10 @@ void VulkanExampleBase::preparePipelines()
 			VK_DYNAMIC_STATE_LINE_WIDTH,
 	};
 	VkPipelineDynamicStateCreateInfo dynamicState =
-            vks::initializers::InitPipelineDynamicStateCreateInfo(dynamicStateEnables);
+            InitPipelineDynamicStateCreateInfo(dynamicStateEnables);
 
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo =
-            vks::initializers::InitPipelineCreateInfo(pipelineLayout, renderPass);
+            InitPipelineCreateInfo(pipelineLayout, renderPass);
 
 	std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
 
@@ -1396,27 +1401,27 @@ void VulkanExampleBase::preparePipelines()
 
 	// Binding description
 	std::vector<VkVertexInputBindingDescription> vertexInputBindings = {
-            vks::initializers::InitVertexInputBindingDescription(VERTEX_BUFFER_BIND_ID,
+            InitVertexInputBindingDescription(VERTEX_BUFFER_BIND_ID,
                                                                  vertexLayout.stride(),
                                                                  VK_VERTEX_INPUT_RATE_VERTEX),
 	};
 
 	// Attribute descriptions
 	std::vector<VkVertexInputAttributeDescription> vertexInputAttributes = {
-            vks::initializers::InitVertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 0,
+            InitVertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 0,
                                                                    VK_FORMAT_R32G32B32_SFLOAT, 0),					// Location 0: Position
-            vks::initializers::InitVertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 1,
+            InitVertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 1,
                                                                    VK_FORMAT_R32G32B32_SFLOAT,
                                                                    sizeof(float) * 3),	// Location 1: Color
-            vks::initializers::InitVertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 2,
+            InitVertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 2,
                                                                    VK_FORMAT_R32G32_SFLOAT,
                                                                    sizeof(float) * 6),		// Location 2 : Texture coordinates
-            vks::initializers::InitVertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 3,
+            InitVertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 3,
                                                                    VK_FORMAT_R32G32B32_SFLOAT,
                                                                    sizeof(float) * 8),	// Location 3 : Normal
 	};
 
-	VkPipelineVertexInputStateCreateInfo vertexInputState = vks::initializers::InitPipelineVertexInputStateCreateInfo();
+	VkPipelineVertexInputStateCreateInfo vertexInputState = InitPipelineVertexInputStateCreateInfo();
 	vertexInputState.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexInputBindings.size());
 	vertexInputState.pVertexBindingDescriptions = vertexInputBindings.data();
 	vertexInputState.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexInputAttributes.size());
@@ -1463,7 +1468,7 @@ void VulkanExampleBase::preparePipelines()
 }
 
 // Prepare and initialize uniform buffer containing shader uniforms
-void VulkanExampleBase::prepareUniformBuffers()
+void VulkanPipeLines::prepareUniformBuffers()
 {
 	// Create the vertex shader uniform buffer block
 	VK_CHECK_RESULT(vulkanDevice->createBuffer(
@@ -1478,7 +1483,7 @@ void VulkanExampleBase::prepareUniformBuffers()
 	updateUniformBuffers();
 }
 
-void VulkanExampleBase::updateUniformBuffers()
+void VulkanPipeLines::updateUniformBuffers()
 {
 	uboVS.projection = glm::perspective(glm::radians(60.0f), (float)(width / 3.0f) / (float)height, 0.1f, 256.0f);
 
@@ -1492,14 +1497,14 @@ void VulkanExampleBase::updateUniformBuffers()
 	memcpy(uniformBuffer.mapped, &uboVS, sizeof(uboVS));
 }
 
-void VulkanExampleBase::draw()
+void VulkanPipeLines::draw()
 {
     // Acquire the next image from the swap chaing
     VK_CHECK_RESULT(swapChain.acquireNextImage(semaphores.presentComplete, &currentBuffer));
 
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &drawCmdBuffers[currentBuffer];
-	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE));
+	mSubmitInfo.commandBufferCount = 1;
+	mSubmitInfo.pCommandBuffers = &drawCmdBuffers[currentBuffer];
+	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &mSubmitInfo, VK_NULL_HANDLE));
 
     bool submitTextOverlay = enableTextOverlay && textOverlay->visible;
 
@@ -1507,30 +1512,30 @@ void VulkanExampleBase::draw()
     {
         // Wait for color attachment output to finish before rendering the text overlay
         VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        submitInfo.pWaitDstStageMask = &stageFlags;
+        mSubmitInfo.pWaitDstStageMask = &stageFlags;
 
         // Set semaphores
         // Wait for render complete semaphore
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = &semaphores.renderComplete;
+        mSubmitInfo.waitSemaphoreCount = 1;
+        mSubmitInfo.pWaitSemaphores = &semaphores.renderComplete;
         // Signal ready with text overlay complete semaphpre
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = &semaphores.textOverlayComplete;
+        mSubmitInfo.signalSemaphoreCount = 1;
+        mSubmitInfo.pSignalSemaphores = &semaphores.textOverlayComplete;
 
         // Submit current text overlay command buffer
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &textOverlay->cmdBuffers[currentBuffer];
-        VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE));
+        mSubmitInfo.commandBufferCount = 1;
+        mSubmitInfo.pCommandBuffers = &textOverlay->cmdBuffers[currentBuffer];
+        VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &mSubmitInfo, VK_NULL_HANDLE));
 
         // Reset stage mask
-        submitInfo.pWaitDstStageMask = &submitPipelineStages;
+        mSubmitInfo.pWaitDstStageMask = &submitPipelineStages;
         // Reset wait and signal semaphores for rendering next frame
         // Wait for swap chain presentation to finish
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = &semaphores.presentComplete;
+        mSubmitInfo.waitSemaphoreCount = 1;
+        mSubmitInfo.pWaitSemaphores = &semaphores.presentComplete;
         // Signal ready with offscreen semaphore
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = &semaphores.renderComplete;
+        mSubmitInfo.signalSemaphoreCount = 1;
+        mSubmitInfo.pSignalSemaphores = &semaphores.renderComplete;
     }
 
     VK_CHECK_RESULT(swapChain.queuePresent(queue, currentBuffer, submitTextOverlay ? semaphores.textOverlayComplete : semaphores.renderComplete));
@@ -1539,15 +1544,15 @@ void VulkanExampleBase::draw()
 }
 
 
-VulkanExampleBase *vulkanExample;
+VulkanPipeLines *gpVkPipeLine;
 void android_main(android_app* state)
 {
 	app_dummy();
-	vulkanExample = new VulkanExampleBase(false);
-	state->userData = vulkanExample;
-	state->onAppCmd = VulkanExampleBase::handleAppCommand;
-	state->onInputEvent = VulkanExampleBase::handleAppInput;
+	gpVkPipeLine = new VulkanPipeLines(false);
+	state->userData = gpVkPipeLine;
+	state->onAppCmd = VulkanPipeLines::handleAppCommand;
+	state->onInputEvent = VulkanPipeLines::handleAppInput;
 	androidApp = state;
-	vulkanExample->renderLoop();
-	delete(vulkanExample);
+	gpVkPipeLine->renderLoop();
+	delete(gpVkPipeLine);
 }

@@ -12,7 +12,7 @@ namespace vks
 {
 	namespace tools
 	{
-		std::string errorString(VkResult errorCode)
+		std::string VksErrorString(VkResult errorCode)
 		{
 			switch (errorCode)
 			{
@@ -46,7 +46,7 @@ namespace vks
 			}
 		}
 
-		std::string physicalDeviceTypeString(VkPhysicalDeviceType type)
+		std::string VksPhysicalDeviceTypeString(VkPhysicalDeviceType type)
 		{
 			switch (type)
 			{
@@ -60,7 +60,7 @@ namespace vks
 			}
 		}
 
-		VkBool32 getSupportedDepthFormat(VkPhysicalDevice physicalDevice, VkFormat *depthFormat)
+		VkBool32 VksGetSupportedDepthFormat(VkPhysicalDevice physicalDevice, VkFormat *depthFormat)
 		{
 			// Since all depth formats may be optional, we need to find a suitable depth format to use
 			// Start with the highest precision packed format
@@ -91,18 +91,18 @@ namespace vks
 		// an image and put it into an active command buffer
 		// See chapter 11.4 "Image Layout" for details
 
-		void setImageLayout(
-			VkCommandBuffer cmdbuffer,
-			VkImage image,
-			VkImageAspectFlags aspectMask,
-			VkImageLayout oldImageLayout,
-			VkImageLayout newImageLayout,
-			VkImageSubresourceRange subresourceRange,
-			VkPipelineStageFlags srcStageMask,
-			VkPipelineStageFlags dstStageMask)
+		void VksSetImageLayout(
+                VkCommandBuffer cmdbuffer,
+                VkImage image,
+                VkImageAspectFlags aspectMask,
+                VkImageLayout oldImageLayout,
+                VkImageLayout newImageLayout,
+                VkImageSubresourceRange subresourceRange,
+                VkPipelineStageFlags srcStageMask,
+                VkPipelineStageFlags dstStageMask)
 		{
 			// Create an image barrier object
-			VkImageMemoryBarrier imageMemoryBarrier = vks::initializers::InitImageMemoryBarrier();
+			VkImageMemoryBarrier imageMemoryBarrier = InitImageMemoryBarrier();
 			imageMemoryBarrier.oldLayout = oldImageLayout;
 			imageMemoryBarrier.newLayout = newImageLayout;
 			imageMemoryBarrier.image = image;
@@ -215,35 +215,36 @@ namespace vks
 		}
 
 		// Fixed sub resource on first mip level and layer
-		void setImageLayout(
-			VkCommandBuffer cmdbuffer,
-			VkImage image,
-			VkImageAspectFlags aspectMask,
-			VkImageLayout oldImageLayout,
-			VkImageLayout newImageLayout,
-			VkPipelineStageFlags srcStageMask,
-			VkPipelineStageFlags dstStageMask)
+		void VksSetImageLayout(
+                VkCommandBuffer cmdbuffer,
+                VkImage image,
+                VkImageAspectFlags aspectMask,
+                VkImageLayout oldImageLayout,
+                VkImageLayout newImageLayout,
+                VkPipelineStageFlags srcStageMask,
+                VkPipelineStageFlags dstStageMask)
 		{
 			VkImageSubresourceRange subresourceRange = {};
 			subresourceRange.aspectMask = aspectMask;
 			subresourceRange.baseMipLevel = 0;
 			subresourceRange.levelCount = 1;
 			subresourceRange.layerCount = 1;
-			setImageLayout(cmdbuffer, image, aspectMask, oldImageLayout, newImageLayout, subresourceRange);
+            VksSetImageLayout(cmdbuffer, image, aspectMask, oldImageLayout, newImageLayout,
+                              subresourceRange);
 		}
 
-		void insertImageMemoryBarrier(
-			VkCommandBuffer cmdbuffer,
-			VkImage image,
-			VkAccessFlags srcAccessMask,
-			VkAccessFlags dstAccessMask,
-			VkImageLayout oldImageLayout,
-			VkImageLayout newImageLayout,
-			VkPipelineStageFlags srcStageMask,
-			VkPipelineStageFlags dstStageMask,
-			VkImageSubresourceRange subresourceRange)
+		void VksInsertImageMemoryBarrier(
+                VkCommandBuffer cmdbuffer,
+                VkImage image,
+                VkAccessFlags srcAccessMask,
+                VkAccessFlags dstAccessMask,
+                VkImageLayout oldImageLayout,
+                VkImageLayout newImageLayout,
+                VkPipelineStageFlags srcStageMask,
+                VkPipelineStageFlags dstStageMask,
+                VkImageSubresourceRange subresourceRange)
 		{
-			VkImageMemoryBarrier imageMemoryBarrier = vks::initializers::InitImageMemoryBarrier();
+			VkImageMemoryBarrier imageMemoryBarrier = InitImageMemoryBarrier();
 			imageMemoryBarrier.srcAccessMask = srcAccessMask;
 			imageMemoryBarrier.dstAccessMask = dstAccessMask;
 			imageMemoryBarrier.oldLayout = oldImageLayout;
@@ -261,7 +262,7 @@ namespace vks
 				1, &imageMemoryBarrier);
 		}
 
-		void exitFatal(std::string message, std::string caption)
+		void VksExitFatal(std::string message, std::string caption)
 		{
 #if defined(_WIN32)
 			MessageBox(NULL, message.c_str(), caption.c_str(), MB_OK | MB_ICONERROR);
@@ -293,7 +294,8 @@ namespace vks
 #if defined(__ANDROID__)
 		// Android shaders are stored as assets in the apk
 		// So they need to be loaded via the asset manager
-		VkShaderModule loadShader(AAssetManager* assetManager, const char *fileName, VkDevice device, VkShaderStageFlagBits stage)
+		VkShaderModule VksLoadShader(AAssetManager *assetManager, const char *fileName,
+                                     VkDevice device, VkShaderStageFlagBits stage)
 		{
 			// Load shader from compressed asset
 			AAsset* asset = AAssetManager_open(assetManager, fileName, AASSET_MODE_STREAMING);
@@ -354,7 +356,8 @@ namespace vks
 		}
 #endif
 
-		VkShaderModule loadShaderGLSL(const char *fileName, VkDevice device, VkShaderStageFlagBits stage)
+		VkShaderModule VksLoadShaderGLSL(const char *fileName, VkDevice device,
+                                         VkShaderStageFlagBits stage)
 		{
 			std::string shaderSrc = readTextFile(fileName);
 			const char *shaderCode = shaderSrc.c_str();
