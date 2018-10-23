@@ -81,7 +81,7 @@ public:
 	bool visible = true;
 	bool invalidated = false;
 
-	float scale = 1.0f;
+	float scale = 2.0f;
 
 	std::vector<VkCommandBuffer> cmdBuffers;
 

@@ -50,8 +50,8 @@ VkResult VulkanMain::createInstance(bool enableValidation)
 	}
 	if (settings.validation)
 	{
-		instanceCreateInfo.enabledLayerCount = vks::debug::validationLayerCount;
-		instanceCreateInfo.ppEnabledLayerNames = vks::debug::validationLayerNames;
+		instanceCreateInfo.enabledLayerCount = gVksDebugValidationLayerCount;
+		instanceCreateInfo.ppEnabledLayerNames = gVksDebugValidationLayerNames;
 	}
 	return vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
 }
@@ -61,7 +61,7 @@ std::string VulkanMain::getWindowTitle()
 	std::string device(deviceProperties.deviceName);
 	std::string windowTitle;
 	windowTitle = title + " - " + device;
-	if (!enableTextOverlay)
+	if (!mEnableTextOverlay)
 	{
 		windowTitle += " - " ;
 		windowTitle += frameCounter;
@@ -81,7 +81,7 @@ const std::string VulkanMain::getAssetPath()
 
 bool VulkanMain::checkCommandBuffers()
 {
-	for (auto& cmdBuffer : drawCmdBuffers)
+	for (auto& cmdBuffer : mDrawCmdBuffers)
 	{
 		if (cmdBuffer == VK_NULL_HANDLE)
 		{
@@ -94,20 +94,20 @@ bool VulkanMain::checkCommandBuffers()
 void VulkanMain::createCommandBuffers()
 {
 	// Create one command buffer for each swap chain image and reuse for rendering
-	drawCmdBuffers.resize(swapChain.imageCount);
+	mDrawCmdBuffers.resize(swapChain.imageCount);
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
             InitCommandBufferAllocateInfo(
                     cmdPool,
                     VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-                    static_cast<uint32_t>(drawCmdBuffers.size()));
+                    static_cast<uint32_t>(mDrawCmdBuffers.size()));
 
-	VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, drawCmdBuffers.data()));
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, mDrawCmdBuffers.data()));
 }
 
 void VulkanMain::destroyCommandBuffers()
 {
-	vkFreeCommandBuffers(device, cmdPool, static_cast<uint32_t>(drawCmdBuffers.size()), drawCmdBuffers.data());
+	vkFreeCommandBuffers(device, cmdPool, static_cast<uint32_t>(mDrawCmdBuffers.size()), mDrawCmdBuffers.data());
 }
 
 VkCommandBuffer VulkanMain::createCommandBuffer(VkCommandBufferLevel level, bool begin)
@@ -166,7 +166,7 @@ void VulkanMain::prepare()
 {
 	if (vulkanDevice->enableDebugMarkers)
 	{
-		vks::debugmarker::VksDebugMarkerSetup(device);
+		VksDebugMarkerSetup(device);
 	}
 	createCommandPool();
 	setupSwapChain();
@@ -176,13 +176,13 @@ void VulkanMain::prepare()
 	createPipelineCache();
 	setupFrameBuffer();
 
-	if (enableTextOverlay)
+	if (mEnableTextOverlay)
 	{
 		// Load the text rendering shaders
 		std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 		shaderStages.push_back(loadShader(getAssetPath() + "shaders/base/textoverlay.vert.spv", VK_SHADER_STAGE_VERTEX_BIT));
 		shaderStages.push_back(loadShader(getAssetPath() + "shaders/base/textoverlay.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT));
-		textOverlay = new VulkanTextOverlay(
+		mTextOverlay = new VulkanTextOverlay(
 			vulkanDevice,
 			queue,
 			frameBuffers,
@@ -344,26 +344,26 @@ void VulkanMain::renderLoop()
 
 void VulkanMain::updateTextOverlay()
 {
-	if (!enableTextOverlay)
+	if (!mEnableTextOverlay)
 		return;
 
-	textOverlay->beginTextUpdate();
+	mTextOverlay->beginTextUpdate();
 
-	textOverlay->addText(title, 5.0f, 5.0f, VulkanTextOverlay::alignLeft);
+	mTextOverlay->addText(title, 5.0f, 5.0f, VulkanTextOverlay::alignLeft);
 
 	std::stringstream ss;
 	ss << std::fixed << std::setprecision(3) << (frameTimer * 1000.0f) << "ms (" << lastFPS << " fps)";
-	textOverlay->addText(ss.str(), 5.0f, 25.0f, VulkanTextOverlay::alignLeft);
+	mTextOverlay->addText(ss.str(), 5.0f, 25.0f, VulkanTextOverlay::alignLeft);
 
 	std::string deviceName(deviceProperties.deviceName);
 #if defined(__ANDROID__)	
 	deviceName += " (" + androidProduct + ")";
 #endif
-	textOverlay->addText(deviceName, 5.0f, 45.0f, VulkanTextOverlay::alignLeft);
+	mTextOverlay->addText(deviceName, 5.0f, 45.0f, VulkanTextOverlay::alignLeft);
 
-	getOverlayText(textOverlay);
+	getOverlayText(mTextOverlay);
 
-	textOverlay->endTextUpdate();
+	mTextOverlay->endTextUpdate();
 }
 
 void VulkanMain::getOverlayText(VulkanTextOverlay *textOverlay)
@@ -417,7 +417,7 @@ VulkanMain::VulkanMain(bool enableValidation)
 
 	zoom = -10.5f;
 	rotation = glm::vec3(-25.0f, 15.0f, 0.0f);
-	enableTextOverlay = true;
+	mEnableTextOverlay = false;
 	title = "Pipeline state objects";
 }
 
@@ -425,17 +425,17 @@ VulkanMain::~VulkanMain()
 {
 	// Clean up used Vulkan resources
 	// Note : Inherited destructor cleans up resources stored in base class
-	vkDestroyPipeline(device, pipelines.phong, nullptr);
+	vkDestroyPipeline(device, mPipeLinePhong, nullptr);
 	if (deviceFeatures.fillModeNonSolid)
 	{
-		vkDestroyPipeline(device, pipelines.wireframe, nullptr);
+		vkDestroyPipeline(device, mPipeLineWireframe, nullptr);
 	}
-	vkDestroyPipeline(device, pipelines.toon, nullptr);
+	vkDestroyPipeline(device, mPipeLineToon, nullptr);
 
 	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 
-	models.cube.destroy();
+	mModels.destroy();
 	uniformBuffer.destroy();
 	////////////
 	// Clean up Vulkan resources
@@ -463,20 +463,20 @@ VulkanMain::~VulkanMain()
 
 	vkDestroyCommandPool(device, cmdPool, nullptr);
 
-	vkDestroySemaphore(device, semaphores.presentComplete, nullptr);
-	vkDestroySemaphore(device, semaphores.renderComplete, nullptr);
-	vkDestroySemaphore(device, semaphores.textOverlayComplete, nullptr);
+	vkDestroySemaphore(device, mPresentComplete, nullptr);
+	vkDestroySemaphore(device, mRenderComplete, nullptr);
+	vkDestroySemaphore(device, mTextOverlayComplete, nullptr);
 
-	if (enableTextOverlay)
+	if (mEnableTextOverlay)
 	{
-		delete textOverlay;
+		delete mTextOverlay;
 	}
 
 	delete vulkanDevice;
 
 	if (settings.validation)
 	{
-        vks::debug::VksDebugFreeDebugCallback(instance);
+        VksDebugFreeDebugCallback(instance);
 	}
 
 	vkDestroyInstance(instance, nullptr);
@@ -504,7 +504,7 @@ void VulkanMain::initVulkan()
 		// For validating (debugging) an appplication the error and warning bits should suffice
 		VkDebugReportFlagsEXT debugReportFlags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
 		// Additional flags include performance info, loader and layer debug messages, etc.
-        vks::debug::VksDebugSetupDebugging(instance, debugReportFlags, VK_NULL_HANDLE);
+        VksDebugSetupDebugging(instance, debugReportFlags, VK_NULL_HANDLE);
 	}
 
 	// Physical device
@@ -562,14 +562,14 @@ void VulkanMain::initVulkan()
 	VkSemaphoreCreateInfo semaphoreCreateInfo = InitSemaphoreCreateInfo();
 	// Create a semaphore used to synchronize image presentation
 	// Ensures that the image is displayed before we start submitting new commands to the queu
-	VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphores.presentComplete));
+	VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &mPresentComplete));
 	// Create a semaphore used to synchronize command submission
 	// Ensures that the image is not presented until all commands have been sumbitted and executed
-	VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphores.renderComplete));
+	VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &mRenderComplete));
 	// Create a semaphore used to synchronize command submission
 	// Ensures that the image is not presented until all commands for the text overlay have been sumbitted and executed
 	// Will be inserted after the render complete semaphore if the text overlay is enabled
-	VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphores.textOverlayComplete));
+	VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &mTextOverlayComplete));
 
 	// Set up submit info structure
 	// Semaphores will stay the same during application lifetime
@@ -577,9 +577,9 @@ void VulkanMain::initVulkan()
 	mSubmitInfo = InitSubmitInfo();
 	mSubmitInfo.pWaitDstStageMask = &submitPipelineStages;
 	mSubmitInfo.waitSemaphoreCount = 1;
-	mSubmitInfo.pWaitSemaphores = &semaphores.presentComplete;
+	mSubmitInfo.pWaitSemaphores = &mPresentComplete;
 	mSubmitInfo.signalSemaphoreCount = 1;
-	mSubmitInfo.pSignalSemaphores = &semaphores.renderComplete;
+	mSubmitInfo.pSignalSemaphores = &mRenderComplete;
 
 #if defined(__ANDROID__)
 	// Get Android device name and manufacturer (to display along GPU name)
@@ -778,57 +778,57 @@ void VulkanMain::buildCommandBuffers()
 	renderPassBeginInfo.clearValueCount = 2;
 	renderPassBeginInfo.pClearValues = clearValues;
 
-	for (int32_t i = 0; i < drawCmdBuffers.size(); ++i)
+	for (int32_t i = 0; i < mDrawCmdBuffers.size(); ++i)
 	{
 		// Set target frame buffer
 		renderPassBeginInfo.framebuffer = frameBuffers[i];
 
-		VK_CHECK_RESULT(vkBeginCommandBuffer(drawCmdBuffers[i], &cmdBufInfo));
+		VK_CHECK_RESULT(vkBeginCommandBuffer(mDrawCmdBuffers[i], &cmdBufInfo));
 
-		vkCmdBeginRenderPass(drawCmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(mDrawCmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 		VkViewport viewport = InitViewport((float) width, (float) height, 0.0f,
                                                               1.0f);
-		vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
+		vkCmdSetViewport(mDrawCmdBuffers[i], 0, 1, &viewport);
 
 		VkRect2D scissor = InitRect2D(width, height, 0, 0);
-		vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);
+		vkCmdSetScissor(mDrawCmdBuffers[i], 0, 1, &scissor);
 
-		vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
+		vkCmdBindDescriptorSets(mDrawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
 
 		VkDeviceSize offsets[1] = { 0 };
-		vkCmdBindVertexBuffers(drawCmdBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &models.cube.vertices.buffer, offsets);
-		vkCmdBindIndexBuffer(drawCmdBuffers[i], models.cube.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdBindVertexBuffers(mDrawCmdBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &mModels.vertices.buffer, offsets);
+		vkCmdBindIndexBuffer(mDrawCmdBuffers[i], mModels.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 
 		// Left : Solid colored
 		viewport.width = (float)width / 3.0;
-		vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
-		vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.phong);
+		vkCmdSetViewport(mDrawCmdBuffers[i], 0, 1, &viewport);
+		vkCmdBindPipeline(mDrawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeLinePhong);
 
-		vkCmdDrawIndexed(drawCmdBuffers[i], models.cube.indexCount, 1, 0, 0, 0);
+		vkCmdDrawIndexed(mDrawCmdBuffers[i], mModels.indexCount, 1, 0, 0, 0);
 
 		// Center : Toon
 		viewport.x = (float)width / 3.0;
-		vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
-		vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.toon);
+		vkCmdSetViewport(mDrawCmdBuffers[i], 0, 1, &viewport);
+		vkCmdBindPipeline(mDrawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeLineToon);
 		// Line width > 1.0f only if wide lines feature is supported
 		if (deviceFeatures.wideLines) {
-			vkCmdSetLineWidth(drawCmdBuffers[i], 2.0f);
+			vkCmdSetLineWidth(mDrawCmdBuffers[i], 2.0f);
 		}
-		vkCmdDrawIndexed(drawCmdBuffers[i], models.cube.indexCount, 1, 0, 0, 0);
+		vkCmdDrawIndexed(mDrawCmdBuffers[i], mModels.indexCount, 1, 0, 0, 0);
 
 		if (deviceFeatures.fillModeNonSolid)
 		{
 			// Right : Wireframe
 			viewport.x = (float)width / 3.0 + (float)width / 3.0;
-			vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
-			vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.wireframe);
-			vkCmdDrawIndexed(drawCmdBuffers[i], models.cube.indexCount, 1, 0, 0, 0);
+			vkCmdSetViewport(mDrawCmdBuffers[i], 0, 1, &viewport);
+			vkCmdBindPipeline(mDrawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeLineWireframe);
+			vkCmdDrawIndexed(mDrawCmdBuffers[i], mModels.indexCount, 1, 0, 0, 0);
 		}
 
-		vkCmdEndRenderPass(drawCmdBuffers[i]);
+		vkCmdEndRenderPass(mDrawCmdBuffers[i]);
 
-		VK_CHECK_RESULT(vkEndCommandBuffer(drawCmdBuffers[i]));
+		VK_CHECK_RESULT(vkEndCommandBuffer(mDrawCmdBuffers[i]));
 	}
 }
 
@@ -1035,9 +1035,9 @@ void VulkanMain::windowResize()
 
 	vkDeviceWaitIdle(device);
 
-	if (enableTextOverlay)
+	if (mEnableTextOverlay)
 	{
-		textOverlay->reallocateCommandBuffers();
+		mTextOverlay->reallocateCommandBuffers();
 		updateTextOverlay();
 	}
 
@@ -1077,7 +1077,7 @@ void VulkanMain::setupSwapChain()
 
 void VulkanMain::loadAssets()
 {
-	models.cube.loadFromFile(getAssetPath() + "models/treasure_smooth.dae", vertexLayout, 1.0f, vulkanDevice, queue);
+	mModels.loadFromFile(getAssetPath() + "models/treasure_smooth.dae", vertexLayout, 1.0f, vulkanDevice, queue);
 }
 
 void VulkanMain::setupDescriptorPool()
@@ -1249,12 +1249,12 @@ void VulkanMain::preparePipelines()
 	// Phong shading pipeline
 	shaderStages[0] = loadShader(getAssetPath() + "shaders/pipelines/phong.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 	shaderStages[1] = loadShader(getAssetPath() + "shaders/pipelines/phong.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCreateInfo, nullptr, &pipelines.phong));
+	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCreateInfo, nullptr, &mPipeLinePhong));
 
 	// All pipelines created after the base pipeline will be derivatives
 	pipelineCreateInfo.flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
 	// Base pipeline will be our first created pipeline
-	pipelineCreateInfo.basePipelineHandle = pipelines.phong;
+	pipelineCreateInfo.basePipelineHandle = mPipeLinePhong;
 	// It's only allowed to either use a handle or index for the base pipeline
 	// As we use the handle, we must set the index to -1 (see section 9.5 of the specification)
 	pipelineCreateInfo.basePipelineIndex = -1;
@@ -1262,7 +1262,7 @@ void VulkanMain::preparePipelines()
 	// Toon shading pipeline
 	shaderStages[0] = loadShader(getAssetPath() + "shaders/pipelines/toon.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 	shaderStages[1] = loadShader(getAssetPath() + "shaders/pipelines/toon.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCreateInfo, nullptr, &pipelines.toon));
+	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCreateInfo, nullptr, &mPipeLineToon));
 
 	// Pipeline for wire frame rendering
 	// Non solid rendering is not a mandatory Vulkan feature
@@ -1271,7 +1271,7 @@ void VulkanMain::preparePipelines()
 		rasterizationState.polygonMode = VK_POLYGON_MODE_LINE;
 		shaderStages[0] = loadShader(getAssetPath() + "shaders/pipelines/wireframe.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		shaderStages[1] = loadShader(getAssetPath() + "shaders/pipelines/wireframe.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-		VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCreateInfo, nullptr, &pipelines.wireframe));
+		VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCreateInfo, nullptr, &mPipeLineWireframe));
 	}
 }
 
@@ -1308,13 +1308,17 @@ void VulkanMain::updateUniformBuffers()
 void VulkanMain::draw()
 {
     // Acquire the next image from the swap chaing
-    VK_CHECK_RESULT(swapChain.acquireNextImage(semaphores.presentComplete, &currentBuffer));
+    VK_CHECK_RESULT(swapChain.acquireNextImage(mPresentComplete, &currentBuffer));
 
 	mSubmitInfo.commandBufferCount = 1;
-	mSubmitInfo.pCommandBuffers = &drawCmdBuffers[currentBuffer];
+	mSubmitInfo.pCommandBuffers = &mDrawCmdBuffers[currentBuffer];
+	mSubmitInfo.pWaitSemaphores = &mPresentComplete;
+	mSubmitInfo.waitSemaphoreCount = 1;
+	mSubmitInfo.pSignalSemaphores = &mRenderComplete;
+	mSubmitInfo.signalSemaphoreCount = 1;
 	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &mSubmitInfo, VK_NULL_HANDLE));
 
-    bool submitTextOverlay = enableTextOverlay && textOverlay->visible;
+    bool submitTextOverlay = mEnableTextOverlay && mTextOverlay->visible;
 
     if (submitTextOverlay)
     {
@@ -1325,14 +1329,14 @@ void VulkanMain::draw()
         // Set semaphores
         // Wait for render complete semaphore
         mSubmitInfo.waitSemaphoreCount = 1;
-        mSubmitInfo.pWaitSemaphores = &semaphores.renderComplete;
+        mSubmitInfo.pWaitSemaphores = &mRenderComplete;
         // Signal ready with text overlay complete semaphpre
         mSubmitInfo.signalSemaphoreCount = 1;
-        mSubmitInfo.pSignalSemaphores = &semaphores.textOverlayComplete;
+        mSubmitInfo.pSignalSemaphores = &mTextOverlayComplete;
 
         // Submit current text overlay command buffer
         mSubmitInfo.commandBufferCount = 1;
-        mSubmitInfo.pCommandBuffers = &textOverlay->cmdBuffers[currentBuffer];
+        mSubmitInfo.pCommandBuffers = &mTextOverlay->cmdBuffers[currentBuffer];
         VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &mSubmitInfo, VK_NULL_HANDLE));
 
         // Reset stage mask
@@ -1340,13 +1344,13 @@ void VulkanMain::draw()
         // Reset wait and signal semaphores for rendering next frame
         // Wait for swap chain presentation to finish
         mSubmitInfo.waitSemaphoreCount = 1;
-        mSubmitInfo.pWaitSemaphores = &semaphores.presentComplete;
+        mSubmitInfo.pWaitSemaphores = &mPresentComplete;
         // Signal ready with offscreen semaphore
         mSubmitInfo.signalSemaphoreCount = 1;
-        mSubmitInfo.pSignalSemaphores = &semaphores.renderComplete;
+        mSubmitInfo.pSignalSemaphores = &mRenderComplete;
     }
 
-    VK_CHECK_RESULT(swapChain.queuePresent(queue, currentBuffer, submitTextOverlay ? semaphores.textOverlayComplete : semaphores.renderComplete));
+    VK_CHECK_RESULT(swapChain.queuePresent(queue, currentBuffer, submitTextOverlay ? mTextOverlayComplete : mRenderComplete));
 
     VK_CHECK_RESULT(vkQueueWaitIdle(queue));
 }

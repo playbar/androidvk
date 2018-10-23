@@ -575,9 +575,9 @@ void VulkanTextOverlay::updateCommandBuffers()
 
 		VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffers[i], &cmdBufInfo));
 
-		if (vks::debugmarker::active)
+		if (gVksDebugMarkerActive)
 		{
-			vks::debugmarker::VksDebugMarkerBeginRegion(cmdBuffers[i], "Text overlay",
+			VksDebugMarkerBeginRegion(cmdBuffers[i], "Text overlay",
 														glm::vec4(1.0f, 0.94f, 0.3f, 1.0f));
 		}
 
@@ -605,9 +605,9 @@ void VulkanTextOverlay::updateCommandBuffers()
 
 		vkCmdEndRenderPass(cmdBuffers[i]);
 
-		if (vks::debugmarker::active)
+		if (gVksDebugMarkerActive)
 		{
-			vks::debugmarker::VksDebugMarkerEndRegion(cmdBuffers[i]);
+			VksDebugMarkerEndRegion(cmdBuffers[i]);
 		}
 
 		VK_CHECK_RESULT(vkEndCommandBuffer(cmdBuffers[i]));

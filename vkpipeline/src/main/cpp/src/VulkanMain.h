@@ -52,9 +52,9 @@ public:
 															   VERTEX_COMPONENT_COLOR,
 													   });
 
-	struct {
-		VksModel cube;
-	} models;
+
+	VksModel mModels;
+
 
 	VksBuffer uniformBuffer;
 
@@ -69,11 +69,9 @@ public:
 	VkDescriptorSet descriptorSet;
 	VkDescriptorSetLayout descriptorSetLayout;
 
-	struct {
-		VkPipeline phong;
-		VkPipeline wireframe;
-		VkPipeline toon;
-	} pipelines;
+	VkPipeline mPipeLinePhong;
+	VkPipeline mPipeLineWireframe;
+	VkPipeline mPipeLineToon;
 
 	////////////
 private:	
@@ -129,7 +127,7 @@ protected:
 	// Contains command buffers and semaphores to be presented to the queue
 	VkSubmitInfo mSubmitInfo;
 	// Command buffers used for rendering
-	std::vector<VkCommandBuffer> drawCmdBuffers;
+	std::vector<VkCommandBuffer> mDrawCmdBuffers;
 	// Global render pass for frame buffer writes
 	VkRenderPass renderPass;
 	// List of available frame buffers (same as number of swap chain images)
@@ -145,14 +143,14 @@ protected:
 	// Wraps the swap chain to present images (framebuffers) to the windowing system
 	VulkanSwapChain swapChain;
 	// Synchronization semaphores
-	struct {
-		// Swap chain image presentation
-		VkSemaphore presentComplete;
-		// Command buffer submission and execution
-		VkSemaphore renderComplete;
-		// Text overlay submission and execution
-		VkSemaphore textOverlayComplete;
-	} semaphores;
+
+    // Swap chain image presentation
+    VkSemaphore mPresentComplete;
+    // Command buffer submission and execution
+    VkSemaphore mRenderComplete;
+    // Text overlay submission and execution
+    VkSemaphore mTextOverlayComplete;
+
 	// Simple texture loader
 	//vks::tools::VulkanTextureLoader *textureLoader = nullptr;
 	// Returns the base asset path (for shaders, models, textures) depending on the os
@@ -186,8 +184,8 @@ public:
 	
 	bool paused = false;
 
-	bool enableTextOverlay = false;
-	VulkanTextOverlay *textOverlay;
+	bool mEnableTextOverlay = false;
+	VulkanTextOverlay *mTextOverlay;
 
 	// Use to adjust mouse rotation speed
 	float rotationSpeed = 1.0f;
