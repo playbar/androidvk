@@ -97,10 +97,10 @@ void VulkanExampleBase::createCommandBuffers()
 	drawCmdBuffers.resize(swapChain.imageCount);
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
-		vks::initializers::commandBufferAllocateInfo(
-			cmdPool,
-			VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-			static_cast<uint32_t>(drawCmdBuffers.size()));
+            vks::initializers::InitCommandBufferAllocateInfo(
+                    cmdPool,
+                    VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+                    static_cast<uint32_t>(drawCmdBuffers.size()));
 
 	VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, drawCmdBuffers.data()));
 }
@@ -115,17 +115,17 @@ VkCommandBuffer VulkanExampleBase::createCommandBuffer(VkCommandBufferLevel leve
 	VkCommandBuffer cmdBuffer;
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
-		vks::initializers::commandBufferAllocateInfo(
-			cmdPool,
-			level,
-			1);
+            vks::initializers::InitCommandBufferAllocateInfo(
+                    cmdPool,
+                    level,
+                    1);
 
 	VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, &cmdBuffer));
 
 	// If requested, also start the new command buffer
 	if (begin)
 	{
-		VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::commandBufferBeginInfo();
+		VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::InitCommandBufferBeginInfo();
 		VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
 	}
 
@@ -746,7 +746,7 @@ void VulkanExampleBase::initVulkan()
 	swapChain.connect(instance, physicalDevice, device);
 
 	// Create synchronization objects
-	VkSemaphoreCreateInfo semaphoreCreateInfo = vks::initializers::semaphoreCreateInfo();
+	VkSemaphoreCreateInfo semaphoreCreateInfo = vks::initializers::InitSemaphoreCreateInfo();
 	// Create a semaphore used to synchronize image presentation
 	// Ensures that the image is displayed before we start submitting new commands to the queu
 	VK_CHECK_RESULT(vkCreateSemaphore(device, &semaphoreCreateInfo, nullptr, &semaphores.presentComplete));
@@ -761,7 +761,7 @@ void VulkanExampleBase::initVulkan()
 	// Set up submit info structure
 	// Semaphores will stay the same during application lifetime
 	// Command buffer submission info is set by each example
-	submitInfo = vks::initializers::submitInfo();
+	submitInfo = vks::initializers::InitSubmitInfo();
 	submitInfo.pWaitDstStageMask = &submitPipelineStages;
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = &semaphores.presentComplete;
@@ -950,13 +950,13 @@ void VulkanExampleBase::keyPressed(uint32_t keyCode)
 
 void VulkanExampleBase::buildCommandBuffers()
 {
-	VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::commandBufferBeginInfo();
+	VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::InitCommandBufferBeginInfo();
 
 	VkClearValue clearValues[2];
 	clearValues[0].color = defaultClearColor;
 	clearValues[1].depthStencil = { 1.0f, 0 };
 
-	VkRenderPassBeginInfo renderPassBeginInfo = vks::initializers::renderPassBeginInfo();
+	VkRenderPassBeginInfo renderPassBeginInfo = vks::initializers::InitRenderPassBeginInfo();
 	renderPassBeginInfo.renderPass = renderPass;
 	renderPassBeginInfo.renderArea.offset.x = 0;
 	renderPassBeginInfo.renderArea.offset.y = 0;
@@ -974,10 +974,11 @@ void VulkanExampleBase::buildCommandBuffers()
 
 		vkCmdBeginRenderPass(drawCmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		VkViewport viewport = vks::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
+		VkViewport viewport = vks::initializers::InitViewport((float) width, (float) height, 0.0f,
+                                                              1.0f);
 		vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
 
-		VkRect2D scissor = vks::initializers::rect2D(width, height,	0, 0);
+		VkRect2D scissor = vks::initializers::InitRect2D(width, height, 0, 0);
 		vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);
 
 		vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
@@ -1270,14 +1271,14 @@ void VulkanExampleBase::setupDescriptorPool()
 {
 	std::vector<VkDescriptorPoolSize> poolSizes =
 			{
-					vks::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1)
+                    vks::initializers::InitDescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1)
 			};
 
 	VkDescriptorPoolCreateInfo descriptorPoolInfo =
-			vks::initializers::descriptorPoolCreateInfo(
-					poolSizes.size(),
-					poolSizes.data(),
-					2);
+            vks::initializers::InitDescriptorPoolCreateInfo(
+                    poolSizes.size(),
+                    poolSizes.data(),
+                    2);
 
 	VK_CHECK_RESULT(vkCreateDescriptorPool(device, &descriptorPoolInfo, nullptr, &descriptorPool));
 }
@@ -1287,23 +1288,23 @@ void VulkanExampleBase::setupDescriptorSetLayout()
 	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings =
 			{
 					// Binding 0 : Vertex shader uniform buffer
-					vks::initializers::descriptorSetLayoutBinding(
-							VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-							VK_SHADER_STAGE_VERTEX_BIT,
-							0)
+                    vks::initializers::InitDescriptorSetLayoutBinding(
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                            VK_SHADER_STAGE_VERTEX_BIT,
+                            0)
 			};
 
 	VkDescriptorSetLayoutCreateInfo descriptorLayout =
-			vks::initializers::descriptorSetLayoutCreateInfo(
-					setLayoutBindings.data(),
-					setLayoutBindings.size());
+            vks::initializers::InitDescriptorSetLayoutCreateInfo(
+                    setLayoutBindings.data(),
+                    setLayoutBindings.size());
 
 	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &descriptorLayout, nullptr, &descriptorSetLayout));
 
 	VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo =
-			vks::initializers::pipelineLayoutCreateInfo(
-					&descriptorSetLayout,
-					1);
+            vks::initializers::InitPipelineLayoutCreateInfo(
+                    &descriptorSetLayout,
+                    1);
 
 	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pPipelineLayoutCreateInfo, nullptr, &pipelineLayout));
 }
@@ -1311,21 +1312,21 @@ void VulkanExampleBase::setupDescriptorSetLayout()
 void VulkanExampleBase::setupDescriptorSet()
 {
 	VkDescriptorSetAllocateInfo allocInfo =
-			vks::initializers::descriptorSetAllocateInfo(
-					descriptorPool,
-					&descriptorSetLayout,
-					1);
+            vks::initializers::InitDescriptorSetAllocateInfo(
+                    descriptorPool,
+                    &descriptorSetLayout,
+                    1);
 
 	VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet));
 
 	std::vector<VkWriteDescriptorSet> writeDescriptorSets =
 			{
 					// Binding 0 : Vertex shader uniform buffer
-					vks::initializers::writeDescriptorSet(
-							descriptorSet,
-							VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-							0,
-							&uniformBuffer.descriptor)
+                    vks::initializers::InitWriteDescriptorSet(
+                            descriptorSet,
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                            0,
+                            &uniformBuffer.descriptor)
 			};
 
 	vkUpdateDescriptorSets(device, writeDescriptorSets.size(), writeDescriptorSets.data(), 0, NULL);
@@ -1334,39 +1335,39 @@ void VulkanExampleBase::setupDescriptorSet()
 void VulkanExampleBase::preparePipelines()
 {
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyState =
-			vks::initializers::pipelineInputAssemblyStateCreateInfo(
-					VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-					0,
-					VK_FALSE);
+            vks::initializers::InitPipelineInputAssemblyStateCreateInfo(
+                    VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+                    0,
+                    VK_FALSE);
 
 	VkPipelineRasterizationStateCreateInfo rasterizationState =
-			vks::initializers::pipelineRasterizationStateCreateInfo(
-					VK_POLYGON_MODE_FILL,
-					VK_CULL_MODE_BACK_BIT,
-					VK_FRONT_FACE_CLOCKWISE,
-					0);
+            vks::initializers::InitPipelineRasterizationStateCreateInfo(
+                    VK_POLYGON_MODE_FILL,
+                    VK_CULL_MODE_BACK_BIT,
+                    VK_FRONT_FACE_CLOCKWISE,
+                    0);
 
 	VkPipelineColorBlendAttachmentState blendAttachmentState =
-			vks::initializers::pipelineColorBlendAttachmentState(
-					0xf,
-					VK_FALSE);
+            vks::initializers::InitPipelineColorBlendAttachmentState(
+                    0xf,
+                    VK_FALSE);
 
 	VkPipelineColorBlendStateCreateInfo colorBlendState =
-			vks::initializers::pipelineColorBlendStateCreateInfo(
-					1,
-					&blendAttachmentState);
+            vks::initializers::InitPipelineColorBlendStateCreateInfo(
+                    1,
+                    &blendAttachmentState);
 
 	VkPipelineDepthStencilStateCreateInfo depthStencilState =
-			vks::initializers::pipelineDepthStencilStateCreateInfo(
-					VK_TRUE,
-					VK_TRUE,
-					VK_COMPARE_OP_LESS_OR_EQUAL);
+            vks::initializers::InitPipelineDepthStencilStateCreateInfo(
+                    VK_TRUE,
+                    VK_TRUE,
+                    VK_COMPARE_OP_LESS_OR_EQUAL);
 
 	VkPipelineViewportStateCreateInfo viewportState =
-			vks::initializers::pipelineViewportStateCreateInfo(1, 1, 0);
+            vks::initializers::InitPipelineViewportStateCreateInfo(1, 1, 0);
 
 	VkPipelineMultisampleStateCreateInfo multisampleState =
-			vks::initializers::pipelineMultisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT);
+            vks::initializers::InitPipelineMultisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT);
 
 	std::vector<VkDynamicState> dynamicStateEnables = {
 			VK_DYNAMIC_STATE_VIEWPORT,
@@ -1374,10 +1375,10 @@ void VulkanExampleBase::preparePipelines()
 			VK_DYNAMIC_STATE_LINE_WIDTH,
 	};
 	VkPipelineDynamicStateCreateInfo dynamicState =
-			vks::initializers::pipelineDynamicStateCreateInfo(dynamicStateEnables);
+            vks::initializers::InitPipelineDynamicStateCreateInfo(dynamicStateEnables);
 
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo =
-			vks::initializers::pipelineCreateInfo(pipelineLayout, renderPass);
+            vks::initializers::InitPipelineCreateInfo(pipelineLayout, renderPass);
 
 	std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
 
@@ -1395,18 +1396,27 @@ void VulkanExampleBase::preparePipelines()
 
 	// Binding description
 	std::vector<VkVertexInputBindingDescription> vertexInputBindings = {
-			vks::initializers::vertexInputBindingDescription(VERTEX_BUFFER_BIND_ID, vertexLayout.stride(), VK_VERTEX_INPUT_RATE_VERTEX),
+            vks::initializers::InitVertexInputBindingDescription(VERTEX_BUFFER_BIND_ID,
+                                                                 vertexLayout.stride(),
+                                                                 VK_VERTEX_INPUT_RATE_VERTEX),
 	};
 
 	// Attribute descriptions
 	std::vector<VkVertexInputAttributeDescription> vertexInputAttributes = {
-			vks::initializers::vertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 0, VK_FORMAT_R32G32B32_SFLOAT, 0),					// Location 0: Position
-			vks::initializers::vertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 1, VK_FORMAT_R32G32B32_SFLOAT, sizeof(float) * 3),	// Location 1: Color
-			vks::initializers::vertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 2, VK_FORMAT_R32G32_SFLOAT, sizeof(float) * 6),		// Location 2 : Texture coordinates
-			vks::initializers::vertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 3, VK_FORMAT_R32G32B32_SFLOAT, sizeof(float) * 8),	// Location 3 : Normal
+            vks::initializers::InitVertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 0,
+                                                                   VK_FORMAT_R32G32B32_SFLOAT, 0),					// Location 0: Position
+            vks::initializers::InitVertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 1,
+                                                                   VK_FORMAT_R32G32B32_SFLOAT,
+                                                                   sizeof(float) * 3),	// Location 1: Color
+            vks::initializers::InitVertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 2,
+                                                                   VK_FORMAT_R32G32_SFLOAT,
+                                                                   sizeof(float) * 6),		// Location 2 : Texture coordinates
+            vks::initializers::InitVertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 3,
+                                                                   VK_FORMAT_R32G32B32_SFLOAT,
+                                                                   sizeof(float) * 8),	// Location 3 : Normal
 	};
 
-	VkPipelineVertexInputStateCreateInfo vertexInputState = vks::initializers::pipelineVertexInputStateCreateInfo();
+	VkPipelineVertexInputStateCreateInfo vertexInputState = vks::initializers::InitPipelineVertexInputStateCreateInfo();
 	vertexInputState.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexInputBindings.size());
 	vertexInputState.pVertexBindingDescriptions = vertexInputBindings.data();
 	vertexInputState.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexInputAttributes.size());

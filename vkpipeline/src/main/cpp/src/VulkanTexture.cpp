@@ -82,7 +82,7 @@ namespace vks
 				VkBuffer stagingBuffer;
 				VkDeviceMemory stagingMemory;
 
-				VkBufferCreateInfo bufferCreateInfo = vks::initializers::bufferCreateInfo();
+				VkBufferCreateInfo bufferCreateInfo = vks::initializers::InitBufferCreateInfo();
 				bufferCreateInfo.size = tex2D.size();
 				// This buffer is used as a transfer source for the buffer copy
 				bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -128,7 +128,7 @@ namespace vks
 				}
 
 				// Create optimal tiled target image
-				VkImageCreateInfo imageCreateInfo = vks::initializers::imageCreateInfo();
+				VkImageCreateInfo imageCreateInfo = vks::initializers::InitImageCreateInfo();
 				imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 				imageCreateInfo.format = format;
 				imageCreateInfo.mipLevels = mipLevels;
@@ -208,7 +208,7 @@ namespace vks
 				VkImage mappableImage;
 				VkDeviceMemory mappableMemory;
 
-				VkImageCreateInfo imageCreateInfo = vks::initializers::imageCreateInfo();
+				VkImageCreateInfo imageCreateInfo = vks::initializers::InitImageCreateInfo();
 				imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 				imageCreateInfo.format = format;
 				imageCreateInfo.extent = { width, height, 1 };
@@ -354,7 +354,7 @@ namespace vks
 			VkBuffer stagingBuffer;
 			VkDeviceMemory stagingMemory;
 
-			VkBufferCreateInfo bufferCreateInfo = vks::initializers::bufferCreateInfo();
+			VkBufferCreateInfo bufferCreateInfo = vks::initializers::InitBufferCreateInfo();
 			bufferCreateInfo.size = bufferSize;
 			// This buffer is used as a transfer source for the buffer copy
 			bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -389,7 +389,7 @@ namespace vks
 			bufferCopyRegion.bufferOffset = 0;
 
 			// Create optimal tiled target image
-			VkImageCreateInfo imageCreateInfo = vks::initializers::imageCreateInfo();
+			VkImageCreateInfo imageCreateInfo = vks::initializers::InitImageCreateInfo();
 			imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 			imageCreateInfo.format = format;
 			imageCreateInfo.mipLevels = mipLevels;
@@ -533,7 +533,7 @@ namespace vks
 			VkBuffer stagingBuffer;
 			VkDeviceMemory stagingMemory;
 
-			VkBufferCreateInfo bufferCreateInfo = vks::initializers::bufferCreateInfo();
+			VkBufferCreateInfo bufferCreateInfo = vks::initializers::InitBufferCreateInfo();
 			bufferCreateInfo.size = tex2DArray.size();
 			// This buffer is used as a transfer source for the buffer copy
 			bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -583,7 +583,7 @@ namespace vks
 			}
 
 			// Create optimal tiled target image
-			VkImageCreateInfo imageCreateInfo = vks::initializers::imageCreateInfo();
+			VkImageCreateInfo imageCreateInfo = vks::initializers::InitImageCreateInfo();
 			imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 			imageCreateInfo.format = format;
 			imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -651,7 +651,7 @@ namespace vks
 			device->flushCommandBuffer(copyCmd, copyQueue);
 
 			// Create sampler
-			VkSamplerCreateInfo samplerCreateInfo = vks::initializers::samplerCreateInfo();
+			VkSamplerCreateInfo samplerCreateInfo = vks::initializers::InitSamplerCreateInfo();
 			samplerCreateInfo.magFilter = VK_FILTER_LINEAR;
 			samplerCreateInfo.minFilter = VK_FILTER_LINEAR;
 			samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
@@ -667,7 +667,7 @@ namespace vks
 			VK_CHECK_RESULT(vkCreateSampler(device->logicalDevice, &samplerCreateInfo, nullptr, &sampler));
 
 			// Create image view
-			VkImageViewCreateInfo viewCreateInfo = vks::initializers::imageViewCreateInfo();
+			VkImageViewCreateInfo viewCreateInfo = vks::initializers::InitImageViewCreateInfo();
 			viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 			viewCreateInfo.format = format;
 			viewCreateInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
@@ -727,7 +727,7 @@ namespace vks
 			VkBuffer stagingBuffer;
 			VkDeviceMemory stagingMemory;
 
-			VkBufferCreateInfo bufferCreateInfo = vks::initializers::bufferCreateInfo();
+			VkBufferCreateInfo bufferCreateInfo = vks::initializers::InitBufferCreateInfo();
 			bufferCreateInfo.size = texCube.size();
 			// This buffer is used as a transfer source for the buffer copy
 			bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -777,7 +777,7 @@ namespace vks
 			}
 
 			// Create optimal tiled target image
-			VkImageCreateInfo imageCreateInfo = vks::initializers::imageCreateInfo();
+			VkImageCreateInfo imageCreateInfo = vks::initializers::InitImageCreateInfo();
 			imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 			imageCreateInfo.format = format;
 			imageCreateInfo.mipLevels = mipLevels;
@@ -849,7 +849,7 @@ namespace vks
 			device->flushCommandBuffer(copyCmd, copyQueue);
 
 			// Create sampler
-			VkSamplerCreateInfo samplerCreateInfo = vks::initializers::samplerCreateInfo();
+			VkSamplerCreateInfo samplerCreateInfo = vks::initializers::InitSamplerCreateInfo();
 			samplerCreateInfo.magFilter = VK_FILTER_LINEAR;
 			samplerCreateInfo.minFilter = VK_FILTER_LINEAR;
 			samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
@@ -865,7 +865,7 @@ namespace vks
 			VK_CHECK_RESULT(vkCreateSampler(device->logicalDevice, &samplerCreateInfo, nullptr, &sampler));
 
 			// Create image view
-			VkImageViewCreateInfo viewCreateInfo = vks::initializers::imageViewCreateInfo();
+			VkImageViewCreateInfo viewCreateInfo = vks::initializers::InitImageViewCreateInfo();
 			viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
 			viewCreateInfo.format = format;
 			viewCreateInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };

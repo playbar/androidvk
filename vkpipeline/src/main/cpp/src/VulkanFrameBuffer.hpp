@@ -162,7 +162,7 @@ namespace vks
 
 			assert(aspectMask > 0);
 
-			VkImageCreateInfo image = vks::initializers::imageCreateInfo();
+			VkImageCreateInfo image = vks::initializers::InitImageCreateInfo();
 			image.imageType = VK_IMAGE_TYPE_2D;
 			image.format = createinfo.format;
 			image.extent.width = createinfo.width;
@@ -190,7 +190,7 @@ namespace vks
 			attachment.subresourceRange.levelCount = 1;
 			attachment.subresourceRange.layerCount = createinfo.layerCount;
 
-			VkImageViewCreateInfo imageView = vks::initializers::imageViewCreateInfo();
+			VkImageViewCreateInfo imageView = vks::initializers::InitImageViewCreateInfo();
 			imageView.viewType = (createinfo.layerCount == 1) ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 			imageView.format = createinfo.format;
 			imageView.subresourceRange = attachment.subresourceRange;
@@ -236,7 +236,7 @@ namespace vks
 		*/
 		VkResult createSampler(VkFilter magFilter, VkFilter minFilter, VkSamplerAddressMode adressMode)
 		{
-			VkSamplerCreateInfo samplerInfo = vks::initializers::samplerCreateInfo();
+			VkSamplerCreateInfo samplerInfo = vks::initializers::InitSamplerCreateInfo();
 			samplerInfo.magFilter = magFilter;
 			samplerInfo.minFilter = minFilter;
 			samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;

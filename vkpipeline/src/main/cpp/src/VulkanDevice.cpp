@@ -305,7 +305,8 @@ namespace vks
 											VkBuffer *buffer, VkDeviceMemory *memory, void *data)
 		{
 			// Create the buffer handle
-			VkBufferCreateInfo bufferCreateInfo = vks::initializers::bufferCreateInfo(usageFlags, size);
+			VkBufferCreateInfo bufferCreateInfo = vks::initializers::InitBufferCreateInfo(
+                    usageFlags, size);
 			bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 			VK_CHECK_RESULT(vkCreateBuffer(logicalDevice, &bufferCreateInfo, nullptr, buffer));
 
@@ -327,7 +328,7 @@ namespace vks
 				// If host coherency hasn't been requested, do a manual flush to make writes visible
 				if ((memoryPropertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0)
 				{
-					VkMappedMemoryRange mappedRange = vks::initializers::mappedMemoryRange();
+					VkMappedMemoryRange mappedRange = vks::initializers::InitMappedMemoryRange();
 					mappedRange.memory = *memory;
 					mappedRange.offset = 0;
 					mappedRange.size = size;
@@ -359,7 +360,8 @@ namespace vks
 			buffer->device = logicalDevice;
 
 			// Create the buffer handle
-			VkBufferCreateInfo bufferCreateInfo = vks::initializers::bufferCreateInfo(usageFlags, size);
+			VkBufferCreateInfo bufferCreateInfo = vks::initializers::InitBufferCreateInfo(
+                    usageFlags, size);
 			VK_CHECK_RESULT(vkCreateBuffer(logicalDevice, &bufferCreateInfo, nullptr, &buffer->buffer));
 
 			// Create the memory backing up the buffer handle
@@ -452,7 +454,8 @@ namespace vks
 		*/
 		VkCommandBuffer VulkanDevice::createCommandBuffer(VkCommandBufferLevel level, bool begin)
 		{
-			VkCommandBufferAllocateInfo cmdBufAllocateInfo = vks::initializers::commandBufferAllocateInfo(commandPool, level, 1);
+			VkCommandBufferAllocateInfo cmdBufAllocateInfo = vks::initializers::InitCommandBufferAllocateInfo(
+                    commandPool, level, 1);
 
 			VkCommandBuffer cmdBuffer;
 			VK_CHECK_RESULT(vkAllocateCommandBuffers(logicalDevice, &cmdBufAllocateInfo, &cmdBuffer));
@@ -460,7 +463,7 @@ namespace vks
 			// If requested, also start recording for the new command buffer
 			if (begin)
 			{
-				VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::commandBufferBeginInfo();
+				VkCommandBufferBeginInfo cmdBufInfo = vks::initializers::InitCommandBufferBeginInfo();
 				VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
 			}
 
@@ -486,12 +489,12 @@ namespace vks
 
 			VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
 
-			VkSubmitInfo submitInfo = vks::initializers::submitInfo();
+			VkSubmitInfo submitInfo = vks::initializers::InitSubmitInfo();
 			submitInfo.commandBufferCount = 1;
 			submitInfo.pCommandBuffers = &commandBuffer;
 
 			// Create fence to ensure that the command buffer has finished executing
-			VkFenceCreateInfo fenceInfo = vks::initializers::fenceCreateInfo(VK_FLAGS_NONE);
+			VkFenceCreateInfo fenceInfo = vks::initializers::InitFenceCreateInfo(VK_FLAGS_NONE);
 			VkFence fence;
 			VK_CHECK_RESULT(vkCreateFence(logicalDevice, &fenceInfo, nullptr, &fence));
 			
