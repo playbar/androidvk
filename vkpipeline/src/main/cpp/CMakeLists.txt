@@ -31,11 +31,10 @@ add_library(vkvulkan SHARED
             src/vulkanandroid.cpp
             src/VulkanDebug.cpp
             src/VulkanDevice.cpp
-            src/vulkanexamplebase.cpp
+            src/VulkanPipeline.cpp
             src/VulkanModel.cpp
             src/VulkanTexture.cpp
             src/VulkanTools.cpp
-            src/pipelines.cpp
             )
 
 

@@ -18,7 +18,7 @@ namespace vks
 	namespace initializers
 	{
 
-		inline VkMemoryAllocateInfo memoryAllocateInfo()
+		inline VkMemoryAllocateInfo InitMemoryAllocateInfo()
 		{
 			VkMemoryAllocateInfo memAllocInfo {};
 			memAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;

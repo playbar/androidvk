@@ -70,7 +70,7 @@ namespace vks
 			// limited amount of formats and features (mip maps, cubemaps, arrays, etc.)
 			VkBool32 useStaging = !forceLinear;
 
-			VkMemoryAllocateInfo memAllocInfo = vks::initializers::memoryAllocateInfo();
+			VkMemoryAllocateInfo memAllocInfo = vks::initializers::InitMemoryAllocateInfo();
 			VkMemoryRequirements memReqs;
 
 			// Use a separate command buffer for texture loading
@@ -344,7 +344,7 @@ namespace vks
 			height = height;
 			mipLevels = 1;
 
-			VkMemoryAllocateInfo memAllocInfo = vks::initializers::memoryAllocateInfo();
+			VkMemoryAllocateInfo memAllocInfo = vks::initializers::InitMemoryAllocateInfo();
 			VkMemoryRequirements memReqs;
 
 			// Use a separate command buffer for texture loading
@@ -526,7 +526,7 @@ namespace vks
 			layerCount = static_cast<uint32_t>(tex2DArray.layers());
 			mipLevels = static_cast<uint32_t>(tex2DArray.levels());
 
-			VkMemoryAllocateInfo memAllocInfo = vks::initializers::memoryAllocateInfo();
+			VkMemoryAllocateInfo memAllocInfo = vks::initializers::InitMemoryAllocateInfo();
 			VkMemoryRequirements memReqs;
 
 			// Create a host-visible staging buffer that contains the raw image data
@@ -720,7 +720,7 @@ namespace vks
 			height = static_cast<uint32_t>(texCube.extent().y);
 			mipLevels = static_cast<uint32_t>(texCube.levels());
 
-			VkMemoryAllocateInfo memAllocInfo = vks::initializers::memoryAllocateInfo();
+			VkMemoryAllocateInfo memAllocInfo = vks::initializers::InitMemoryAllocateInfo();
 			VkMemoryRequirements memReqs;
 
 			// Create a host-visible staging buffer that contains the raw image data

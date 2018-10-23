@@ -174,7 +174,7 @@ namespace vks
 			image.tiling = VK_IMAGE_TILING_OPTIMAL;
 			image.usage = createinfo.usage;
 
-			VkMemoryAllocateInfo memAlloc = vks::initializers::memoryAllocateInfo();
+			VkMemoryAllocateInfo memAlloc = vks::initializers::InitMemoryAllocateInfo();
 			VkMemoryRequirements memReqs;
 
 			// Create image for this attachment
