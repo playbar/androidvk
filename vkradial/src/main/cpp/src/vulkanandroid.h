@@ -118,6 +118,7 @@ extern PFN_vkCmdBindDescriptorSets vkCmdBindDescriptorSets;
 extern PFN_vkCmdBindPipeline vkCmdBindPipeline;
 extern PFN_vkCmdBindVertexBuffers vkCmdBindVertexBuffers;
 extern PFN_vkCmdBindIndexBuffer vkCmdBindIndexBuffer;
+extern PFN_vkResetCommandBuffer vkResetCommandBuffer;
 extern PFN_vkCmdSetViewport vkCmdSetViewport;
 extern PFN_vkCmdSetScissor vkCmdSetScissor;
 extern PFN_vkCmdSetLineWidth vkCmdSetLineWidth;

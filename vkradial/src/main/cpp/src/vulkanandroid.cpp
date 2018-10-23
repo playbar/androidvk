@@ -87,6 +87,7 @@ PFN_vkCmdBindDescriptorSets vkCmdBindDescriptorSets;
 PFN_vkCmdBindPipeline vkCmdBindPipeline;
 PFN_vkCmdBindVertexBuffers vkCmdBindVertexBuffers;
 PFN_vkCmdBindIndexBuffer vkCmdBindIndexBuffer;
+PFN_vkResetCommandBuffer vkResetCommandBuffer;
 PFN_vkCmdSetViewport vkCmdSetViewport;
 PFN_vkCmdSetScissor vkCmdSetScissor;
 PFN_vkCmdSetLineWidth vkCmdSetLineWidth;
@@ -235,6 +236,7 @@ void loadVulkanFunctions(VkInstance instance)
 	vkCmdBindPipeline = reinterpret_cast<PFN_vkCmdBindPipeline>(vkGetInstanceProcAddr(instance, "vkCmdBindPipeline"));
 	vkCmdBindVertexBuffers = reinterpret_cast<PFN_vkCmdBindVertexBuffers>(vkGetInstanceProcAddr(instance, "vkCmdBindVertexBuffers"));
 	vkCmdBindIndexBuffer = reinterpret_cast<PFN_vkCmdBindIndexBuffer>(vkGetInstanceProcAddr(instance, "vkCmdBindIndexBuffer"));
+	vkResetCommandBuffer = reinterpret_cast<PFN_vkResetCommandBuffer>(vkGetInstanceProcAddr(instance, "vkResetCommandBuffer"));
 
 	vkCmdSetViewport = reinterpret_cast<PFN_vkCmdSetViewport>(vkGetInstanceProcAddr(instance, "vkCmdSetViewport"));
 	vkCmdSetScissor = reinterpret_cast<PFN_vkCmdSetScissor>(vkGetInstanceProcAddr(instance, "vkCmdSetScissor"));
