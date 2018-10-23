@@ -29,11 +29,13 @@ add_library(vkvulkan SHARED
             cpu-features.c
             jniactivity.c
             src/vulkanandroid.cpp
+            src/VulkanBuffer.cpp
             src/VulkanDebug.cpp
             src/VulkanDevice.cpp
             src/VulkanMain.cpp
             src/VulkanTextOverlay.cpp
             src/VulkanModel.cpp
+            src/VulkanSwapChain.cpp
             src/VulkanTexture.cpp
             src/VulkanTools.cpp
             )

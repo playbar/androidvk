@@ -43,24 +43,14 @@ struct VksBuffer
     *
     * @return VkResult of the buffer mapping call
     */
-	VkResult map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0)
-	{
-		return vkMapMemory(device, memory, offset, size, 0, &mapped);
-	}
+	VkResult map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
 	/**
     * Unmap a mapped memory range
     *
     * @note Does not return a result as vkUnmapMemory can't fail
     */
-	void unmap()
-	{
-		if (mapped)
-		{
-			vkUnmapMemory(device, memory);
-			mapped = nullptr;
-		}
-	}
+	void unmap();
 
 	/**
     * Attach the allocated memory block to the buffer
@@ -69,10 +59,7 @@ struct VksBuffer
     *
     * @return VkResult of the bindBufferMemory call
     */
-	VkResult bind(VkDeviceSize offset = 0)
-	{
-		return vkBindBufferMemory(device, buffer, memory, offset);
-	}
+	VkResult bind(VkDeviceSize offset = 0);
 
 	/**
     * Setup the default descriptor for this buffer
@@ -81,15 +68,7 @@ struct VksBuffer
     * @param offset (Optional) Byte offset from beginning
     *
     */
-	void setupDescriptor(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0)
-	{
-		descriptor.offset = offset;
-		descriptor.buffer = buffer;
-		descriptor.range = size;
-		if( size < 1000000 ){
-			LOGE("size:%d", size);
-		}
-	}
+	void setupDescriptor(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
 	/**
     * Copies the specified data to the mapped buffer
@@ -98,11 +77,7 @@ struct VksBuffer
     * @param size Size of the data to copy in machine units
     *
     */
-	void copyTo(void* data, VkDeviceSize size)
-	{
-		assert(mapped);
-		memcpy(mapped, data, size);
-	}
+	void copyTo(void* data, VkDeviceSize size);
 
 	/**
     * Flush a memory range of the buffer to make it visible to the device
@@ -114,15 +89,7 @@ struct VksBuffer
     *
     * @return VkResult of the flush call
     */
-	VkResult flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0)
-	{
-		VkMappedMemoryRange mappedRange = {};
-		mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-		mappedRange.memory = memory;
-		mappedRange.offset = offset;
-		mappedRange.size = size;
-		return vkFlushMappedMemoryRanges(device, 1, &mappedRange);
-	}
+	VkResult flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
 	/**
     * Invalidate a memory range of the buffer to make it visible to the host
@@ -134,29 +101,11 @@ struct VksBuffer
     *
     * @return VkResult of the invalidate call
     */
-	VkResult invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0)
-	{
-		VkMappedMemoryRange mappedRange = {};
-		mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-		mappedRange.memory = memory;
-		mappedRange.offset = offset;
-		mappedRange.size = size;
-		return vkInvalidateMappedMemoryRanges(device, 1, &mappedRange);
-	}
+	VkResult invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
 	/**
     * Release all Vulkan resources held by this buffer
     */
-	void destroy()
-	{
-		if (buffer)
-		{
-			vkDestroyBuffer(device, buffer, nullptr);
-		}
-		if (memory)
-		{
-			vkFreeMemory(device, memory, nullptr);
-		}
-	}
+	void destroy();
 
 };

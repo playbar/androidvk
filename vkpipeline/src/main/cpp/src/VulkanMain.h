@@ -56,7 +56,7 @@ public:
 	VksModel mModels;
 
 
-	VksBuffer uniformBuffer;
+	VksBuffer mUniformBuffer;
 
 	// Same uniform buffer layout as shader
 	struct UBOVS {
@@ -65,9 +65,9 @@ public:
 		glm::vec4 lightPos = glm::vec4(0.0f, 2.0f, 1.0f, 0.0f);
 	} uboVS;
 
-	VkPipelineLayout pipelineLayout;
-	VkDescriptorSet descriptorSet;
-	VkDescriptorSetLayout descriptorSetLayout;
+	VkPipelineLayout mPipelineLayout;
+	VkDescriptorSet mDescriptorSet;
+	VkDescriptorSetLayout mDescriptorSetLayout;
 
 	VkPipeline mPipeLinePhong;
 	VkPipeline mPipeLineWireframe;
@@ -121,7 +121,7 @@ protected:
 	// Depth buffer format (selected during Vulkan initialization)
 	VkFormat depthFormat;
 	// Command buffer pool
-	VkCommandPool cmdPool;
+	VkCommandPool mCmdPool;
 	/** @brief Pipeline stages used to wait at for graphics queue submissions */
 	VkPipelineStageFlags submitPipelineStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	// Contains command buffers and semaphores to be presented to the queue
@@ -139,7 +139,7 @@ protected:
 	// List of shader modules created (stored for cleanup)
 	std::vector<VkShaderModule> shaderModules;
 	// Pipeline cache object
-	VkPipelineCache pipelineCache;
+	VkPipelineCache mPipelineCache;
 	// Wraps the swap chain to present images (framebuffers) to the windowing system
 	VulkanSwapChain swapChain;
 	// Synchronization semaphores
@@ -170,7 +170,7 @@ public:
 		bool vsync = false;
 	} settings;
 
-	VkClearColorValue defaultClearColor = { { 0.025f, 0.025f, 0.025f, 1.0f } };
+	VkClearColorValue defaultClearColor = { { 0.25f, 0.025f, 0.025f, 1.0f } };
 
 	float zoom = 0;
 

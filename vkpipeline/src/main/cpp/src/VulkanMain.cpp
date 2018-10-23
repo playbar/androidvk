@@ -98,7 +98,7 @@ void VulkanMain::createCommandBuffers()
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
             InitCommandBufferAllocateInfo(
-                    cmdPool,
+                    mCmdPool,
                     VK_COMMAND_BUFFER_LEVEL_PRIMARY,
                     static_cast<uint32_t>(mDrawCmdBuffers.size()));
 
@@ -107,7 +107,7 @@ void VulkanMain::createCommandBuffers()
 
 void VulkanMain::destroyCommandBuffers()
 {
-	vkFreeCommandBuffers(device, cmdPool, static_cast<uint32_t>(mDrawCmdBuffers.size()), mDrawCmdBuffers.data());
+	vkFreeCommandBuffers(device, mCmdPool, static_cast<uint32_t>(mDrawCmdBuffers.size()), mDrawCmdBuffers.data());
 }
 
 VkCommandBuffer VulkanMain::createCommandBuffer(VkCommandBufferLevel level, bool begin)
@@ -116,7 +116,7 @@ VkCommandBuffer VulkanMain::createCommandBuffer(VkCommandBufferLevel level, bool
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
             InitCommandBufferAllocateInfo(
-                    cmdPool,
+                    mCmdPool,
                     level,
                     1);
 
@@ -151,7 +151,7 @@ void VulkanMain::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue
 
 	if (free)
 	{
-		vkFreeCommandBuffers(device, cmdPool, 1, &commandBuffer);
+		vkFreeCommandBuffers(device, mCmdPool, 1, &commandBuffer);
 	}
 }
 
@@ -159,7 +159,7 @@ void VulkanMain::createPipelineCache()
 {
 	VkPipelineCacheCreateInfo pipelineCacheCreateInfo = {};
 	pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-	VK_CHECK_RESULT(vkCreatePipelineCache(device, &pipelineCacheCreateInfo, nullptr, &pipelineCache));
+	VK_CHECK_RESULT(vkCreatePipelineCache(device, &pipelineCacheCreateInfo, nullptr, &mPipelineCache));
 }
 
 void VulkanMain::prepare()
@@ -432,11 +432,11 @@ VulkanMain::~VulkanMain()
 	}
 	vkDestroyPipeline(device, mPipeLineToon, nullptr);
 
-	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+	vkDestroyPipelineLayout(device, mPipelineLayout, nullptr);
+	vkDestroyDescriptorSetLayout(device, mDescriptorSetLayout, nullptr);
 
 	mModels.destroy();
-	uniformBuffer.destroy();
+	mUniformBuffer.destroy();
 	////////////
 	// Clean up Vulkan resources
 	swapChain.cleanup();
@@ -459,9 +459,9 @@ VulkanMain::~VulkanMain()
 	vkDestroyImage(device, depthStencil.image, nullptr);
 	vkFreeMemory(device, depthStencil.mem, nullptr);
 
-	vkDestroyPipelineCache(device, pipelineCache, nullptr);
+	vkDestroyPipelineCache(device, mPipelineCache, nullptr);
 
-	vkDestroyCommandPool(device, cmdPool, nullptr);
+	vkDestroyCommandPool(device, mCmdPool, nullptr);
 
 	vkDestroySemaphore(device, mPresentComplete, nullptr);
 	vkDestroySemaphore(device, mRenderComplete, nullptr);
@@ -794,7 +794,7 @@ void VulkanMain::buildCommandBuffers()
 		VkRect2D scissor = InitRect2D(width, height, 0, 0);
 		vkCmdSetScissor(mDrawCmdBuffers[i], 0, 1, &scissor);
 
-		vkCmdBindDescriptorSets(mDrawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
+		vkCmdBindDescriptorSets(mDrawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mDescriptorSet, 0, NULL);
 
 		VkDeviceSize offsets[1] = { 0 };
 		vkCmdBindVertexBuffers(mDrawCmdBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &mModels.vertices.buffer, offsets);
@@ -838,7 +838,7 @@ void VulkanMain::createCommandPool()
 	cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	cmdPoolInfo.queueFamilyIndex = swapChain.queueNodeIndex;
 	cmdPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	VK_CHECK_RESULT(vkCreateCommandPool(device, &cmdPoolInfo, nullptr, &cmdPool));
+	VK_CHECK_RESULT(vkCreateCommandPool(device, &cmdPoolInfo, nullptr, &mCmdPool));
 }
 
 void VulkanMain::setupDepthStencil()
@@ -909,7 +909,7 @@ void VulkanMain::setupFrameBuffer()
 	frameBuffers.resize(swapChain.imageCount);
 	for (uint32_t i = 0; i < frameBuffers.size(); i++)
 	{
-		attachments[0] = swapChain.buffers[i].view;
+		attachments[0] = swapChain.mVuffers[i].view;
 		VK_CHECK_RESULT(vkCreateFramebuffer(device, &frameBufferCreateInfo, nullptr, &frameBuffers[i]));
 	}
 }
@@ -991,6 +991,7 @@ void VulkanMain::getEnabledFeatures()
 	// Fill mode non solid is required for wireframe display
 	if (deviceFeatures.fillModeNonSolid) {
 		enabledFeatures.fillModeNonSolid = VK_TRUE;
+//		enabledFeatures.wideLines = VK_TRUE;
 		// Wide lines must be present for line width > 1.0f
 		if (deviceFeatures.wideLines) {
 			enabledFeatures.wideLines = VK_TRUE;
@@ -1112,14 +1113,14 @@ void VulkanMain::setupDescriptorSetLayout()
                     setLayoutBindings.data(),
                     setLayoutBindings.size());
 
-	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &descriptorLayout, nullptr, &descriptorSetLayout));
+	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &descriptorLayout, nullptr, &mDescriptorSetLayout));
 
 	VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo =
             InitPipelineLayoutCreateInfo(
-                    &descriptorSetLayout,
+                    &mDescriptorSetLayout,
                     1);
 
-	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pPipelineLayoutCreateInfo, nullptr, &pipelineLayout));
+	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pPipelineLayoutCreateInfo, nullptr, &mPipelineLayout));
 }
 
 void VulkanMain::setupDescriptorSet()
@@ -1127,19 +1128,19 @@ void VulkanMain::setupDescriptorSet()
 	VkDescriptorSetAllocateInfo allocInfo =
             InitDescriptorSetAllocateInfo(
                     descriptorPool,
-                    &descriptorSetLayout,
+                    &mDescriptorSetLayout,
                     1);
 
-	VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet));
+	VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &allocInfo, &mDescriptorSet));
 
 	std::vector<VkWriteDescriptorSet> writeDescriptorSets =
 			{
 					// Binding 0 : Vertex shader uniform buffer
                     InitWriteDescriptorSet(
-                            descriptorSet,
+                            mDescriptorSet,
                             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                             0,
-                            &uniformBuffer.descriptor)
+                            &mUniformBuffer.descriptor)
 			};
 
 	vkUpdateDescriptorSets(device, writeDescriptorSets.size(), writeDescriptorSets.data(), 0, NULL);
@@ -1191,7 +1192,7 @@ void VulkanMain::preparePipelines()
             InitPipelineDynamicStateCreateInfo(dynamicStateEnables);
 
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo =
-            InitPipelineCreateInfo(pipelineLayout, renderPass);
+            InitPipelineCreateInfo(mPipelineLayout, renderPass);
 
 	std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
 
@@ -1249,7 +1250,7 @@ void VulkanMain::preparePipelines()
 	// Phong shading pipeline
 	shaderStages[0] = loadShader(getAssetPath() + "shaders/pipelines/phong.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 	shaderStages[1] = loadShader(getAssetPath() + "shaders/pipelines/phong.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCreateInfo, nullptr, &mPipeLinePhong));
+	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, mPipelineCache, 1, &pipelineCreateInfo, nullptr, &mPipeLinePhong));
 
 	// All pipelines created after the base pipeline will be derivatives
 	pipelineCreateInfo.flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
@@ -1262,7 +1263,7 @@ void VulkanMain::preparePipelines()
 	// Toon shading pipeline
 	shaderStages[0] = loadShader(getAssetPath() + "shaders/pipelines/toon.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 	shaderStages[1] = loadShader(getAssetPath() + "shaders/pipelines/toon.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCreateInfo, nullptr, &mPipeLineToon));
+	VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, mPipelineCache, 1, &pipelineCreateInfo, nullptr, &mPipeLineToon));
 
 	// Pipeline for wire frame rendering
 	// Non solid rendering is not a mandatory Vulkan feature
@@ -1271,7 +1272,7 @@ void VulkanMain::preparePipelines()
 		rasterizationState.polygonMode = VK_POLYGON_MODE_LINE;
 		shaderStages[0] = loadShader(getAssetPath() + "shaders/pipelines/wireframe.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		shaderStages[1] = loadShader(getAssetPath() + "shaders/pipelines/wireframe.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-		VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCreateInfo, nullptr, &mPipeLineWireframe));
+		VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, mPipelineCache, 1, &pipelineCreateInfo, nullptr, &mPipeLineWireframe));
 	}
 }
 
@@ -1282,11 +1283,11 @@ void VulkanMain::prepareUniformBuffers()
 	VK_CHECK_RESULT(vulkanDevice->createBuffer(
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			&uniformBuffer,
+			&mUniformBuffer,
 			sizeof(uboVS)));
 
 	// Map persistent
-	VK_CHECK_RESULT(uniformBuffer.map());
+	VK_CHECK_RESULT(mUniformBuffer.map());
 
 	updateUniformBuffers();
 }
@@ -1302,7 +1303,7 @@ void VulkanMain::updateUniformBuffers()
 	uboVS.modelView = glm::rotate(uboVS.modelView, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
 	uboVS.modelView = glm::rotate(uboVS.modelView, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
 
-	memcpy(uniformBuffer.mapped, &uboVS, sizeof(uboVS));
+	memcpy(mUniformBuffer.mapped, &uboVS, sizeof(uboVS));
 }
 
 void VulkanMain::draw()
