@@ -46,30 +46,16 @@ public:
 	VkFormat colorFormat;
 	VkColorSpaceKHR colorSpace;
 	/** @brief Handle to the current swap chain, required for recreation */
-	VkSwapchainKHR swapChain = VK_NULL_HANDLE;	
-	uint32_t imageCount;
-	std::vector<VkImage> images;
-	std::vector<SwapChainBuffer> mVuffers;
+	VkSwapchainKHR mSwapChain = VK_NULL_HANDLE;
+	uint32_t mImageCount = 0;
+	std::vector<VkImage> mImages;
+	std::vector<SwapChainBuffer> mSwapChainVuffers;
 	// Index of the deteced graphics and presenting device queue
 	/** @brief Queue family index of the detected graphics and presenting device queue */
 	uint32_t queueNodeIndex = UINT32_MAX;
 
-	// Creates an os specific surface
-	/**
-	* Create the surface object, an abstraction for the native platform window
-	*
-	* @pre Windows
-	* @param platformHandle HINSTANCE of the window to create the surface for
-	* @param platformWindow HWND of the window to create the surface for
-	*
-	* @pre Android 
-	* @param window A native platform window
-	*
-	* @pre Linux (XCB)
-	* @param connection xcb connection to the X Server
-	* @param window The xcb window to create the surface for
-	* @note Targets other than XCB ar not yet supported
-	*/
+	VulkanSwapChain();
+
 	void initSurface(ANativeWindow* window);
 
 	/**

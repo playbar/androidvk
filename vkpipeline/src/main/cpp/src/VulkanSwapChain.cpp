@@ -20,6 +20,10 @@
 	}                                                                   \
 }
 
+VulkanSwapChain::VulkanSwapChain()
+{
+	mImageCount = 0;
+}
 
 void VulkanSwapChain::initSurface(ANativeWindow* window)
 {
@@ -175,7 +179,7 @@ void VulkanSwapChain::connect(VkInstance instance, VkPhysicalDevice physicalDevi
 void VulkanSwapChain::create(uint32_t *width, uint32_t *height, bool vsync)
 {
 	VkResult err;
-	VkSwapchainKHR oldSwapchain = swapChain;
+	VkSwapchainKHR oldSwapchain = mSwapChain;
 
 	// Get physical device surface properties and formats
 	VkSurfaceCapabilitiesKHR surfCaps;
@@ -281,31 +285,31 @@ void VulkanSwapChain::create(uint32_t *width, uint32_t *height, bool vsync)
 		swapchainCI.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	}
 
-	err = fpCreateSwapchainKHR(device, &swapchainCI, nullptr, &swapChain);
+	err = fpCreateSwapchainKHR(device, &swapchainCI, nullptr, &mSwapChain);
 	assert(!err);
 
 	// If an existing swap chain is re-created, destroy the old swap chain
 	// This also cleans up all the presentable images
 	if (oldSwapchain != VK_NULL_HANDLE)
 	{
-		for (uint32_t i = 0; i < imageCount; i++)
+		for (uint32_t i = 0; i < mImageCount; i++)
 		{
-			vkDestroyImageView(device, mVuffers[i].view, nullptr);
+			vkDestroyImageView(device, mSwapChainVuffers[i].view, nullptr);
 		}
 		fpDestroySwapchainKHR(device, oldSwapchain, nullptr);
 	}
 
-	err = fpGetSwapchainImagesKHR(device, swapChain, &imageCount, NULL);
+	err = fpGetSwapchainImagesKHR(device, mSwapChain, &mImageCount, NULL);
 	assert(!err);
 
 	// Get the swap chain images
-	images.resize(imageCount);
-	err = fpGetSwapchainImagesKHR(device, swapChain, &imageCount, images.data());
+	mImages.resize(mImageCount);
+	err = fpGetSwapchainImagesKHR(device, mSwapChain, &mImageCount, mImages.data());
 	assert(!err);
 
 	// Get the swap chain buffers containing the image and imageview
-	mVuffers.resize(imageCount);
-	for (uint32_t i = 0; i < imageCount; i++)
+	mSwapChainVuffers.resize(mImageCount);
+	for (uint32_t i = 0; i < mImageCount; i++)
 	{
 		VkImageViewCreateInfo colorAttachmentView = {};
 		colorAttachmentView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -325,11 +329,11 @@ void VulkanSwapChain::create(uint32_t *width, uint32_t *height, bool vsync)
 		colorAttachmentView.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		colorAttachmentView.flags = 0;
 
-		mVuffers[i].image = images[i];
+		mSwapChainVuffers[i].image = mImages[i];
 
-		colorAttachmentView.image = mVuffers[i].image;
+		colorAttachmentView.image = mSwapChainVuffers[i].image;
 
-		err = vkCreateImageView(device, &colorAttachmentView, nullptr, &mVuffers[i].view);
+		err = vkCreateImageView(device, &colorAttachmentView, nullptr, &mSwapChainVuffers[i].view);
 		assert(!err);
 	}
 }
@@ -348,7 +352,7 @@ VkResult VulkanSwapChain::acquireNextImage(VkSemaphore presentCompleteSemaphore,
 {
 	// By setting timeout to UINT64_MAX we will always wait until the next image has been acquired or an actual error is thrown
 	// With that we don't have to handle VK_NOT_READY
-	return fpAcquireNextImageKHR(device, swapChain, UINT64_MAX, presentCompleteSemaphore, (VkFence)nullptr, imageIndex);
+	return fpAcquireNextImageKHR(device, mSwapChain, UINT64_MAX, presentCompleteSemaphore, (VkFence)nullptr, imageIndex);
 }
 
 /**
@@ -366,7 +370,7 @@ VkResult VulkanSwapChain::queuePresent(VkQueue queue, uint32_t imageIndex, VkSem
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	presentInfo.pNext = NULL;
 	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = &swapChain;
+	presentInfo.pSwapchains = &mSwapChain;
 	presentInfo.pImageIndices = &imageIndex;
 	// Check if a wait semaphore has been specified to wait for before presenting the image
 	if (waitSemaphore != VK_NULL_HANDLE)
@@ -383,19 +387,19 @@ VkResult VulkanSwapChain::queuePresent(VkQueue queue, uint32_t imageIndex, VkSem
 */
 void VulkanSwapChain::cleanup()
 {
-	if (swapChain != VK_NULL_HANDLE)
+	if (mSwapChain != VK_NULL_HANDLE)
 	{
-		for (uint32_t i = 0; i < imageCount; i++)
+		for (uint32_t i = 0; i < mImageCount; i++)
 		{
-			vkDestroyImageView(device, mVuffers[i].view, nullptr);
+			vkDestroyImageView(device, mSwapChainVuffers[i].view, nullptr);
 		}
 	}
 	if (surface != VK_NULL_HANDLE)
 	{
-		fpDestroySwapchainKHR(device, swapChain, nullptr);
+		fpDestroySwapchainKHR(device, mSwapChain, nullptr);
 		vkDestroySurfaceKHR(instance, surface, nullptr);
 	}
 	surface = VK_NULL_HANDLE;
-	swapChain = VK_NULL_HANDLE;
+	mSwapChain = VK_NULL_HANDLE;
 }
 

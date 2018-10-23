@@ -41,19 +41,19 @@ VulkanTextOverlay::~VulkanTextOverlay()
 {
 	// Free up all Vulkan resources requested by the text overlay
 	vertexBuffer.destroy();
-	vkDestroySampler(vulkanDevice->logicalDevice, sampler, nullptr);
-	vkDestroyImage(vulkanDevice->logicalDevice, image, nullptr);
-	vkDestroyImageView(vulkanDevice->logicalDevice, view, nullptr);
-	vkFreeMemory(vulkanDevice->logicalDevice, imageMemory, nullptr);
-	vkDestroyDescriptorSetLayout(vulkanDevice->logicalDevice, descriptorSetLayout, nullptr);
-	vkDestroyDescriptorPool(vulkanDevice->logicalDevice, descriptorPool, nullptr);
-	vkDestroyPipelineLayout(vulkanDevice->logicalDevice, pipelineLayout, nullptr);
-	vkDestroyPipelineCache(vulkanDevice->logicalDevice, pipelineCache, nullptr);
-	vkDestroyPipeline(vulkanDevice->logicalDevice, pipeline, nullptr);
-	vkDestroyRenderPass(vulkanDevice->logicalDevice, renderPass, nullptr);
-	vkFreeCommandBuffers(vulkanDevice->logicalDevice, commandPool, static_cast<uint32_t>(mCmdBuffers.size()), mCmdBuffers.data());
-	vkDestroyCommandPool(vulkanDevice->logicalDevice, commandPool, nullptr);
-	vkDestroyFence(vulkanDevice->logicalDevice, fence, nullptr);
+	vkDestroySampler(vulkanDevice->mLogicalDevice, sampler, nullptr);
+	vkDestroyImage(vulkanDevice->mLogicalDevice, image, nullptr);
+	vkDestroyImageView(vulkanDevice->mLogicalDevice, view, nullptr);
+	vkFreeMemory(vulkanDevice->mLogicalDevice, imageMemory, nullptr);
+	vkDestroyDescriptorSetLayout(vulkanDevice->mLogicalDevice, descriptorSetLayout, nullptr);
+	vkDestroyDescriptorPool(vulkanDevice->mLogicalDevice, descriptorPool, nullptr);
+	vkDestroyPipelineLayout(vulkanDevice->mLogicalDevice, pipelineLayout, nullptr);
+	vkDestroyPipelineCache(vulkanDevice->mLogicalDevice, mPipelineCache, nullptr);
+	vkDestroyPipeline(vulkanDevice->mLogicalDevice, mPipeline, nullptr);
+	vkDestroyRenderPass(vulkanDevice->mLogicalDevice, mRenderPass, nullptr);
+	vkFreeCommandBuffers(vulkanDevice->mLogicalDevice, commandPool, static_cast<uint32_t>(mCmdBuffers.size()), mCmdBuffers.data());
+	vkDestroyCommandPool(vulkanDevice->mLogicalDevice, commandPool, nullptr);
+	vkDestroyFence(vulkanDevice->mLogicalDevice, fence, nullptr);
 }
 
 /**
@@ -72,7 +72,7 @@ void VulkanTextOverlay::prepareResources()
 	cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	cmdPoolInfo.queueFamilyIndex = vulkanDevice->queueFamilyIndices.graphics;
 	cmdPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	VK_CHECK_RESULT(vkCreateCommandPool(vulkanDevice->logicalDevice, &cmdPoolInfo, nullptr, &commandPool));
+	VK_CHECK_RESULT(vkCreateCommandPool(vulkanDevice->mLogicalDevice, &cmdPoolInfo, nullptr, &commandPool));
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
 			InitCommandBufferAllocateInfo(
@@ -80,7 +80,7 @@ void VulkanTextOverlay::prepareResources()
 					VK_COMMAND_BUFFER_LEVEL_PRIMARY,
 					(uint32_t) mCmdBuffers.size());
 
-	VK_CHECK_RESULT(vkAllocateCommandBuffers(vulkanDevice->logicalDevice, &cmdBufAllocateInfo, mCmdBuffers.data()));
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(vulkanDevice->mLogicalDevice, &cmdBufAllocateInfo, mCmdBuffers.data()));
 
 	// Vertex buffer
 	VK_CHECK_RESULT(vulkanDevice->createBuffer(
@@ -106,15 +106,15 @@ void VulkanTextOverlay::prepareResources()
 	imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-	VK_CHECK_RESULT(vkCreateImage(vulkanDevice->logicalDevice, &imageInfo, nullptr, &image));
+	VK_CHECK_RESULT(vkCreateImage(vulkanDevice->mLogicalDevice, &imageInfo, nullptr, &image));
 
 	VkMemoryRequirements memReqs;
 	VkMemoryAllocateInfo allocInfo = InitMemoryAllocateInfo();
-	vkGetImageMemoryRequirements(vulkanDevice->logicalDevice, image, &memReqs);
+	vkGetImageMemoryRequirements(vulkanDevice->mLogicalDevice, image, &memReqs);
 	allocInfo.allocationSize = memReqs.size;
 	allocInfo.memoryTypeIndex = vulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	VK_CHECK_RESULT(vkAllocateMemory(vulkanDevice->logicalDevice, &allocInfo, nullptr, &imageMemory));
-	VK_CHECK_RESULT(vkBindImageMemory(vulkanDevice->logicalDevice, image, imageMemory, 0));
+	VK_CHECK_RESULT(vkAllocateMemory(vulkanDevice->mLogicalDevice, &allocInfo, nullptr, &imageMemory));
+	VK_CHECK_RESULT(vkBindImageMemory(vulkanDevice->mLogicalDevice, image, imageMemory, 0));
 
 	// Staging
 	VksBuffer stagingBuffer;
@@ -132,7 +132,7 @@ void VulkanTextOverlay::prepareResources()
 	// Copy to image
 	VkCommandBuffer copyCmd;
 	cmdBufAllocateInfo.commandBufferCount = 1;
-	VK_CHECK_RESULT(vkAllocateCommandBuffers(vulkanDevice->logicalDevice, &cmdBufAllocateInfo, &copyCmd));
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(vulkanDevice->mLogicalDevice, &cmdBufAllocateInfo, &copyCmd));
 
 	VkCommandBufferBeginInfo cmdBufInfo = InitCommandBufferBeginInfo();
 	VK_CHECK_RESULT(vkBeginCommandBuffer(copyCmd, &cmdBufInfo));
@@ -181,7 +181,7 @@ void VulkanTextOverlay::prepareResources()
 
 	stagingBuffer.destroy();
 
-	vkFreeCommandBuffers(vulkanDevice->logicalDevice, commandPool, 1, &copyCmd);
+	vkFreeCommandBuffers(vulkanDevice->mLogicalDevice, commandPool, 1, &copyCmd);
 
 	VkImageViewCreateInfo imageViewInfo = InitImageViewCreateInfo();
 	imageViewInfo.image = image;
@@ -189,7 +189,7 @@ void VulkanTextOverlay::prepareResources()
 	imageViewInfo.format = imageInfo.format;
 	imageViewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B,	VK_COMPONENT_SWIZZLE_A };
 	imageViewInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-	VK_CHECK_RESULT(vkCreateImageView(vulkanDevice->logicalDevice, &imageViewInfo, nullptr, &view));
+	VK_CHECK_RESULT(vkCreateImageView(vulkanDevice->mLogicalDevice, &imageViewInfo, nullptr, &view));
 
 	// Sampler
 	VkSamplerCreateInfo samplerInfo = InitSamplerCreateInfo();
@@ -204,7 +204,7 @@ void VulkanTextOverlay::prepareResources()
 	samplerInfo.minLod = 0.0f;
 	samplerInfo.maxLod = 1.0f;
 	samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-	VK_CHECK_RESULT(vkCreateSampler(vulkanDevice->logicalDevice, &samplerInfo, nullptr, &sampler));
+	VK_CHECK_RESULT(vkCreateSampler(vulkanDevice->mLogicalDevice, &samplerInfo, nullptr, &sampler));
 
 	// Descriptor
 	// Font uses a separate descriptor pool
@@ -218,7 +218,7 @@ void VulkanTextOverlay::prepareResources()
 					poolSizes.data(),
 					1);
 
-	VK_CHECK_RESULT(vkCreateDescriptorPool(vulkanDevice->logicalDevice, &descriptorPoolInfo, nullptr, &descriptorPool));
+	VK_CHECK_RESULT(vkCreateDescriptorPool(vulkanDevice->mLogicalDevice, &descriptorPoolInfo, nullptr, &descriptorPool));
 
 	// Descriptor set layout
 	std::array<VkDescriptorSetLayoutBinding, 1> setLayoutBindings;
@@ -230,7 +230,7 @@ void VulkanTextOverlay::prepareResources()
 					setLayoutBindings.data(),
 					static_cast<uint32_t>(setLayoutBindings.size()));
 
-	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(vulkanDevice->logicalDevice, &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout));
+	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(vulkanDevice->mLogicalDevice, &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout));
 
 	// Pipeline layout
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo =
@@ -238,7 +238,7 @@ void VulkanTextOverlay::prepareResources()
 					&descriptorSetLayout,
 					1);
 
-	VK_CHECK_RESULT(vkCreatePipelineLayout(vulkanDevice->logicalDevice, &pipelineLayoutInfo, nullptr, &pipelineLayout));
+	VK_CHECK_RESULT(vkCreatePipelineLayout(vulkanDevice->mLogicalDevice, &pipelineLayoutInfo, nullptr, &pipelineLayout));
 
 	// Descriptor set
 	VkDescriptorSetAllocateInfo descriptorSetAllocInfo =
@@ -247,7 +247,7 @@ void VulkanTextOverlay::prepareResources()
 					&descriptorSetLayout,
 					1);
 
-	VK_CHECK_RESULT(vkAllocateDescriptorSets(vulkanDevice->logicalDevice, &descriptorSetAllocInfo, &descriptorSet));
+	VK_CHECK_RESULT(vkAllocateDescriptorSets(vulkanDevice->mLogicalDevice, &descriptorSetAllocInfo, &descriptorSet));
 
 	VkDescriptorImageInfo texDescriptor =
 			InitDescriptorImageInfo(
@@ -259,16 +259,16 @@ void VulkanTextOverlay::prepareResources()
 	writeDescriptorSets[0] = InitWriteDescriptorSet(descriptorSet,
 													VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 													0, &texDescriptor);
-	vkUpdateDescriptorSets(vulkanDevice->logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, NULL);
+	vkUpdateDescriptorSets(vulkanDevice->mLogicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, NULL);
 
 	// Pipeline cache
 	VkPipelineCacheCreateInfo pipelineCacheCreateInfo = {};
 	pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-	VK_CHECK_RESULT(vkCreatePipelineCache(vulkanDevice->logicalDevice, &pipelineCacheCreateInfo, nullptr, &pipelineCache));
+	VK_CHECK_RESULT(vkCreatePipelineCache(vulkanDevice->mLogicalDevice, &pipelineCacheCreateInfo, nullptr, &mPipelineCache));
 
 	// Command buffer execution fence
 	VkFenceCreateInfo fenceCreateInfo = InitFenceCreateInfo();
-	VK_CHECK_RESULT(vkCreateFence(vulkanDevice->logicalDevice, &fenceCreateInfo, nullptr, &fence));
+	VK_CHECK_RESULT(vkCreateFence(vulkanDevice->mLogicalDevice, &fenceCreateInfo, nullptr, &fence));
 }
 
 /**
@@ -358,7 +358,7 @@ void VulkanTextOverlay::preparePipeline()
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo =
 			InitPipelineCreateInfo(
 					pipelineLayout,
-					renderPass,
+					mRenderPass,
 					0);
 
 	pipelineCreateInfo.pVertexInputState = &inputState;
@@ -372,7 +372,7 @@ void VulkanTextOverlay::preparePipeline()
 	pipelineCreateInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
 	pipelineCreateInfo.pStages = shaderStages.data();
 
-	VK_CHECK_RESULT(vkCreateGraphicsPipelines(vulkanDevice->logicalDevice, pipelineCache, 1, &pipelineCreateInfo, nullptr, &pipeline));
+	VK_CHECK_RESULT(vkCreateGraphicsPipelines(vulkanDevice->mLogicalDevice, mPipelineCache, 1, &pipelineCreateInfo, nullptr, &mPipeline));
 }
 
 /**
@@ -453,7 +453,7 @@ void VulkanTextOverlay::prepareRenderPass()
 	renderPassInfo.dependencyCount = 2;
 	renderPassInfo.pDependencies = subpassDependencies;
 
-	VK_CHECK_RESULT(vkCreateRenderPass(vulkanDevice->logicalDevice, &renderPassInfo, nullptr, &renderPass));
+	VK_CHECK_RESULT(vkCreateRenderPass(vulkanDevice->mLogicalDevice, &renderPassInfo, nullptr, &mRenderPass));
 }
 
 /**
@@ -562,7 +562,7 @@ void VulkanTextOverlay::updateCommandBuffers()
 	VkCommandBufferBeginInfo cmdBufInfo = InitCommandBufferBeginInfo();
 
 	VkRenderPassBeginInfo renderPassBeginInfo = InitRenderPassBeginInfo();
-	renderPassBeginInfo.renderPass = renderPass;
+	renderPassBeginInfo.renderPass = mRenderPass;
 	renderPassBeginInfo.renderArea.extent.width = *frameBufferWidth;
 	renderPassBeginInfo.renderArea.extent.height = *frameBufferHeight;
 	// None of the attachments will be cleared
@@ -591,7 +591,7 @@ void VulkanTextOverlay::updateCommandBuffers()
 									  0, 0);
 		vkCmdSetScissor(mCmdBuffers[i], 0, 1, &scissor);
 
-		vkCmdBindPipeline(mCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+		vkCmdBindPipeline(mCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline);
 		vkCmdBindDescriptorSets(mCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
 
 		VkDeviceSize offsets = 0;
@@ -628,8 +628,8 @@ void VulkanTextOverlay::submit(VkQueue queue, uint32_t bufferindex, VkSubmitInfo
 
 	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, fence));
 
-	VK_CHECK_RESULT(vkWaitForFences(vulkanDevice->logicalDevice, 1, &fence, VK_TRUE, UINT64_MAX));
-	VK_CHECK_RESULT(vkResetFences(vulkanDevice->logicalDevice, 1, &fence));
+	VK_CHECK_RESULT(vkWaitForFences(vulkanDevice->mLogicalDevice, 1, &fence, VK_TRUE, UINT64_MAX));
+	VK_CHECK_RESULT(vkResetFences(vulkanDevice->mLogicalDevice, 1, &fence));
 }
 
 /**
@@ -638,7 +638,7 @@ void VulkanTextOverlay::submit(VkQueue queue, uint32_t bufferindex, VkSubmitInfo
 */
 void VulkanTextOverlay::reallocateCommandBuffers()
 {
-	vkFreeCommandBuffers(vulkanDevice->logicalDevice, commandPool, static_cast<uint32_t>(mCmdBuffers.size()), mCmdBuffers.data());
+	vkFreeCommandBuffers(vulkanDevice->mLogicalDevice, commandPool, static_cast<uint32_t>(mCmdBuffers.size()), mCmdBuffers.data());
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
 			InitCommandBufferAllocateInfo(
@@ -646,5 +646,5 @@ void VulkanTextOverlay::reallocateCommandBuffers()
 					VK_COMMAND_BUFFER_LEVEL_PRIMARY,
 					static_cast<uint32_t>(mCmdBuffers.size()));
 
-	VK_CHECK_RESULT(vkAllocateCommandBuffers(vulkanDevice->logicalDevice, &cmdBufAllocateInfo, mCmdBuffers.data()));
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(vulkanDevice->mLogicalDevice, &cmdBufAllocateInfo, mCmdBuffers.data()));
 }

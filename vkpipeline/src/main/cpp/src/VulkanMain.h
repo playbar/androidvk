@@ -113,9 +113,9 @@ protected:
 	std::vector<const char*> enabledExtensions;
 	/** @brief Logical device, application's view of the physical device (GPU) */
 	// todo: getter? should always point to VulkanDevice->device
-	VkDevice device;
+
 	/** @brief Encapsulated physical and logical vulkan device */
-	VulkanDevice *vulkanDevice;
+	VulkanDevice *mVulkanDevice;
 	// Handle to the device graphics queue that command buffers are submitted to
 	VkQueue queue;
 	// Depth buffer format (selected during Vulkan initialization)
@@ -131,17 +131,17 @@ protected:
 	// Global render pass for frame buffer writes
 	VkRenderPass renderPass;
 	// List of available frame buffers (same as number of swap chain images)
-	std::vector<VkFramebuffer>frameBuffers;
+	std::vector<VkFramebuffer> mFrameBuffers;
 	// Active frame buffer index
 	uint32_t currentBuffer = 0;
 	// Descriptor set pool
-	VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
+	VkDescriptorPool mDescriptorPool = VK_NULL_HANDLE;
 	// List of shader modules created (stored for cleanup)
 	std::vector<VkShaderModule> shaderModules;
 	// Pipeline cache object
 	VkPipelineCache mPipelineCache;
 	// Wraps the swap chain to present images (framebuffers) to the windowing system
-	VulkanSwapChain swapChain;
+	VulkanSwapChain mSwapChain;
 	// Synchronization semaphores
 
     // Swap chain image presentation

@@ -60,9 +60,9 @@ private:
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorSet descriptorSet;
 	VkPipelineLayout pipelineLayout;
-	VkPipelineCache pipelineCache;
-	VkPipeline pipeline;
-	VkRenderPass renderPass;
+	VkPipelineCache mPipelineCache;
+	VkPipeline mPipeline;
+	VkRenderPass mRenderPass;
 	VkCommandPool commandPool;
 	std::vector<VkFramebuffer*> frameBuffers;
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
