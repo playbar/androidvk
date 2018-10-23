@@ -211,14 +211,14 @@ public:
 		// Exit if either a graphics or a presenting queue hasn't been found
 		if (graphicsQueueNodeIndex == UINT32_MAX || presentQueueNodeIndex == UINT32_MAX) 
 		{
-            vks::tools::VksExitFatal("Could not find a graphics and/or presenting queue!",
+            VksExitFatal("Could not find a graphics and/or presenting queue!",
                                      "Fatal error");
 		}
 
 		// todo : Add support for separate graphics and presenting queue
 		if (graphicsQueueNodeIndex != presentQueueNodeIndex) 
 		{
-            vks::tools::VksExitFatal(
+            VksExitFatal(
                     "Separate graphics and presenting queues are not supported yet!", "Fatal error");
 		}
 
@@ -578,7 +578,7 @@ public:
 
 		if(!foundMode)
 		{
-			vks::tools::exitFatal("Can't find a display and a display mode!", "Fatal error");
+			exitFatal("Can't find a display and a display mode!", "Fatal error");
 			return;
 		}
 
@@ -615,7 +615,7 @@ public:
 
 		if(bestPlaneIndex == UINT32_MAX)
 		{
-			vks::tools::exitFatal("Can't find a plane for displaying!", "Fatal error");
+			exitFatal("Can't find a plane for displaying!", "Fatal error");
 			return;
 		}
 
@@ -653,7 +653,7 @@ public:
 		VkResult result = vkCreateDisplayPlaneSurfaceKHR(instance, &surfaceInfo, NULL, &surface);
 		if(result !=VK_SUCCESS)
 		{
-			vks::tools::exitFatal("Failed to create surface!", "Fatal error");
+			exitFatal("Failed to create surface!", "Fatal error");
 		}
 
 		delete[] pDisplays;

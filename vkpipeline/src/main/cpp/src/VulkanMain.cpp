@@ -6,7 +6,7 @@
 * This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
 */
 
-#include "VulkanPipeline.h"
+#include "VulkanMain.h"
 
 std::vector<const char*> VulkanPipeLines::args;
 
@@ -212,10 +212,10 @@ VkPipelineShaderStageCreateInfo VulkanPipeLines::loadShader(std::string fileName
 	shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	shaderStage.stage = stage;
 #if defined(__ANDROID__)
-	shaderStage.module = vks::tools::VksLoadShader(androidApp->activity->assetManager,
+	shaderStage.module = VksLoadShader(androidApp->activity->assetManager,
 												   fileName.c_str(), device, stage);
 #else
-	shaderStage.module = vks::tools::loadShader(fileName.c_str(), device, stage);
+	shaderStage.module = loadShader(fileName.c_str(), device, stage);
 #endif
 	shaderStage.pName = "main"; // todo : make param
 	assert(shaderStage.module != VK_NULL_HANDLE);
@@ -683,8 +683,8 @@ void VulkanPipeLines::initVulkan()
 	err = createInstance(settings.validation);
 	if (err)
 	{
-		vks::tools::VksExitFatal("Could not create Vulkan instance : \n" +
-								 vks::tools::VksErrorString(err), "Fatal error");
+		VksExitFatal("Could not create Vulkan instance : \n" +
+								 VksErrorString(err), "Fatal error");
 	}
 
 	loadVulkanFunctions(instance);
@@ -709,8 +709,8 @@ void VulkanPipeLines::initVulkan()
 	err = vkEnumeratePhysicalDevices(instance, &gpuCount, physicalDevices.data());
 	if (err)
 	{
-		vks::tools::VksExitFatal("Could not enumerate physical devices : \n" +
-								 vks::tools::VksErrorString(err), "Fatal error");
+		VksExitFatal("Could not enumerate physical devices : \n" +
+								 VksErrorString(err), "Fatal error");
 	}
 
 	// GPU selection
@@ -735,8 +735,8 @@ void VulkanPipeLines::initVulkan()
 	vulkanDevice = new vks::VulkanDevice(physicalDevice);
 	VkResult res = vulkanDevice->createLogicalDevice(enabledFeatures, enabledExtensions);
 	if (res != VK_SUCCESS) {
-		vks::tools::VksExitFatal(
-				"Could not create Vulkan device: \n" + vks::tools::VksErrorString(res),
+		VksExitFatal(
+				"Could not create Vulkan device: \n" + VksErrorString(res),
 				"Fatal error");
 	}
 	device = vulkanDevice->logicalDevice;
@@ -745,7 +745,7 @@ void VulkanPipeLines::initVulkan()
 	vkGetDeviceQueue(device, vulkanDevice->queueFamilyIndices.graphics, 0, &queue);
 
 	// Find a suitable depth format
-	VkBool32 validDepthFormat = vks::tools::VksGetSupportedDepthFormat(physicalDevice, &depthFormat);
+	VkBool32 validDepthFormat = VksGetSupportedDepthFormat(physicalDevice, &depthFormat);
 	assert(validDepthFormat);
 
 	swapChain.connect(instance, physicalDevice, device);

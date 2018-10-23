@@ -162,7 +162,7 @@ namespace vks
 
 				// Image barrier for optimal image (target)
 				// Optimal image will be used as destination for the copy
-                vks::tools::VksSetImageLayout(
+                VksSetImageLayout(
                         copyCmd,
                         image,
                         VK_IMAGE_ASPECT_COLOR_BIT,
@@ -182,7 +182,7 @@ namespace vks
 
 				// Change texture image layout to shader read after all mip levels have been copied
 				this->imageLayout = imageLayout;
-                vks::tools::VksSetImageLayout(
+                VksSetImageLayout(
                         copyCmd,
                         image,
                         VK_IMAGE_ASPECT_COLOR_BIT,
@@ -266,7 +266,7 @@ namespace vks
 				imageLayout = imageLayout;
 
 				// Setup image memory barrier
-                vks::tools::VksSetImageLayout(copyCmd, image, VK_IMAGE_ASPECT_COLOR_BIT,
+                VksSetImageLayout(copyCmd, image, VK_IMAGE_ASPECT_COLOR_BIT,
                                               VK_IMAGE_LAYOUT_UNDEFINED, imageLayout);
 
 				device->flushCommandBuffer(copyCmd, copyQueue);
@@ -424,7 +424,7 @@ namespace vks
 
 			// Image barrier for optimal image (target)
 			// Optimal image will be used as destination for the copy
-            vks::tools::VksSetImageLayout(
+            VksSetImageLayout(
                     copyCmd,
                     image,
                     VK_IMAGE_ASPECT_COLOR_BIT,
@@ -444,7 +444,7 @@ namespace vks
 
 			// Change texture image layout to shader read after all mip levels have been copied
 			this->imageLayout = imageLayout;
-            vks::tools::VksSetImageLayout(
+            VksSetImageLayout(
                     copyCmd,
                     image,
                     VK_IMAGE_ASPECT_COLOR_BIT,
@@ -622,7 +622,7 @@ namespace vks
 			subresourceRange.levelCount = mipLevels;
 			subresourceRange.layerCount = layerCount;
 
-        vks::tools::VksSetImageLayout(
+        VksSetImageLayout(
                 copyCmd,
                 image,
                 VK_IMAGE_ASPECT_COLOR_BIT,
@@ -641,7 +641,7 @@ namespace vks
 
 			// Change texture image layout to shader read after all faces have been copied
 			this->imageLayout = imageLayout;
-        vks::tools::VksSetImageLayout(
+        VksSetImageLayout(
                 copyCmd,
                 image,
                 VK_IMAGE_ASPECT_COLOR_BIT,
@@ -820,7 +820,7 @@ namespace vks
 			subresourceRange.levelCount = mipLevels;
 			subresourceRange.layerCount = 6;
 
-        vks::tools::VksSetImageLayout(
+        VksSetImageLayout(
                 copyCmd,
                 image,
                 VK_IMAGE_ASPECT_COLOR_BIT,
@@ -839,7 +839,7 @@ namespace vks
 
 			// Change texture image layout to shader read after all faces have been copied
 			this->imageLayout = imageLayout;
-        vks::tools::VksSetImageLayout(
+        VksSetImageLayout(
                 copyCmd,
                 image,
                 VK_IMAGE_ASPECT_COLOR_BIT,

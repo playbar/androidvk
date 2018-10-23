@@ -138,7 +138,7 @@ void VulkanTextOverlay::prepareResources()
 	VK_CHECK_RESULT(vkBeginCommandBuffer(copyCmd, &cmdBufInfo));
 
 	// Prepare for transfer
-	vks::tools::VksSetImageLayout(
+	VksSetImageLayout(
 			copyCmd,
 			image,
 			VK_IMAGE_ASPECT_COLOR_BIT,
@@ -163,7 +163,7 @@ void VulkanTextOverlay::prepareResources()
 	);
 
 	// Prepare for shader read
-	vks::tools::VksSetImageLayout(
+	VksSetImageLayout(
 			copyCmd,
 			image,
 			VK_IMAGE_ASPECT_COLOR_BIT,

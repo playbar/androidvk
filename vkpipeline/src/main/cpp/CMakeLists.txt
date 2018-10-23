@@ -31,7 +31,7 @@ add_library(vkvulkan SHARED
             src/vulkanandroid.cpp
             src/VulkanDebug.cpp
             src/VulkanDevice.cpp
-            src/VulkanPipeline.cpp
+            src/VulkanMain.cpp
             src/VulkanTextOverlay.cpp
             src/VulkanModel.cpp
             src/VulkanTexture.cpp
