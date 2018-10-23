@@ -22,7 +22,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/resource.h>
-#include "my_log.h"
+#include "mylog.h"
 
 #include "android_native_app_glue.h"
 #include <android/log.h>

@@ -28,7 +28,7 @@ VulkanTextOverlay::VulkanTextOverlay(
 	this->frameBufferWidth = framebufferwidth;
 	this->frameBufferHeight = framebufferheight;
 
-	cmdBuffers.resize(framebuffers.size());
+	mCmdBuffers.resize(framebuffers.size());
 	prepareResources();
 	prepareRenderPass();
 	preparePipeline();
@@ -51,7 +51,7 @@ VulkanTextOverlay::~VulkanTextOverlay()
 	vkDestroyPipelineCache(vulkanDevice->logicalDevice, pipelineCache, nullptr);
 	vkDestroyPipeline(vulkanDevice->logicalDevice, pipeline, nullptr);
 	vkDestroyRenderPass(vulkanDevice->logicalDevice, renderPass, nullptr);
-	vkFreeCommandBuffers(vulkanDevice->logicalDevice, commandPool, static_cast<uint32_t>(cmdBuffers.size()), cmdBuffers.data());
+	vkFreeCommandBuffers(vulkanDevice->logicalDevice, commandPool, static_cast<uint32_t>(mCmdBuffers.size()), mCmdBuffers.data());
 	vkDestroyCommandPool(vulkanDevice->logicalDevice, commandPool, nullptr);
 	vkDestroyFence(vulkanDevice->logicalDevice, fence, nullptr);
 }
@@ -78,9 +78,9 @@ void VulkanTextOverlay::prepareResources()
 			InitCommandBufferAllocateInfo(
 					commandPool,
 					VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-					(uint32_t) cmdBuffers.size());
+					(uint32_t) mCmdBuffers.size());
 
-	VK_CHECK_RESULT(vkAllocateCommandBuffers(vulkanDevice->logicalDevice, &cmdBufAllocateInfo, cmdBuffers.data()));
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(vulkanDevice->logicalDevice, &cmdBufAllocateInfo, mCmdBuffers.data()));
 
 	// Vertex buffer
 	VK_CHECK_RESULT(vulkanDevice->createBuffer(
@@ -569,48 +569,47 @@ void VulkanTextOverlay::updateCommandBuffers()
 	renderPassBeginInfo.clearValueCount = 0;
 	renderPassBeginInfo.pClearValues = nullptr;
 
-	for (int32_t i = 0; i < cmdBuffers.size(); ++i)
+	for (int32_t i = 0; i < mCmdBuffers.size(); ++i)
 	{
 		renderPassBeginInfo.framebuffer = *frameBuffers[i];
 
-		VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffers[i], &cmdBufInfo));
+		VK_CHECK_RESULT(vkBeginCommandBuffer(mCmdBuffers[i], &cmdBufInfo));
 
 		if (gVksDebugMarkerActive)
 		{
-			VksDebugMarkerBeginRegion(cmdBuffers[i], "Text overlay",
-														glm::vec4(1.0f, 0.94f, 0.3f, 1.0f));
+			VksDebugMarkerBeginRegion(mCmdBuffers[i], "Text overlay", glm::vec4(1.0f, 0.94f, 0.3f, 1.0f));
 		}
 
-		vkCmdBeginRenderPass(cmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(mCmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 		VkViewport viewport = InitViewport((float) *frameBufferWidth,
 										   (float) *frameBufferHeight, 0.0f,
 										   1.0f);
-		vkCmdSetViewport(cmdBuffers[i], 0, 1, &viewport);
+		vkCmdSetViewport(mCmdBuffers[i], 0, 1, &viewport);
 
 		VkRect2D scissor = InitRect2D(*frameBufferWidth, *frameBufferHeight,
 									  0, 0);
-		vkCmdSetScissor(cmdBuffers[i], 0, 1, &scissor);
+		vkCmdSetScissor(mCmdBuffers[i], 0, 1, &scissor);
 
-		vkCmdBindPipeline(cmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-		vkCmdBindDescriptorSets(cmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
+		vkCmdBindPipeline(mCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+		vkCmdBindDescriptorSets(mCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
 
 		VkDeviceSize offsets = 0;
-		vkCmdBindVertexBuffers(cmdBuffers[i], 0, 1, &vertexBuffer.buffer, &offsets);
-		vkCmdBindVertexBuffers(cmdBuffers[i], 1, 1, &vertexBuffer.buffer, &offsets);
+		vkCmdBindVertexBuffers(mCmdBuffers[i], 0, 1, &vertexBuffer.buffer, &offsets);
+		vkCmdBindVertexBuffers(mCmdBuffers[i], 1, 1, &vertexBuffer.buffer, &offsets);
 		for (uint32_t j = 0; j < numLetters; j++)
 		{
-			vkCmdDraw(cmdBuffers[i], 4, 1, j * 4, 0);
+			vkCmdDraw(mCmdBuffers[i], 4, 1, j * 4, 0);
 		}
 
-		vkCmdEndRenderPass(cmdBuffers[i]);
+		vkCmdEndRenderPass(mCmdBuffers[i]);
 
 		if (gVksDebugMarkerActive)
 		{
-			VksDebugMarkerEndRegion(cmdBuffers[i]);
+			VksDebugMarkerEndRegion(mCmdBuffers[i]);
 		}
 
-		VK_CHECK_RESULT(vkEndCommandBuffer(cmdBuffers[i]));
+		VK_CHECK_RESULT(vkEndCommandBuffer(mCmdBuffers[i]));
 	}
 }
 
@@ -624,7 +623,7 @@ void VulkanTextOverlay::submit(VkQueue queue, uint32_t bufferindex, VkSubmitInfo
 		return;
 	}
 
-	submitInfo.pCommandBuffers = &cmdBuffers[bufferindex];
+	submitInfo.pCommandBuffers = &mCmdBuffers[bufferindex];
 	submitInfo.commandBufferCount = 1;
 
 	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, fence));
@@ -639,13 +638,13 @@ void VulkanTextOverlay::submit(VkQueue queue, uint32_t bufferindex, VkSubmitInfo
 */
 void VulkanTextOverlay::reallocateCommandBuffers()
 {
-	vkFreeCommandBuffers(vulkanDevice->logicalDevice, commandPool, static_cast<uint32_t>(cmdBuffers.size()), cmdBuffers.data());
+	vkFreeCommandBuffers(vulkanDevice->logicalDevice, commandPool, static_cast<uint32_t>(mCmdBuffers.size()), mCmdBuffers.data());
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
 			InitCommandBufferAllocateInfo(
 					commandPool,
 					VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-					static_cast<uint32_t>(cmdBuffers.size()));
+					static_cast<uint32_t>(mCmdBuffers.size()));
 
-	VK_CHECK_RESULT(vkAllocateCommandBuffers(vulkanDevice->logicalDevice, &cmdBufAllocateInfo, cmdBuffers.data()));
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(vulkanDevice->logicalDevice, &cmdBufAllocateInfo, mCmdBuffers.data()));
 }

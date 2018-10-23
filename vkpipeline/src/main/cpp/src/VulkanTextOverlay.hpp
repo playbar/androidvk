@@ -83,7 +83,7 @@ public:
 
 	float scale = 2.0f;
 
-	std::vector<VkCommandBuffer> cmdBuffers;
+	std::vector<VkCommandBuffer> mCmdBuffers;
 
 	/**
 	* Default constructor

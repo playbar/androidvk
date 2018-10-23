@@ -19,7 +19,7 @@
 #include <android/log.h>
 #include <assert.h>
 #include <errno.h>
-#include "my_log.h"
+#include "mylog.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>

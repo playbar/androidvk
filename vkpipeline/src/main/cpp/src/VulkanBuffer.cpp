@@ -1,5 +1,5 @@
 #include "VulkanBuffer.hpp"
-
+#include "mylog.h"
 
 VkResult VksBuffer::map(VkDeviceSize size, VkDeviceSize offset)
 {

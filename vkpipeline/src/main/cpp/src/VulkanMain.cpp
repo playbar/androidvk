@@ -7,8 +7,7 @@
 */
 
 #include "VulkanMain.h"
-
-std::vector<const char*> VulkanMain::args;
+#include "mylog.h"
 
 VkResult VulkanMain::createInstance(bool enableValidation)
 {
@@ -201,7 +200,7 @@ void VulkanMain::prepare()
 	preparePipelines();
 	setupDescriptorPool();
 	setupDescriptorSet();
-	buildCommandBuffers();
+    updateCommandBuffers();
 	prepared = true;
 
 }
@@ -281,7 +280,9 @@ void VulkanMain::renderLoop()
 			if (fpsTimer > 1000.0f)
 			{
 				lastFPS = frameCounter;
-				updateTextOverlay();
+                LOGE("frameTime:%04.2f, FPS:%u", frameTimer * 1000, lastFPS);
+//				updateTextOverlay();
+//                updateCommandBuffers();
 				fpsTimer = 0.0f;
 				frameCounter = 0;
 			}
@@ -380,44 +381,16 @@ void VulkanMain::getOverlayText(VulkanTextOverlay *textOverlay)
 VulkanMain::VulkanMain(bool enableValidation)
 {
 	settings.validation = enableValidation;
+	settings.vsync = false;
+	settings.fullscreen = false;
 
-	// Parse command line arguments
-	for (size_t i = 0; i < args.size(); i++)
-	{
-		if (args[i] == std::string("-validation"))
-		{
-			settings.validation = true;
-		}
-		if (args[i] == std::string("-vsync"))
-		{
-			settings.vsync = true;
-		}
-		if (args[i] == std::string("-fullscreen"))
-		{
-			settings.fullscreen = true;
-		}
-		if ((args[i] == std::string("-w")) || (args[i] == std::string("-width")))
-		{
-			char* endptr;
-			uint32_t w = strtol(args[i + 1], &endptr, 10);
-			if (endptr != args[i + 1]) { width = w; };
-		}
-		if ((args[i] == std::string("-h")) || (args[i] == std::string("-height")))
-		{
-			char* endptr;
-			uint32_t h = strtol(args[i + 1], &endptr, 10);
-			if (endptr != args[i + 1]) { height = h; };
-		}
-	}
-	
 	// Vulkan library is loaded dynamically on Android
 	bool libLoaded = loadVulkanLibrary();
 	assert(libLoaded);
 
-
 	zoom = -10.5f;
 	rotation = glm::vec3(-25.0f, 15.0f, 0.0f);
-	mEnableTextOverlay = false;
+	mEnableTextOverlay = true;
 	title = "Pipeline state objects";
 }
 
@@ -491,8 +464,7 @@ void VulkanMain::initVulkan()
 	err = createInstance(settings.validation);
 	if (err)
 	{
-		VksExitFatal("Could not create Vulkan instance : \n" +
-								 VksErrorString(err), "Fatal error");
+		VksExitFatal("Could not create Vulkan instance : \n" + VksErrorString(err), "Fatal error");
 	}
 
 	loadVulkanFunctions(instance);
@@ -517,8 +489,7 @@ void VulkanMain::initVulkan()
 	err = vkEnumeratePhysicalDevices(instance, &gpuCount, physicalDevices.data());
 	if (err)
 	{
-		VksExitFatal("Could not enumerate physical devices : \n" +
-								 VksErrorString(err), "Fatal error");
+		VksExitFatal("Could not enumerate physical devices : \n" + VksErrorString(err), "Fatal error");
 	}
 
 	// GPU selection
@@ -543,9 +514,7 @@ void VulkanMain::initVulkan()
 	vulkanDevice = new VulkanDevice(physicalDevice);
 	VkResult res = vulkanDevice->createLogicalDevice(enabledFeatures, enabledExtensions);
 	if (res != VK_SUCCESS) {
-		VksExitFatal(
-				"Could not create Vulkan device: \n" + VksErrorString(res),
-				"Fatal error");
+		VksExitFatal("Could not create Vulkan device: \n" + VksErrorString(res), "Fatal error");
 	}
 	device = vulkanDevice->logicalDevice;
 
@@ -761,7 +730,7 @@ void VulkanMain::keyPressed(uint32_t keyCode)
 	// Can be overriden in derived class
 }
 
-void VulkanMain::buildCommandBuffers()
+void VulkanMain::updateCommandBuffers()
 {
 	VkCommandBufferBeginInfo cmdBufInfo = InitCommandBufferBeginInfo();
 
@@ -1032,7 +1001,7 @@ void VulkanMain::windowResize()
 	// references to the recreated frame buffer
 	destroyCommandBuffers();
 	createCommandBuffers();
-	buildCommandBuffers();
+    updateCommandBuffers();
 
 	vkDeviceWaitIdle(device);
 
@@ -1337,7 +1306,7 @@ void VulkanMain::draw()
 
         // Submit current text overlay command buffer
         mSubmitInfo.commandBufferCount = 1;
-        mSubmitInfo.pCommandBuffers = &mTextOverlay->cmdBuffers[currentBuffer];
+        mSubmitInfo.pCommandBuffers = &mTextOverlay->mCmdBuffers[currentBuffer];
         VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &mSubmitInfo, VK_NULL_HANDLE));
 
         // Reset stage mask

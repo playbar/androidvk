@@ -39,11 +39,6 @@ namespace std
 // Global reference to android application object
 extern android_app* androidApp;
 
-#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "vulkanExample", __VA_ARGS__))
-#define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "vulkanExample", __VA_ARGS__))
-#define LOGD(...) ((void)__android_log_print(ANDROID_LOG_DEBUG, "vulkanExample", __VA_ARGS__))
-#define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, "vulkanExample", __VA_ARGS__))
-
 
 extern PFN_vkCreateInstance vkCreateInstance;
 extern PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr;
