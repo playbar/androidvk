@@ -8,23 +8,12 @@
 
 #pragma once
 
-#ifdef _WIN32
-#pragma comment(linker, "/subsystem:windows")
-#include <windows.h>
-#include <fcntl.h>
-#include <io.h>
-#elif defined(__ANDROID__)
+
 #include <android/native_activity.h>
 #include <android/asset_manager.h>
 #include <android_native_app_glue.h>
 #include <sys/system_properties.h>
 #include "vulkanandroid.h"
-#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-#include <wayland-client.h>
-#elif defined(__linux__)
-#include <xcb/xcb.h>
-#endif
-
 #include <iostream>
 #include <chrono>
 #include <sys/stat.h>
@@ -52,22 +41,22 @@
 
 #define VERTEX_BUFFER_BIND_ID 0
 
-class VulkanPipeLines
+class VulkanMain
 {
 public:
 	// Vertex layout for the models
-	vks::VertexLayout vertexLayout = vks::VertexLayout({
-															   vks::VERTEX_COMPONENT_POSITION,
-															   vks::VERTEX_COMPONENT_NORMAL,
-															   vks::VERTEX_COMPONENT_UV,
-															   vks::VERTEX_COMPONENT_COLOR,
+	VksVertexLayout vertexLayout = VksVertexLayout({
+															   VERTEX_COMPONENT_POSITION,
+															   VERTEX_COMPONENT_NORMAL,
+															   VERTEX_COMPONENT_UV,
+															   VERTEX_COMPONENT_COLOR,
 													   });
 
 	struct {
-		vks::Model cube;
+		VksModel cube;
 	} models;
 
-	vks::Buffer uniformBuffer;
+	VksBuffer uniformBuffer;
 
 	// Same uniform buffer layout as shader
 	struct UBOVS {
@@ -128,7 +117,7 @@ protected:
 	// todo: getter? should always point to VulkanDevice->device
 	VkDevice device;
 	/** @brief Encapsulated physical and logical vulkan device */
-	vks::VulkanDevice *vulkanDevice;
+	VulkanDevice *vulkanDevice;
 	// Handle to the device graphics queue that command buffers are submitted to
 	VkQueue queue;
 	// Depth buffer format (selected during Vulkan initialization)
@@ -273,10 +262,10 @@ public:
 #endif
 
 	// Default ctor
-	VulkanPipeLines(bool enableValidation);
+	VulkanMain(bool enableValidation);
 
 	// dtor
-	~VulkanPipeLines();
+	~VulkanMain();
 
 	// Setup the vulkan instance, enable required extensions and connect to the physical device (GPU)
 	void initVulkan();

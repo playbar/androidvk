@@ -8,9 +8,9 @@
 
 #include "VulkanMain.h"
 
-std::vector<const char*> VulkanPipeLines::args;
+std::vector<const char*> VulkanMain::args;
 
-VkResult VulkanPipeLines::createInstance(bool enableValidation)
+VkResult VulkanMain::createInstance(bool enableValidation)
 {
 	this->settings.validation = enableValidation;
 
@@ -56,7 +56,7 @@ VkResult VulkanPipeLines::createInstance(bool enableValidation)
 	return vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
 }
 
-std::string VulkanPipeLines::getWindowTitle()
+std::string VulkanMain::getWindowTitle()
 {
 	std::string device(deviceProperties.deviceName);
 	std::string windowTitle;
@@ -70,7 +70,7 @@ std::string VulkanPipeLines::getWindowTitle()
 	return windowTitle;
 }
 
-const std::string VulkanPipeLines::getAssetPath()
+const std::string VulkanMain::getAssetPath()
 {
 #if defined(__ANDROID__)
 	return "";
@@ -79,7 +79,7 @@ const std::string VulkanPipeLines::getAssetPath()
 #endif
 }
 
-bool VulkanPipeLines::checkCommandBuffers()
+bool VulkanMain::checkCommandBuffers()
 {
 	for (auto& cmdBuffer : drawCmdBuffers)
 	{
@@ -91,7 +91,7 @@ bool VulkanPipeLines::checkCommandBuffers()
 	return true;
 }
 
-void VulkanPipeLines::createCommandBuffers()
+void VulkanMain::createCommandBuffers()
 {
 	// Create one command buffer for each swap chain image and reuse for rendering
 	drawCmdBuffers.resize(swapChain.imageCount);
@@ -105,12 +105,12 @@ void VulkanPipeLines::createCommandBuffers()
 	VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, drawCmdBuffers.data()));
 }
 
-void VulkanPipeLines::destroyCommandBuffers()
+void VulkanMain::destroyCommandBuffers()
 {
 	vkFreeCommandBuffers(device, cmdPool, static_cast<uint32_t>(drawCmdBuffers.size()), drawCmdBuffers.data());
 }
 
-VkCommandBuffer VulkanPipeLines::createCommandBuffer(VkCommandBufferLevel level, bool begin)
+VkCommandBuffer VulkanMain::createCommandBuffer(VkCommandBufferLevel level, bool begin)
 {
 	VkCommandBuffer cmdBuffer;
 
@@ -132,7 +132,7 @@ VkCommandBuffer VulkanPipeLines::createCommandBuffer(VkCommandBufferLevel level,
 	return cmdBuffer;
 }
 
-void VulkanPipeLines::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free)
+void VulkanMain::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free)
 {
 	if (commandBuffer == VK_NULL_HANDLE)
 	{
@@ -155,18 +155,18 @@ void VulkanPipeLines::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue 
 	}
 }
 
-void VulkanPipeLines::createPipelineCache()
+void VulkanMain::createPipelineCache()
 {
 	VkPipelineCacheCreateInfo pipelineCacheCreateInfo = {};
 	pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
 	VK_CHECK_RESULT(vkCreatePipelineCache(device, &pipelineCacheCreateInfo, nullptr, &pipelineCache));
 }
 
-void VulkanPipeLines::prepare()
+void VulkanMain::prepare()
 {
 	if (vulkanDevice->enableDebugMarkers)
 	{
-		vks::debugmarker::setup(device);
+		vks::debugmarker::VksDebugMarkerSetup(device);
 	}
 	createCommandPool();
 	setupSwapChain();
@@ -206,7 +206,7 @@ void VulkanPipeLines::prepare()
 
 }
 
-VkPipelineShaderStageCreateInfo VulkanPipeLines::loadShader(std::string fileName, VkShaderStageFlagBits stage)
+VkPipelineShaderStageCreateInfo VulkanMain::loadShader(std::string fileName, VkShaderStageFlagBits stage)
 {
 	VkPipelineShaderStageCreateInfo shaderStage = {};
 	shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -223,66 +223,11 @@ VkPipelineShaderStageCreateInfo VulkanPipeLines::loadShader(std::string fileName
 	return shaderStage;
 }
 
-void VulkanPipeLines::renderLoop()
+void VulkanMain::renderLoop()
 {
 	destWidth = width;
 	destHeight = height;
-#if defined(_WIN32)
-	MSG msg;
-	while (TRUE)
-	{
-		auto tStart = std::chrono::high_resolution_clock::now();
-		if (viewUpdated)
-		{
-			viewUpdated = false;
-			viewChanged();
-		}
 
-		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-
-		if (msg.message == WM_QUIT)
-		{
-			break;
-		}
-
-		render();
-		frameCounter++;
-		auto tEnd = std::chrono::high_resolution_clock::now();
-		auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
-		frameTimer = (float)tDiff / 1000.0f;
-		camera.update(frameTimer);
-		if (camera.moving())
-		{
-			viewUpdated = true;
-		}
-		// Convert to clamped timer value
-		if (!paused)
-		{
-			timer += timerSpeed * frameTimer;
-			if (timer > 1.0)
-			{
-				timer -= 1.0f;
-			}
-		}
-		fpsTimer += (float)tDiff;
-		if (fpsTimer > 1000.0f)
-		{
-			if (!enableTextOverlay)
-			{
-				std::string windowTitle = getWindowTitle();
-				SetWindowText(window, windowTitle.c_str());
-			}
-			lastFPS = static_cast<uint32_t>(1.0f / frameTimer);
-			updateTextOverlay();
-			fpsTimer = 0.0f;
-			frameCounter = 0;
-		}
-	}
-#elif defined(__ANDROID__)
 	while (1)
 	{
 		int ident;
@@ -392,149 +337,12 @@ void VulkanPipeLines::renderLoop()
 			}
 		}
 	}
-#elif defined(_DIRECT2DISPLAY)
-	while (!quit)
-	{
-		auto tStart = std::chrono::high_resolution_clock::now();
-		if (viewUpdated)
-		{
-			viewUpdated = false;
-			viewChanged();
-		}
-		render();
-		frameCounter++;
-		auto tEnd = std::chrono::high_resolution_clock::now();
-		auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
-		frameTimer = tDiff / 1000.0f;
-		camera.update(frameTimer);
-		if (camera.moving())
-		{
-			viewUpdated = true;
-		}
-		// Convert to clamped timer value
-		if (!paused)
-		{
-			timer += timerSpeed * frameTimer;
-			if (timer > 1.0)
-			{
-				timer -= 1.0f;
-			}
-		}
-		fpsTimer += (float)tDiff;
-		if (fpsTimer > 1000.0f)
-		{
-			lastFPS = frameCounter;
-			updateTextOverlay();
-			fpsTimer = 0.0f;
-			frameCounter = 0;
-		}
-	}
-#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-	while (!quit)
-	{
-		auto tStart = std::chrono::high_resolution_clock::now();
-		if (viewUpdated)
-		{
-			viewUpdated = false;
-			viewChanged();
-		}
 
-		while (wl_display_prepare_read(display) != 0)
-			wl_display_dispatch_pending(display);
-		wl_display_flush(display);
-		wl_display_read_events(display);
-		wl_display_dispatch_pending(display);
-
-		render();
-		frameCounter++;
-		auto tEnd = std::chrono::high_resolution_clock::now();
-		auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
-		frameTimer = tDiff / 1000.0f;
-		camera.update(frameTimer);
-		if (camera.moving())
-		{
-			viewUpdated = true;
-		}
-		// Convert to clamped timer value
-		if (!paused)
-		{
-			timer += timerSpeed * frameTimer;
-			if (timer > 1.0)
-			{
-				timer -= 1.0f;
-			}
-		}
-		fpsTimer += (float)tDiff;
-		if (fpsTimer > 1000.0f)
-		{
-			if (!enableTextOverlay)
-			{
-				std::string windowTitle = getWindowTitle();
-				wl_shell_surface_set_title(shell_surface, windowTitle.c_str());
-			}
-			lastFPS = frameCounter;
-			updateTextOverlay();
-			fpsTimer = 0.0f;
-			frameCounter = 0;
-		}
-	}
-#elif defined(__linux__)
-	xcb_flush(connection);
-	while (!quit)
-	{
-		auto tStart = std::chrono::high_resolution_clock::now();
-		if (viewUpdated)
-		{
-			viewUpdated = false;
-			viewChanged();
-		}
-		xcb_generic_event_t *event;
-		while ((event = xcb_poll_for_event(connection)))
-		{
-			handleEvent(event);
-			free(event);
-		}
-		render();
-		frameCounter++;
-		auto tEnd = std::chrono::high_resolution_clock::now();
-		auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
-		frameTimer = tDiff / 1000.0f;
-		camera.update(frameTimer);
-		if (camera.moving())
-		{
-			viewUpdated = true;
-		}
-		// Convert to clamped timer value
-		if (!paused)
-		{
-			timer += timerSpeed * frameTimer;
-			if (timer > 1.0)
-			{
-				timer -= 1.0f;
-			}
-		}
-		fpsTimer += (float)tDiff;
-		if (fpsTimer > 1000.0f)
-		{
-			if (!enableTextOverlay)
-			{
-				std::string windowTitle = getWindowTitle();
-				xcb_change_property(connection, XCB_PROP_MODE_REPLACE,
-					window, XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8,
-					windowTitle.size(), windowTitle.c_str());
-			}
-			lastFPS = frameCounter;
-			updateTextOverlay();
-			fpsTimer = 0.0f;
-			frameCounter = 0;
-		}
-	}
-#endif
 	// Flush device to make sure all resources can be freed 
 	vkDeviceWaitIdle(device);
 }
 
-void VulkanPipeLines::updateTextOverlay()
+void VulkanMain::updateTextOverlay()
 {
 	if (!enableTextOverlay)
 		return;
@@ -558,7 +366,7 @@ void VulkanPipeLines::updateTextOverlay()
 	textOverlay->endTextUpdate();
 }
 
-void VulkanPipeLines::getOverlayText(VulkanTextOverlay *textOverlay)
+void VulkanMain::getOverlayText(VulkanTextOverlay *textOverlay)
 {
 	textOverlay->addText("Phong shading pipeline",(float)width / 6.0f, height - 35.0f, VulkanTextOverlay::alignCenter);
 	textOverlay->addText("Toon shading pipeline", (float)width / 2.0f, height - 35.0f, VulkanTextOverlay::alignCenter);
@@ -569,7 +377,7 @@ void VulkanPipeLines::getOverlayText(VulkanTextOverlay *textOverlay)
 }
 
 
-VulkanPipeLines::VulkanPipeLines(bool enableValidation)
+VulkanMain::VulkanMain(bool enableValidation)
 {
 	settings.validation = enableValidation;
 
@@ -613,7 +421,7 @@ VulkanPipeLines::VulkanPipeLines(bool enableValidation)
 	title = "Pipeline state objects";
 }
 
-VulkanPipeLines::~VulkanPipeLines()
+VulkanMain::~VulkanMain()
 {
 	// Clean up used Vulkan resources
 	// Note : Inherited destructor cleans up resources stored in base class
@@ -668,14 +476,14 @@ VulkanPipeLines::~VulkanPipeLines()
 
 	if (settings.validation)
 	{
-		vks::debug::freeDebugCallback(instance);
+        vks::debug::VksDebugFreeDebugCallback(instance);
 	}
 
 	vkDestroyInstance(instance, nullptr);
 
 }
 
-void VulkanPipeLines::initVulkan()
+void VulkanMain::initVulkan()
 {
 	VkResult err;
 
@@ -696,7 +504,7 @@ void VulkanPipeLines::initVulkan()
 		// For validating (debugging) an appplication the error and warning bits should suffice
 		VkDebugReportFlagsEXT debugReportFlags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
 		// Additional flags include performance info, loader and layer debug messages, etc.
-		vks::debug::setupDebugging(instance, debugReportFlags, VK_NULL_HANDLE);
+        vks::debug::VksDebugSetupDebugging(instance, debugReportFlags, VK_NULL_HANDLE);
 	}
 
 	// Physical device
@@ -732,7 +540,7 @@ void VulkanPipeLines::initVulkan()
 	// Vulkan device creation
 	// This is handled by a separate class that gets a logical device representation
 	// and encapsulates functions related to a device
-	vulkanDevice = new vks::VulkanDevice(physicalDevice);
+	vulkanDevice = new VulkanDevice(physicalDevice);
 	VkResult res = vulkanDevice->createLogicalDevice(enabledFeatures, enabledExtensions);
 	if (res != VK_SUCCESS) {
 		VksExitFatal(
@@ -789,9 +597,9 @@ void VulkanPipeLines::initVulkan()
 #endif	
 }
 
-int32_t VulkanPipeLines::handleAppInput(struct android_app* app, AInputEvent* event)
+int32_t VulkanMain::handleAppInput(struct android_app* app, AInputEvent* event)
 {
-	VulkanPipeLines* vulkanExample = reinterpret_cast<VulkanPipeLines*>(app->userData);
+	VulkanMain* vulkanExample = reinterpret_cast<VulkanMain*>(app->userData);
 	if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION)
 	{
 		int32_t eventSource = AInputEvent_getSource(event);
@@ -893,10 +701,10 @@ int32_t VulkanPipeLines::handleAppInput(struct android_app* app, AInputEvent* ev
 	return 0;
 }
 
-void VulkanPipeLines::handleAppCommand(android_app * app, int32_t cmd)
+void VulkanMain::handleAppCommand(android_app * app, int32_t cmd)
 {
 	assert(app->userData != NULL);
-	VulkanPipeLines* vulkanExample = reinterpret_cast<VulkanPipeLines*>(app->userData);
+	VulkanMain* vulkanExample = reinterpret_cast<VulkanMain*>(app->userData);
 	switch (cmd)
 	{
 	case APP_CMD_SAVE_STATE:
@@ -937,23 +745,23 @@ void VulkanPipeLines::handleAppCommand(android_app * app, int32_t cmd)
 	}
 }
 
-void VulkanPipeLines::render(){
+void VulkanMain::render(){
 	if (!prepared)
 		return;
 	draw();
 }
 
-void VulkanPipeLines::viewChanged()
+void VulkanMain::viewChanged()
 {
 	updateUniformBuffers();
 }
 
-void VulkanPipeLines::keyPressed(uint32_t keyCode)
+void VulkanMain::keyPressed(uint32_t keyCode)
 {
 	// Can be overriden in derived class
 }
 
-void VulkanPipeLines::buildCommandBuffers()
+void VulkanMain::buildCommandBuffers()
 {
 	VkCommandBufferBeginInfo cmdBufInfo = InitCommandBufferBeginInfo();
 
@@ -1024,7 +832,7 @@ void VulkanPipeLines::buildCommandBuffers()
 	}
 }
 
-void VulkanPipeLines::createCommandPool()
+void VulkanMain::createCommandPool()
 {
 	VkCommandPoolCreateInfo cmdPoolInfo = {};
 	cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -1033,7 +841,7 @@ void VulkanPipeLines::createCommandPool()
 	VK_CHECK_RESULT(vkCreateCommandPool(device, &cmdPoolInfo, nullptr, &cmdPool));
 }
 
-void VulkanPipeLines::setupDepthStencil()
+void VulkanMain::setupDepthStencil()
 {
 	VkImageCreateInfo image = {};
 	image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -1080,7 +888,7 @@ void VulkanPipeLines::setupDepthStencil()
 	VK_CHECK_RESULT(vkCreateImageView(device, &depthStencilView, nullptr, &depthStencil.view));
 }
 
-void VulkanPipeLines::setupFrameBuffer()
+void VulkanMain::setupFrameBuffer()
 {
 	VkImageView attachments[2];
 
@@ -1106,7 +914,7 @@ void VulkanPipeLines::setupFrameBuffer()
 	}
 }
 
-void VulkanPipeLines::setupRenderPass()
+void VulkanMain::setupRenderPass()
 {
 	std::array<VkAttachmentDescription, 2> attachments = {};
 	// Color attachment
@@ -1178,7 +986,7 @@ void VulkanPipeLines::setupRenderPass()
 	VK_CHECK_RESULT(vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass));
 }
 
-void VulkanPipeLines::getEnabledFeatures()
+void VulkanMain::getEnabledFeatures()
 {
 	// Fill mode non solid is required for wireframe display
 	if (deviceFeatures.fillModeNonSolid) {
@@ -1190,7 +998,7 @@ void VulkanPipeLines::getEnabledFeatures()
 	};
 }
 
-void VulkanPipeLines::windowResize()
+void VulkanMain::windowResize()
 {
 	if (!prepared)
 	{
@@ -1242,12 +1050,12 @@ void VulkanPipeLines::windowResize()
 	prepared = true;
 }
 
-void VulkanPipeLines::windowResized()
+void VulkanMain::windowResized()
 {
 	// Can be overriden in derived class
 }
 
-void VulkanPipeLines::initSwapchain()
+void VulkanMain::initSwapchain()
 {
 #if defined(_WIN32)
 	swapChain.initSurface(windowInstance, window);
@@ -1262,17 +1070,17 @@ void VulkanPipeLines::initSwapchain()
 #endif
 }
 
-void VulkanPipeLines::setupSwapChain()
+void VulkanMain::setupSwapChain()
 {
 	swapChain.create(&width, &height, settings.vsync);
 }
 
-void VulkanPipeLines::loadAssets()
+void VulkanMain::loadAssets()
 {
 	models.cube.loadFromFile(getAssetPath() + "models/treasure_smooth.dae", vertexLayout, 1.0f, vulkanDevice, queue);
 }
 
-void VulkanPipeLines::setupDescriptorPool()
+void VulkanMain::setupDescriptorPool()
 {
 	std::vector<VkDescriptorPoolSize> poolSizes =
 			{
@@ -1288,7 +1096,7 @@ void VulkanPipeLines::setupDescriptorPool()
 	VK_CHECK_RESULT(vkCreateDescriptorPool(device, &descriptorPoolInfo, nullptr, &descriptorPool));
 }
 
-void VulkanPipeLines::setupDescriptorSetLayout()
+void VulkanMain::setupDescriptorSetLayout()
 {
 	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings =
 			{
@@ -1314,7 +1122,7 @@ void VulkanPipeLines::setupDescriptorSetLayout()
 	VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pPipelineLayoutCreateInfo, nullptr, &pipelineLayout));
 }
 
-void VulkanPipeLines::setupDescriptorSet()
+void VulkanMain::setupDescriptorSet()
 {
 	VkDescriptorSetAllocateInfo allocInfo =
             InitDescriptorSetAllocateInfo(
@@ -1337,7 +1145,7 @@ void VulkanPipeLines::setupDescriptorSet()
 	vkUpdateDescriptorSets(device, writeDescriptorSets.size(), writeDescriptorSets.data(), 0, NULL);
 }
 
-void VulkanPipeLines::preparePipelines()
+void VulkanMain::preparePipelines()
 {
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyState =
             InitPipelineInputAssemblyStateCreateInfo(
@@ -1468,7 +1276,7 @@ void VulkanPipeLines::preparePipelines()
 }
 
 // Prepare and initialize uniform buffer containing shader uniforms
-void VulkanPipeLines::prepareUniformBuffers()
+void VulkanMain::prepareUniformBuffers()
 {
 	// Create the vertex shader uniform buffer block
 	VK_CHECK_RESULT(vulkanDevice->createBuffer(
@@ -1483,7 +1291,7 @@ void VulkanPipeLines::prepareUniformBuffers()
 	updateUniformBuffers();
 }
 
-void VulkanPipeLines::updateUniformBuffers()
+void VulkanMain::updateUniformBuffers()
 {
 	uboVS.projection = glm::perspective(glm::radians(60.0f), (float)(width / 3.0f) / (float)height, 0.1f, 256.0f);
 
@@ -1497,7 +1305,7 @@ void VulkanPipeLines::updateUniformBuffers()
 	memcpy(uniformBuffer.mapped, &uboVS, sizeof(uboVS));
 }
 
-void VulkanPipeLines::draw()
+void VulkanMain::draw()
 {
     // Acquire the next image from the swap chaing
     VK_CHECK_RESULT(swapChain.acquireNextImage(semaphores.presentComplete, &currentBuffer));
@@ -1544,15 +1352,15 @@ void VulkanPipeLines::draw()
 }
 
 
-VulkanPipeLines *gpVkPipeLine;
+VulkanMain *gpVkMain;
 void android_main(android_app* state)
 {
 	app_dummy();
-	gpVkPipeLine = new VulkanPipeLines(false);
-	state->userData = gpVkPipeLine;
-	state->onAppCmd = VulkanPipeLines::handleAppCommand;
-	state->onInputEvent = VulkanPipeLines::handleAppInput;
+	gpVkMain = new VulkanMain(false);
+	state->userData = gpVkMain;
+	state->onAppCmd = VulkanMain::handleAppCommand;
+	state->onInputEvent = VulkanMain::handleAppInput;
 	androidApp = state;
-	gpVkPipeLine->renderLoop();
-	delete(gpVkPipeLine);
+	gpVkMain->renderLoop();
+	delete(gpVkMain);
 }

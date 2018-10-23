@@ -28,7 +28,7 @@ namespace vks
 		void Texture2D::loadFromFile(
 			std::string filename, 
 			VkFormat format,
-			vks::VulkanDevice *device,
+			VulkanDevice *device,
 			VkQueue copyQueue,
 			VkImageUsageFlags imageUsageFlags,
 			VkImageLayout imageLayout,
@@ -332,7 +332,7 @@ namespace vks
 			VkFormat format,
 			uint32_t width,
 			uint32_t height,
-			vks::VulkanDevice *device,
+			VulkanDevice *device,
 			VkQueue copyQueue,
 			VkFilter filter,
 			VkImageUsageFlags imageUsageFlags,
@@ -495,7 +495,7 @@ namespace vks
 		void Texture2DArray::loadFromFile(
 			std::string filename,
 			VkFormat format,
-			vks::VulkanDevice *device,
+			VulkanDevice *device,
 			VkQueue copyQueue,
 			VkImageUsageFlags imageUsageFlags,
 			VkImageLayout imageLayout)
@@ -691,7 +691,7 @@ namespace vks
 		void TextureCubeMap::loadFromFile(
 			std::string filename,
 			VkFormat format,
-			vks::VulkanDevice *device,
+			VulkanDevice *device,
 			VkQueue copyQueue,
 			VkImageUsageFlags imageUsageFlags,
 			VkImageLayout imageLayout)

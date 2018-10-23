@@ -42,7 +42,7 @@
 class VulkanTextOverlay
 {
 private:
-	vks::VulkanDevice *vulkanDevice;
+	VulkanDevice *vulkanDevice;
 
 	VkQueue queue;
 	VkFormat colorFormat;
@@ -54,7 +54,7 @@ private:
 	VkSampler sampler;
 	VkImage image;
 	VkImageView view;
-	vks::Buffer vertexBuffer;
+	VksBuffer vertexBuffer;
 	VkDeviceMemory imageMemory;
 	VkDescriptorPool descriptorPool;
 	VkDescriptorSetLayout descriptorSetLayout;
@@ -91,7 +91,7 @@ public:
 	* @param vulkanDevice Pointer to a valid VulkanDevice
 	*/
 	VulkanTextOverlay(
-		vks::VulkanDevice *vulkanDevice,
+		VulkanDevice *vulkanDevice,
 		VkQueue queue,
 		std::vector<VkFramebuffer> &framebuffers,
 		VkFormat colorformat,

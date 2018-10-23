@@ -3,7 +3,7 @@
 
 
 VulkanTextOverlay::VulkanTextOverlay(
-		vks::VulkanDevice *vulkanDevice,
+		VulkanDevice *vulkanDevice,
 		VkQueue queue,
 		std::vector<VkFramebuffer> &framebuffers,
 		VkFormat colorformat,
@@ -117,7 +117,7 @@ void VulkanTextOverlay::prepareResources()
 	VK_CHECK_RESULT(vkBindImageMemory(vulkanDevice->logicalDevice, image, imageMemory, 0));
 
 	// Staging
-	vks::Buffer stagingBuffer;
+	VksBuffer stagingBuffer;
 
 	VK_CHECK_RESULT(vulkanDevice->createBuffer(
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -577,7 +577,8 @@ void VulkanTextOverlay::updateCommandBuffers()
 
 		if (vks::debugmarker::active)
 		{
-			vks::debugmarker::beginRegion(cmdBuffers[i], "Text overlay", glm::vec4(1.0f, 0.94f, 0.3f, 1.0f));
+			vks::debugmarker::VksDebugMarkerBeginRegion(cmdBuffers[i], "Text overlay",
+														glm::vec4(1.0f, 0.94f, 0.3f, 1.0f));
 		}
 
 		vkCmdBeginRenderPass(cmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -606,7 +607,7 @@ void VulkanTextOverlay::updateCommandBuffers()
 
 		if (vks::debugmarker::active)
 		{
-			vks::debugmarker::endRegion(cmdBuffers[i]);
+			vks::debugmarker::VksDebugMarkerEndRegion(cmdBuffers[i]);
 		}
 
 		VK_CHECK_RESULT(vkEndCommandBuffer(cmdBuffers[i]));
