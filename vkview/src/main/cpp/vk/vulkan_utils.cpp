@@ -269,9 +269,10 @@ void VulkanUtils::OnSurfaceCreated()
     createSwapchain();
     createImageViews();
     createRenderPass();
-    createDescriptorSetLayout();
-    createGraphicsPipelineTest();
     createFramebuffers();
+    createDescriptorSetLayout();
+    createGraphicsPipeline();
+
 
     mTexImage.createTextureImage(assetManager);
     mTexImage.createTextureImageView();
@@ -466,7 +467,7 @@ void VulkanUtils::createDescriptorSetLayout() {
     };
 
     VkDescriptorSetLayoutBinding samplerLayoutBinding = {
-            .binding = 2,
+            .binding = 10,
             .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             .descriptorCount = 1,
             .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -658,7 +659,7 @@ void VulkanUtils::createGraphicsPipelineTest()
     vkDestroyShaderModule(mVKDevice.logicalDevice, fragmentShaderModule, nullptr);
 }
 
-#define USE_SPV
+//#define USE_SPV
 
 void VulkanUtils::createGraphicsPipeline() {
 
@@ -955,7 +956,7 @@ void VulkanUtils::createDescriptorSet() {
 
     descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptorWrites[2].dstSet = descriptorSet;
-    descriptorWrites[2].dstBinding = 2;
+    descriptorWrites[2].dstBinding = 10;
     descriptorWrites[2].dstArrayElement = 0;
     descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptorWrites[2].descriptorCount = 1;
@@ -1005,11 +1006,10 @@ void VulkanUtils::createCommandBuffers() {
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 
-        vkCmdBindIndexBuffer(commandBuffers[i], mIndexBuffer.mBuffer, 0, VK_INDEX_TYPE_UINT16);
-
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
                                 0, 1, &descriptorSet, 0, nullptr);
 
+        vkCmdBindIndexBuffer(commandBuffers[i], mIndexBuffer.mBuffer, 0, VK_INDEX_TYPE_UINT16);
         vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffers[i]);
@@ -1129,7 +1129,7 @@ void VulkanUtils::recreateSwapchain() {
     createSwapchain();
     createImageViews();
     createRenderPass();
-    createGraphicsPipelineTest();
+    createGraphicsPipeline();
     createFramebuffers();
     createCommandBuffers();
 }

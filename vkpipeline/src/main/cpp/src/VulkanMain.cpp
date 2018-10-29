@@ -390,7 +390,7 @@ VulkanMain::VulkanMain(bool enableValidation)
 
 	zoom = -10.5f;
 	rotation = glm::vec3(-25.0f, 15.0f, 0.0f);
-	mEnableTextOverlay = true;
+	mEnableTextOverlay = false;
 	title = "Pipeline state objects";
 }
 
@@ -1263,12 +1263,16 @@ void VulkanMain::draw()
     // Acquire the next image from the swap chaing
     VK_CHECK_RESULT(mSwapChain.acquireNextImage(mPresentComplete, &currentBuffer));
 
-	mSubmitInfo.commandBufferCount = 1;
-	mSubmitInfo.pCommandBuffers = &mDrawCmdBuffers[currentBuffer];
-	mSubmitInfo.pWaitSemaphores = &mPresentComplete;
-	mSubmitInfo.waitSemaphoreCount = 1;
-	mSubmitInfo.pSignalSemaphores = &mRenderComplete;
-	mSubmitInfo.signalSemaphoreCount = 1;
+    mSubmitInfo.commandBufferCount = 1;
+    mSubmitInfo.pCommandBuffers = &mDrawCmdBuffers[currentBuffer];
+    mSubmitInfo.pWaitSemaphores = &mPresentComplete;
+    mSubmitInfo.waitSemaphoreCount = 1;
+    mSubmitInfo.pSignalSemaphores = &mRenderComplete;
+    mSubmitInfo.signalSemaphoreCount = 1;
+//    mSubmitInfo.commandBufferCount = 1;
+//    mSubmitInfo.pCommandBuffers = &mDrawCmdBuffers[currentBuffer];
+//    mSubmitInfo.waitSemaphoreCount = 0;
+//    mSubmitInfo.signalSemaphoreCount = 0;
 	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &mSubmitInfo, VK_NULL_HANDLE));
 
     bool submitTextOverlay = mEnableTextOverlay && mTextOverlay->visible;
