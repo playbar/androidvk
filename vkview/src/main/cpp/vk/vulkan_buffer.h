@@ -28,6 +28,8 @@ public:
 
 	void copyTo(void* data, VkDeviceSize size);
 
+	void updateData(void* data);
+
 	void unmap();
 
 	void copyBuffer(HVkBuffer &srcBuffer);

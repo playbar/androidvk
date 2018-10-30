@@ -839,6 +839,8 @@ void VulkanUtils::createVertexBuffer() {
                  VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
+    stagBuffer.updateData((void*)vertices.data());
+
     stagBuffer.map(bufferSize, 0 );
     stagBuffer.copyTo((void *)vertices.data(), (size_t) bufferSize);
     stagBuffer.unmap();
@@ -848,6 +850,9 @@ void VulkanUtils::createVertexBuffer() {
                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     mVertexBuffer.copyBuffer(stagBuffer);
+
+
+
     return;
 }
 
@@ -860,14 +865,12 @@ void VulkanUtils::createIndexBuffer() {
                  VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    stagBuffer.map(bufferSize, 0);
-    stagBuffer.copyTo( (void*)indices.data(), (size_t) bufferSize);
-    stagBuffer.unmap();
+    stagBuffer.updateData((void*)indices.data());
+
 
     mIndexBuffer.createBuffer(bufferSize,
                  VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-//    copyBuffer(stagBuffer.mBuffer, mIndexBuffer.mBuffer, bufferSize);
     mIndexBuffer.copyBuffer(stagBuffer);
 
 
@@ -930,8 +933,8 @@ void VulkanUtils::createDescriptorSet() {
 
     VkDescriptorImageInfo imageInfo = {
             .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            .imageView = mTexImage.textureImageView,
-            .sampler = mTexImage.textureSampler,
+            .imageView = mTexImage.mTextureImageView,
+            .sampler = mTexImage.mTextureSampler,
     };
 
     std::array<VkWriteDescriptorSet, 3> descriptorWrites = {};

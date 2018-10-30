@@ -53,6 +53,18 @@ void HVkBuffer::copyTo(void* data, VkDeviceSize size)
     memcpy(mpData, data, size);
 }
 
+void HVkBuffer::updateData(void* data)
+{
+	void* pData = NULL;
+	vkMapMemory(mVkDevice->logicalDevice, mMemory, 0, mSize, 0, &pData);
+	if( pData == NULL ){
+		return;
+	}
+	memcpy(pData, data, mSize);
+	vkUnmapMemory(mVkDevice->logicalDevice, mMemory);
+	pData = NULL;
+}
+
 void HVkBuffer::unmap()
 {
 	if (mpData)

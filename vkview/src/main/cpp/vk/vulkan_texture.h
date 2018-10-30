@@ -9,10 +9,10 @@ class HVkTexture
 {
 public:
 	VulkanDevice *mVkDevice;
-	VkImage textureImage;
-	VkDeviceMemory textureImageMemory;
-	VkImageView textureImageView;
-	VkSampler textureSampler;
+	VkImage mTextureImage;
+	VkDeviceMemory mTextureImageMemory;
+	VkImageView mTextureImageView;
+	VkSampler mTextureSampler;
 
 	uint32_t mWidth;
 	uint32_t mHeight;
@@ -23,10 +23,9 @@ public:
 	~HVkTexture();
 
 public:
-    void createImage(uint32_t width, uint32_t height, VkFormat format,
-                                  VkImageTiling tiling, VkImageUsageFlags usage,
-                                  VkMemoryPropertyFlags properties, VkImage &image,
-                                  VkDeviceMemory &imageMemory);
+    void createImage(uint32_t width, uint32_t height,
+                     VkFormat format, VkImageTiling tiling,
+                     VkImageUsageFlags usage, VkMemoryPropertyFlags properties);
 
 	void createTextureImage(AAssetManager *assetManager);
     void createTextureImage(const char *imgName);
