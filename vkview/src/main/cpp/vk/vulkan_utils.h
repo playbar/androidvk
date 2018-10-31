@@ -76,9 +76,13 @@ public:
 
     void createDescriptorPool();
     void createDescriptorSet();
+    void bindDescriptorSet();
+    void bindDescriptorSetTexture();
     void createCommandBuffers();
+    void updateCommandBuffers();
     void createSemaphores();
     void drawFrame();
+    uint32_t mImageIndex = 0;
 
     std::vector<char> readAsset(std::string name);
 
@@ -106,8 +110,8 @@ public:
     VkExtent2D swapchainExtent;
     std::vector<VkImage> swapchainImages;
     std::vector<VkImageView> swapchainImageViews;
-    std::vector<VkFramebuffer> swapchainFramebuffers;
-    std::vector<VkCommandBuffer> commandBuffers;
+    std::vector<VkFramebuffer> mFramebuffers;
+    std::vector<VkCommandBuffer> mCommandBuffers;
 
     HVkBuffer mVertexBuffer;
     HVkBuffer mIndexBuffer;
@@ -116,8 +120,8 @@ public:
 
     HVkTexture mTexImage;
 
-    VkSemaphore imageAvailableSemaphore;
-    VkSemaphore renderFinishedSemaphore;
+    VkSemaphore mImageAvailableSemaphore;
+    VkSemaphore mRenderFinishedSemaphore;
 };
 
 #endif //__BAR_VULKAN_UTILS_H__

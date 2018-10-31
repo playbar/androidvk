@@ -16,8 +16,8 @@ public:
 
 	uint32_t mWidth;
 	uint32_t mHeight;
-	uint32_t mipLevels;
-	uint32_t layerCount;
+	uint32_t mMipLevels;
+	uint32_t mLayerCount;
 
 	HVkTexture(VulkanDevice *device);
 	~HVkTexture();
