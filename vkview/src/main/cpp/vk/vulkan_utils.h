@@ -101,11 +101,11 @@ public:
 
     VkSwapchainKHR swapchain;
     VkRenderPass renderPass;
-    VkDescriptorSetLayout descriptorSetLayout;
-    VkDescriptorPool descriptorPool;
-    VkDescriptorSet descriptorSet;
-    VkPipelineLayout pipelineLayout;
-    VkPipeline graphicsPipeline;
+    VkDescriptorPool mDescriptorPool;
+    VkDescriptorSetLayout mDescriptorSetLayout;
+    VkDescriptorSet mDescriptorSet;
+    VkPipelineLayout mPipelineLayout;
+    VkPipeline mGraphicsPipeline;
 
 
     VkFormat swapchainImageFormat;

@@ -318,8 +318,8 @@ void VulkanUtils::start()
 void VulkanUtils::cleanUp() {
     cleanupSwapchain();
 
-    vkDestroyDescriptorPool(mVKDevice.logicalDevice, descriptorPool, nullptr);
-    vkDestroyDescriptorSetLayout(mVKDevice.logicalDevice, descriptorSetLayout, nullptr);
+    vkDestroyDescriptorPool(mVKDevice.logicalDevice, mDescriptorPool, nullptr);
+    vkDestroyDescriptorSetLayout(mVKDevice.logicalDevice, mDescriptorSetLayout, nullptr);
 
     mUniformBuffer.destroy();
     mIndexBuffer.destroy();
@@ -490,10 +490,21 @@ void VulkanUtils::createDescriptorSetLayout() {
             .pBindings = bindings.data(),
     };
 
-    if (vkCreateDescriptorSetLayout(mVKDevice.logicalDevice, &layoutInfo, nullptr, &descriptorSetLayout)
+    if (vkCreateDescriptorSetLayout(mVKDevice.logicalDevice, &layoutInfo, nullptr, &mDescriptorSetLayout)
         != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor set layout!");
     }
+
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+            .setLayoutCount = 1,
+            .pSetLayouts = &mDescriptorSetLayout,
+    };
+    if (vkCreatePipelineLayout(mVKDevice.logicalDevice, &pipelineLayoutInfo, nullptr, &mPipelineLayout)
+        != VK_SUCCESS) {
+        throw std::runtime_error("failed to create pipeline layout!");
+    }
+
 }
 
 void VulkanUtils::createGraphicsPipelineTest()
@@ -567,7 +578,7 @@ void VulkanUtils::createGraphicsPipelineTest()
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-            .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
             .primitiveRestartEnable = VK_FALSE,
     };
 
@@ -632,9 +643,9 @@ void VulkanUtils::createGraphicsPipelineTest()
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .setLayoutCount = 1,
-            .pSetLayouts = &descriptorSetLayout,
+            .pSetLayouts = &mDescriptorSetLayout,
     };
-    if (vkCreatePipelineLayout(mVKDevice.logicalDevice, &pipelineLayoutInfo, nullptr, &pipelineLayout)
+    if (vkCreatePipelineLayout(mVKDevice.logicalDevice, &pipelineLayoutInfo, nullptr, &mPipelineLayout)
         != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     }
@@ -649,14 +660,14 @@ void VulkanUtils::createGraphicsPipelineTest()
             .pRasterizationState = &rasterizer,
             .pMultisampleState = &multisampling,
             .pColorBlendState = &colorBlending,
-            .layout = pipelineLayout,
+            .layout = mPipelineLayout,
             .renderPass = renderPass,
             .subpass = 0,
             .basePipelineHandle = VK_NULL_HANDLE,
     };
 
     if (vkCreateGraphicsPipelines(mVKDevice.logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
-                                  &graphicsPipeline) != VK_SUCCESS)
+                                  &mGraphicsPipeline) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
@@ -715,7 +726,7 @@ void VulkanUtils::createGraphicsPipeline() {
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-            .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
             .primitiveRestartEnable = VK_FALSE,
     };
 
@@ -777,15 +788,6 @@ void VulkanUtils::createGraphicsPipeline() {
             .blendConstants[3] = 0.0f,
     };
 
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-            .setLayoutCount = 1,
-            .pSetLayouts = &descriptorSetLayout,
-    };
-    if (vkCreatePipelineLayout(mVKDevice.logicalDevice, &pipelineLayoutInfo, nullptr, &pipelineLayout)
-        != VK_SUCCESS) {
-        throw std::runtime_error("failed to create pipeline layout!");
-    }
 
     VkGraphicsPipelineCreateInfo pipelineInfo = {
             .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -797,14 +799,14 @@ void VulkanUtils::createGraphicsPipeline() {
             .pRasterizationState = &rasterizer,
             .pMultisampleState = &multisampling,
             .pColorBlendState = &colorBlending,
-            .layout = pipelineLayout,
+            .layout = mPipelineLayout,
             .renderPass = renderPass,
             .subpass = 0,
             .basePipelineHandle = VK_NULL_HANDLE,
     };
 
     VkResult vkre = vkCreateGraphicsPipelines(mVKDevice.logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
-                                              &graphicsPipeline);
+                                              &mGraphicsPipeline);
     if ( vkre != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
@@ -846,10 +848,6 @@ void VulkanUtils::createVertexBuffer() {
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     stagBuffer.updateData((void*)vertices.data());
-
-    stagBuffer.map(bufferSize, 0 );
-    stagBuffer.copyTo((void *)vertices.data(), (size_t) bufferSize);
-    stagBuffer.unmap();
 
     mVertexBuffer.createBuffer(bufferSize,
                  VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -908,20 +906,20 @@ void VulkanUtils::createDescriptorPool() {
             .pPoolSizes = poolSizes.data(),
             .maxSets = 1,
     };
-    if (vkCreateDescriptorPool(mVKDevice.logicalDevice, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+    if (vkCreateDescriptorPool(mVKDevice.logicalDevice, &poolInfo, nullptr, &mDescriptorPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
     }
 }
 
 void VulkanUtils::createDescriptorSet() {
-    VkDescriptorSetLayout layouts[] = {descriptorSetLayout};
+    VkDescriptorSetLayout layouts[] = {mDescriptorSetLayout};
     VkDescriptorSetAllocateInfo allocInfo = {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            .descriptorPool = descriptorPool,
+            .descriptorPool = mDescriptorPool,
             .descriptorSetCount = 1,
             .pSetLayouts = layouts,
     };
-    if (vkAllocateDescriptorSets(mVKDevice.logicalDevice, &allocInfo, &descriptorSet) != VK_SUCCESS) {
+    if (vkAllocateDescriptorSets(mVKDevice.logicalDevice, &allocInfo, &mDescriptorSet) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor set!");
     }
 
@@ -947,7 +945,7 @@ void VulkanUtils::bindDescriptorSet()
 
 
     descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[0].dstSet = descriptorSet;
+    descriptorWrites[0].dstSet = mDescriptorSet;
     descriptorWrites[0].dstBinding = 0;
     descriptorWrites[0].dstArrayElement = 0;
     descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -956,7 +954,7 @@ void VulkanUtils::bindDescriptorSet()
 
 
     descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[1].dstSet = descriptorSet;
+    descriptorWrites[1].dstSet = mDescriptorSet;
     descriptorWrites[1].dstBinding = 1;
     descriptorWrites[1].dstArrayElement = 0;
     descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -977,7 +975,7 @@ void VulkanUtils::bindDescriptorSetTexture()
     };
 
     descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[0].dstSet = descriptorSet;
+    descriptorWrites[0].dstSet = mDescriptorSet;
     descriptorWrites[0].dstBinding = 10;
     descriptorWrites[0].dstArrayElement = 0;
     descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1028,17 +1026,18 @@ void VulkanUtils::updateCommandBuffers()
 
         vkCmdBeginRenderPass(mCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+        vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
 
         VkBuffer vertexBuffers[] = {mVertexBuffer.mBuffer};
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(mCommandBuffers[i], 0, 1, vertexBuffers, offsets);
 
-        vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-                                0, 1, &descriptorSet, 0, nullptr);
+        vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout,
+                                0, 1, &mDescriptorSet, 0, nullptr);
 
-        vkCmdBindIndexBuffer(mCommandBuffers[i], mIndexBuffer.mBuffer, 0, VK_INDEX_TYPE_UINT16);
-        vkCmdDrawIndexed(mCommandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+//        vkCmdBindIndexBuffer(mCommandBuffers[i], mIndexBuffer.mBuffer, 0, VK_INDEX_TYPE_UINT16);
+//        vkCmdDrawIndexed(mCommandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+        vkCmdDraw(mCommandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
         vkCmdEndRenderPass(mCommandBuffers[i]);
 
@@ -1168,6 +1167,7 @@ void VulkanUtils::recreateSwapchain() {
     createSwapchain();
     createImageViews();
     createRenderPass();
+    createDescriptorSetLayout();
     createGraphicsPipeline();
     createFramebuffers();
     createCommandBuffers();
@@ -1182,8 +1182,8 @@ void VulkanUtils::cleanupSwapchain() {
     vkFreeCommandBuffers(mVKDevice.logicalDevice, mVKDevice.mCommandPool, static_cast<uint32_t>(mCommandBuffers.size()),
                          mCommandBuffers.data());
 
-    vkDestroyPipeline(mVKDevice.logicalDevice, graphicsPipeline, nullptr);
-    vkDestroyPipelineLayout(mVKDevice.logicalDevice, pipelineLayout, nullptr);
+    vkDestroyPipeline(mVKDevice.logicalDevice, mGraphicsPipeline, nullptr);
+    vkDestroyPipelineLayout(mVKDevice.logicalDevice, mPipelineLayout, nullptr);
     vkDestroyRenderPass(mVKDevice.logicalDevice, renderPass, nullptr);
 
     for (size_t i = 0; i < swapchainImageViews.size(); i++) {
