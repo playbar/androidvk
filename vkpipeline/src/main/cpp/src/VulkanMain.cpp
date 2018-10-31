@@ -281,7 +281,7 @@ void VulkanMain::renderLoop()
 			{
 				lastFPS = frameCounter;
                 LOGE("frameTime:%04.2f, FPS:%u", frameTimer * 1000, lastFPS);
-//				updateTextOverlay();
+				updateTextOverlay();
 //                updateCommandBuffers();
 				fpsTimer = 0.0f;
 				frameCounter = 0;
@@ -390,7 +390,7 @@ VulkanMain::VulkanMain(bool enableValidation)
 
 	zoom = -10.5f;
 	rotation = glm::vec3(-25.0f, 15.0f, 0.0f);
-	mEnableTextOverlay = false;
+	mEnableTextOverlay = true;
 	title = "Pipeline state objects";
 }
 
