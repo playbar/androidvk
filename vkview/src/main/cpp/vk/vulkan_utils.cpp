@@ -302,7 +302,9 @@ void VulkanUtils::OnDrawFrame()
 {
     updateUniformBuffer();
     updateCommandBuffers();
+    AcquireNextImage();
     drawFrame();
+    QueuePresent();
 }
 
 void VulkanUtils::start()
@@ -1091,8 +1093,8 @@ void VulkanUtils::updateUniformBuffer() {
     return;
 }
 
-void VulkanUtils::drawFrame() {
-
+void VulkanUtils::AcquireNextImage()
+{
     VkResult result = vkAcquireNextImageKHR(mVKDevice.logicalDevice, swapchain, std::numeric_limits<uint64_t>::max(),
                                             mImageAvailableSemaphore, VK_NULL_HANDLE, &mImageIndex);
 
@@ -1102,6 +1104,11 @@ void VulkanUtils::drawFrame() {
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("failed to acquire swap chain image!");
     }
+}
+
+void VulkanUtils::drawFrame() {
+
+    VkResult result = VK_SUCCESS;
 
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1122,6 +1129,11 @@ void VulkanUtils::drawFrame() {
         throw std::runtime_error("failed to submit draw command buffer!");
     }
 
+}
+
+void VulkanUtils::QueuePresent()
+{
+    VkSemaphore signalSemaphores[] = {mRenderFinishedSemaphore};
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
@@ -1134,7 +1146,7 @@ void VulkanUtils::drawFrame() {
 
     presentInfo.pImageIndices = &mImageIndex;
 
-    result = vkQueuePresentKHR(mVKDevice.presentQueue, &presentInfo);
+    VkResult result = vkQueuePresentKHR(mVKDevice.presentQueue, &presentInfo);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         recreateSwapchain();
@@ -1144,6 +1156,7 @@ void VulkanUtils::drawFrame() {
 
     vkQueueWaitIdle(mVKDevice.presentQueue);
 }
+
 
 void VulkanUtils::recreateSwapchain() {
     LOGI("recreateSwapchain");

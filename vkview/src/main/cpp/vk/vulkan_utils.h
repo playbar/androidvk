@@ -81,7 +81,9 @@ public:
     void createCommandBuffers();
     void updateCommandBuffers();
     void createSemaphores();
+    void AcquireNextImage();
     void drawFrame();
+    void QueuePresent();
     uint32_t mImageIndex = 0;
 
     std::vector<char> readAsset(std::string name);
