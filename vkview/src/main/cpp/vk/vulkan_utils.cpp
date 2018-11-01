@@ -300,9 +300,9 @@ void VulkanUtils::OnSurfaceChanged()
 
 void VulkanUtils::OnDrawFrame()
 {
+    AcquireNextImage();
     updateUniformBuffer();
     updateCommandBuffers();
-    AcquireNextImage();
     drawFrame();
     QueuePresent();
 }
@@ -724,10 +724,10 @@ void VulkanUtils::createGraphicsPipeline() {
             .pVertexAttributeDescriptions = attrDesc.data(),
     };
 
-    VkPipelineInputAssemblyStateCreateInfo inputAssembly = {
+    mInputAssembly = {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
             .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
-            .primitiveRestartEnable = VK_FALSE,
+            .primitiveRestartEnable = VK_TRUE,
     };
 
     VkViewport viewport = {
@@ -794,7 +794,7 @@ void VulkanUtils::createGraphicsPipeline() {
             .stageCount = 2,
             .pStages = shaderStages,
             .pVertexInputState = &vertexInputInfo,
-            .pInputAssemblyState = &inputAssembly,
+            .pInputAssemblyState = &mInputAssembly,
             .pViewportState = &viewportState,
             .pRasterizationState = &rasterizer,
             .pMultisampleState = &multisampling,
@@ -896,9 +896,9 @@ void VulkanUtils::createUniformBuffer() {
 void VulkanUtils::createDescriptorPool() {
     std::array<VkDescriptorPoolSize, 2> poolSizes = {};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = 1;
+    poolSizes[0].descriptorCount = 10;
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = 1;
+    poolSizes[1].descriptorCount = 10;
 
     VkDescriptorPoolCreateInfo poolInfo = {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
@@ -1003,6 +1003,7 @@ void VulkanUtils::createCommandBuffers() {
 
 void VulkanUtils::updateCommandBuffers()
 {
+    mInputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
@@ -1014,7 +1015,7 @@ void VulkanUtils::updateCommandBuffers()
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = swapchainExtent;
 
-    VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+    VkClearValue clearColor = {1.0f, 0.0f, 0.0f, 1.0f};
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
 

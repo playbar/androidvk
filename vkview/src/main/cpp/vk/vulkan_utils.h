@@ -115,6 +115,8 @@ public:
     std::vector<VkFramebuffer> mFramebuffers;
     std::vector<VkCommandBuffer> mCommandBuffers;
 
+    VkPipelineInputAssemblyStateCreateInfo mInputAssembly;
+
     HVkBuffer mVertexBuffer;
     HVkBuffer mIndexBuffer;
     HVkBuffer mUniformBuffer;
