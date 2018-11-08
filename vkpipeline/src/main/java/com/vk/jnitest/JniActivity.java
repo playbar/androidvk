@@ -20,8 +20,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
-import com.vk.R;
 import com.vk.log.Logger;
+import com.vk.pipeline.R;
 
 
 public class JniActivity extends Activity {

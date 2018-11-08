@@ -6,29 +6,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
 
 add_subdirectory(shaderc)
 
-add_library(glview SHARED
-           gl/gles3jni.cpp
-           gl/RendererES2.cpp
-           gl/RendererES3.cpp
-           gl/ThreadPool.cpp
-           gl/gl3stub_wrapper.c
-           hook/inlineHook.c
-           hook/relocate.c
-           hook/gleshook.c
-            )
-
-target_include_directories(glview PRIVATE
-                          ${CMAKE_CURRENT_SOURCE_DIR}
-                          ${CMAKE_CURRENT_SOURCE_DIR}/gl
-                                      )
-
-target_link_libraries(glview
-                      android
-                      log
-                      GLESv3
-                      EGL )
-
-
 ######
 
 add_library(vkutils SHARED
