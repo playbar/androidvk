@@ -35,6 +35,8 @@ public class VKApplication extends Application {
         super.onCreate();	
         Log.w("native-activity", "onCreate");
 
+        System.loadLibrary("main");
+
         final PackageManager pm = getApplicationContext().getPackageManager();
         ApplicationInfo ai;
         try {

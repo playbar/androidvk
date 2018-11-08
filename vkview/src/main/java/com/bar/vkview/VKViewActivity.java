@@ -33,7 +33,6 @@ public class VKViewActivity extends Activity {
     }
 
     VKViewTest mView;
-    EGLConfig mEglConfig;
 
 
     @Override

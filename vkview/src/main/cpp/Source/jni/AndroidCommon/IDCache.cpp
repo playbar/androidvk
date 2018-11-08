@@ -94,28 +94,6 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
   if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION) != JNI_OK)
     return JNI_ERR;
 
-  const jclass native_library_class = env->FindClass("org/dolphinemu/dolphinemu/NativeLibrary");
-  s_native_library_class = reinterpret_cast<jclass>(env->NewGlobalRef(native_library_class));
-  s_display_alert_msg = env->GetStaticMethodID(s_native_library_class, "displayAlertMsg",
-                                               "(Ljava/lang/String;Ljava/lang/String;Z)Z");
-
-  const jclass game_file_class = env->FindClass("org/dolphinemu/dolphinemu/model/GameFile");
-  s_game_file_class = reinterpret_cast<jclass>(env->NewGlobalRef(game_file_class));
-  s_game_file_pointer = env->GetFieldID(game_file_class, "mPointer", "J");
-  s_game_file_constructor = env->GetMethodID(game_file_class, "<init>", "(J)V");
-
-  const jclass game_file_cache_class =
-      env->FindClass("org/dolphinemu/dolphinemu/model/GameFileCache");
-  s_game_file_cache_class = reinterpret_cast<jclass>(env->NewGlobalRef(game_file_cache_class));
-  s_game_file_cache_pointer = env->GetFieldID(game_file_cache_class, "mPointer", "J");
-
-  const jclass analytics_class = env->FindClass("org/dolphinemu/dolphinemu/utils/Analytics");
-  s_analytics_class = reinterpret_cast<jclass>(env->NewGlobalRef(analytics_class));
-  s_send_analytics_report =
-      env->GetStaticMethodID(s_analytics_class, "sendReport", "(Ljava/lang/String;[B)V");
-  s_get_analytics_value = env->GetStaticMethodID(s_analytics_class, "getValue",
-                                                 "(Ljava/lang/String;)Ljava/lang/String;");
-
   return JNI_VERSION;
 }
 
@@ -125,10 +103,6 @@ void JNI_OnUnload(JavaVM* vm, void* reserved)
   if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION) != JNI_OK)
     return;
 
-  env->DeleteGlobalRef(s_native_library_class);
-  env->DeleteGlobalRef(s_game_file_class);
-  env->DeleteGlobalRef(s_game_file_cache_class);
-  env->DeleteGlobalRef(s_analytics_class);
 }
 
 #ifdef __cplusplus

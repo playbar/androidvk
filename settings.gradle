@@ -1,7 +1,7 @@
 //include ':shaderc'
 //include ':vksample'
 //include ':vkdrawcube'
-include ':vkpipeline'
+//include ':vkpipeline'
 //include ':vkradial'
 include ':vkview'
 //include ':assimp'
