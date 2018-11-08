@@ -1,32 +1,23 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion = 25
-    buildToolsVersion = '26.0.2'
+    compileSdkVersion = 27
+    buildToolsVersion = '27.0.3'
 
     defaultConfig {
         applicationId = 'com.bar.vkview'
-        minSdkVersion    25
-        targetSdkVersion 26
+        minSdkVersion    26
+        targetSdkVersion 27
         versionCode 1
         versionName "1.0"
         externalNativeBuild {
             cmake {
-                abiFilters 'armeabi-v7a'
-                arguments '-DANDROID_TOOLCHAIN=clang'
-
+                abiFilters 'x86_64'
+                arguments "-DANDROID_STL=c++_static", "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
             }
         }
     }
-//    ndk {
-//        platformVersion = 22
-//        moduleName  = 'gles3jni'
-//        toolchain = 'clang'
-//        stl         = 'gnustl_static'
-//        cppFlags.addAll(['-std=c++11', '-Wall', '-fno-rtti', '-fno-exceptions'])
-//        CFlags.addAll(['-Wall'])
-//        ldLibs.addAll(['log','GLESv3', 'EGL'])
-//    }
+
     externalNativeBuild {
         cmake {
             path "src/main/cpp/CMakeLists.txt"
