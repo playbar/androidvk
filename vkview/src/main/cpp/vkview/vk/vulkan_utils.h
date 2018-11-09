@@ -78,6 +78,7 @@ public:
     void createDescriptorSet();
     void bindDescriptorSet();
     void bindDescriptorSetTexture(HVkTexture &texImg);
+    void bindDescriptorSetTexture1(HVkTexture &texImg);
     void createCommandBuffers();
     void updateCommandBuffers();
     void updateBufferData();
@@ -106,6 +107,7 @@ public:
     VkDescriptorPool mDescriptorPool;
     VkDescriptorSetLayout mDescriptorSetLayout;
     VkDescriptorSet mDescriptorSet;
+    VkDescriptorSet mDescriptorSet1;
     VkPipelineLayout mPipelineLayout;
     VkPipeline mGraphicsPipeline;
 

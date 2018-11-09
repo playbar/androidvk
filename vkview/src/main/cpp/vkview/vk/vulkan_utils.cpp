@@ -285,8 +285,10 @@ void VulkanUtils::OnDrawFrame()
     static int count = 0;
     if( count < 500 ) {
         bindDescriptorSetTexture(mTexImage);
+        bindDescriptorSetTexture1(mTexImage1);
     }else{
         bindDescriptorSetTexture(mTexImage1);
+        bindDescriptorSetTexture1(mTexImage);
     }
     ++count;
     if( count > 1000)
@@ -928,6 +930,12 @@ void VulkanUtils::createDescriptorSet() {
         throw std::runtime_error("failed to allocate descriptor set!");
     }
 
+
+    if (vkAllocateDescriptorSets(mVKDevice.logicalDevice, &allocInfo, &mDescriptorSet1) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor set!");
+    }
+
+
 }
 
 void VulkanUtils::bindDescriptorSet()
@@ -948,7 +956,6 @@ void VulkanUtils::bindDescriptorSet()
 
     std::array<VkWriteDescriptorSet, 1> descriptorWrites = {};
 
-
     descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptorWrites[0].dstSet = mDescriptorSet;
     descriptorWrites[0].dstBinding = 1;
@@ -968,6 +975,9 @@ void VulkanUtils::bindDescriptorSet()
 
     vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 
+    descriptorWrites[0].dstSet = mDescriptorSet1;
+    vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+
 }
 
 void VulkanUtils::bindDescriptorSetTexture(HVkTexture &texImg)
@@ -981,6 +991,27 @@ void VulkanUtils::bindDescriptorSetTexture(HVkTexture &texImg)
 
     descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptorWrites[0].dstSet = mDescriptorSet;
+    descriptorWrites[0].dstBinding = 10;
+    descriptorWrites[0].dstArrayElement = 0;
+    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrites[0].descriptorCount = 1;
+    descriptorWrites[0].pImageInfo = &imageInfo;
+
+    vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+
+}
+
+void VulkanUtils::bindDescriptorSetTexture1(HVkTexture &texImg)
+{
+    std::array<VkWriteDescriptorSet, 1> descriptorWrites = {};
+    VkDescriptorImageInfo imageInfo = {
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .imageView = texImg.mTextureImageView,
+            .sampler = texImg.mTextureSampler,
+    };
+
+    descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[0].dstSet = mDescriptorSet1;
     descriptorWrites[0].dstBinding = 10;
     descriptorWrites[0].dstArrayElement = 0;
     descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1041,7 +1072,7 @@ void VulkanUtils::updateCommandBuffers1()
         vkCmdBindVertexBuffers(mCommandBuffers[i], VERTEXT_BUFFER_ID, 1, vertexBuffers, offsets);
 
         vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout,
-                                0, 1, &mDescriptorSet, 0, nullptr);
+                                0, 1, &mDescriptorSet1, 0, nullptr);
 
 //        vkCmdBindIndexBuffer(mCommandBuffers[i], mIndexBuffer.mBuffer, 0, VK_INDEX_TYPE_UINT16);
 //        vkCmdDrawIndexed(mCommandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
