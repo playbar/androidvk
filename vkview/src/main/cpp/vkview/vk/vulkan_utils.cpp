@@ -18,6 +18,9 @@
 #include "shaderc/shaderc.hpp"
 
 
+const char* IMAGE_PATH = "sample_tex.png";
+const char *IMAGE_APPLE = "apple.png";
+
 const int WIDTH = 800;
 const int HEIGHT = 448;
 
@@ -187,6 +190,7 @@ VulkanUtils::VulkanUtils(AAssetManager *assetManager, const char *vertexShader, 
 //        mUniformBuffer(&mVKDevice),
         mUniformProj(&mVKDevice),
         mTexImage(&mVKDevice),
+        mTexImage1(&mVKDevice),
     assetManager(assetManager),
     vertexShader(std::string(vertexShader)),
     fragmentShader(std::string(fragmentShader)),
@@ -200,6 +204,7 @@ VulkanUtils::VulkanUtils():
         mIndexBuffer(&mVKDevice),
 //        mUniformBuffer(&mVKDevice),
         mUniformProj(&mVKDevice),
+        mTexImage1(&mVKDevice),
         mTexImage(&mVKDevice)
 {
     state = STATE_RUNNING;
@@ -243,9 +248,13 @@ void VulkanUtils::OnSurfaceCreated()
     createGraphicsPipeline();
 
 
-    mTexImage.createTextureImage(assetManager);
+    mTexImage.createTextureImage(assetManager, IMAGE_PATH);
     mTexImage.createTextureImageView();
     mTexImage.createTextureSampler();
+
+    mTexImage1.createTextureImage(assetManager, IMAGE_APPLE );
+    mTexImage1.createTextureImageView();
+    mTexImage1.createTextureSampler();
 
     createVertexBuffer();
     createIndexBuffer();
@@ -253,12 +262,12 @@ void VulkanUtils::OnSurfaceCreated()
     createDescriptorPool();
     createDescriptorSet();
     bindDescriptorSet();
-    bindDescriptorSetTexture();
+
     createCommandBuffers();
 //    updateCommandBuffers();
 
 
-    updateCommandBuffers1();
+
     updateCommandBuffers();
 
     createSemaphores();
@@ -275,6 +284,18 @@ void VulkanUtils::OnDrawFrame()
 {
     AcquireNextImage();
     updateUniformBuffer();
+
+    static int count = 0;
+    if( count < 500 ) {
+        bindDescriptorSetTexture(mTexImage);
+    }else{
+        bindDescriptorSetTexture(mTexImage1);
+    }
+    ++count;
+    if( count > 1000)
+        count = 0;
+    updateCommandBuffers1();
+
     updateBufferData();
 
     drawFrame();
@@ -302,6 +323,9 @@ void VulkanUtils::cleanUp() {
 
     mTexImage.destroyImage();
     mTexImage.destroySampler();
+
+    mTexImage1.destroyImage();
+    mTexImage1.destroySampler();
 
     vkDestroySemaphore(mVKDevice.logicalDevice, mRenderFinishedSemaphore, nullptr);
     vkDestroySemaphore(mVKDevice.logicalDevice, mImageAvailableSemaphore, nullptr);
@@ -940,13 +964,13 @@ void VulkanUtils::bindDescriptorSet()
 
 }
 
-void VulkanUtils::bindDescriptorSetTexture()
+void VulkanUtils::bindDescriptorSetTexture(HVkTexture &texImg)
 {
     std::array<VkWriteDescriptorSet, 1> descriptorWrites = {};
     VkDescriptorImageInfo imageInfo = {
             .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            .imageView = mTexImage.mTextureImageView,
-            .sampler = mTexImage.mTextureSampler,
+            .imageView = texImg.mTextureImageView,
+            .sampler = texImg.mTextureSampler,
     };
 
     descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1009,6 +1033,9 @@ void VulkanUtils::updateCommandBuffers()
         VkBuffer vertexBuffers[] = {mVertexBuffer.mBuffer};
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(mCommandBuffers[i], 0, 1, vertexBuffers, offsets);
+
+//        VkBuffer vertexBuffers1[] = {mVertexBuffer1.mBuffer};     //error
+//        vkCmdBindVertexBuffers(mCommandBuffers[i], 1, 1, vertexBuffers1, offsets); // error
 
         vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout,
                                 0, 1, &mDescriptorSet, 0, nullptr);

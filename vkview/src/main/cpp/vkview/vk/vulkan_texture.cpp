@@ -5,7 +5,6 @@
 #include "vulkan_utils.h"
 #include "vulkan_buffer.h"
 
-const std::string IMAGE_PATH = "sample_tex.png";
 
 HVkTexture::HVkTexture(VulkanDevice *device)
 {
@@ -63,9 +62,9 @@ void HVkTexture::createImage(uint32_t width, uint32_t height, VkFormat format,
     return;
 }
 
-void HVkTexture::createTextureImage(AAssetManager *assetManager)
+void HVkTexture::createTextureImage(AAssetManager *assetManager, const char* filename)
 {
-    AAsset* file = AAssetManager_open(assetManager, IMAGE_PATH.c_str(), AASSET_MODE_BUFFER);
+    AAsset* file = AAssetManager_open(assetManager, filename, AASSET_MODE_BUFFER);
     size_t fileLength = AAsset_getLength(file);
     stbi_uc* fileContent = new unsigned char[fileLength];
     AAsset_read(file, fileContent, fileLength);

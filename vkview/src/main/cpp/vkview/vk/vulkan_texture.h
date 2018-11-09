@@ -27,7 +27,7 @@ public:
                      VkFormat format, VkImageTiling tiling,
                      VkImageUsageFlags usage, VkMemoryPropertyFlags properties);
 
-	void createTextureImage(AAssetManager *assetManager);
+	void createTextureImage(AAssetManager *assetManager, const char* filename);
     void createTextureImage(const char *imgName);
 
 	void transitionImageLayout(VkImage image, VkFormat format,

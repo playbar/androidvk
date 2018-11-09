@@ -77,7 +77,7 @@ public:
     void createDescriptorPool();
     void createDescriptorSet();
     void bindDescriptorSet();
-    void bindDescriptorSetTexture();
+    void bindDescriptorSetTexture(HVkTexture &texImg);
     void createCommandBuffers();
     void updateCommandBuffers();
     void updateBufferData();
@@ -126,6 +126,7 @@ public:
     HVkBuffer mUniformProj;
 
     HVkTexture mTexImage;
+    HVkTexture mTexImage1;
 
     VkSemaphore mImageAvailableSemaphore;
     VkSemaphore mRenderFinishedSemaphore;
