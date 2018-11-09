@@ -1182,9 +1182,9 @@ void VulkanUtils::updateBufferData()
     }
 
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
-//    vkCmdUpdateBuffer(mCommandBuffers[mImageIndex], mVertexBuffer1.mBuffer, 0, bufferSize, vertices1.data() );
+    vkCmdUpdateBuffer(mCommandBuffers[mImageIndex], mVertexBuffer1.mBuffer, 0, bufferSize, vertices1.data() );
 
-    mVertexBuffer1.updateData(vertices1.data());
+//    mVertexBuffer1.updateData(vertices1.data());
 
 }
 
