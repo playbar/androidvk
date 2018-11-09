@@ -39,7 +39,7 @@
 #include "VulkanBuffer.hpp"
 #include "camera.hpp"
 
-#define VERTEX_BUFFER_BIND_ID 0
+#define VERTEX_BUFFER_BIND_ID 1
 
 class VulkanMain
 {

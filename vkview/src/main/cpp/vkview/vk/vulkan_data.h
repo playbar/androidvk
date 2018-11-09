@@ -10,6 +10,8 @@
 #include <glm/glm.hpp>
 #include <vulkan_wrapper.h>
 
+#define VERTEXT_BUFFER_ID 1
+
 struct QueueFamilyIndices {
     int graphicsFamily = -1;
     int presentFamily = -1;
@@ -31,7 +33,7 @@ struct Vertex {
 
     static VkVertexInputBindingDescription getBindingDescription() {
         VkVertexInputBindingDescription bindingDescription = {};
-        bindingDescription.binding = 0;
+        bindingDescription.binding = VERTEXT_BUFFER_ID;
         bindingDescription.stride = sizeof(Vertex);
         bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
@@ -41,12 +43,12 @@ struct Vertex {
     static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
         std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions = {};
 
-        attributeDescriptions[0].binding = 0;
+        attributeDescriptions[0].binding = VERTEXT_BUFFER_ID;
         attributeDescriptions[0].location = 0;
         attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
         attributeDescriptions[0].offset = offsetof(Vertex, pos);
 
-        attributeDescriptions[1].binding = 0;
+        attributeDescriptions[1].binding = VERTEXT_BUFFER_ID;
         attributeDescriptions[1].location = 1;
         attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
         attributeDescriptions[1].offset = offsetof(Vertex, texCoord);

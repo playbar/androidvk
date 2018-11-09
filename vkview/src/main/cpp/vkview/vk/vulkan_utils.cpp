@@ -299,7 +299,14 @@ void VulkanUtils::OnDrawFrame()
     updateBufferData();
 
     drawFrame();
+//    QueuePresent();
+
+    updateCommandBuffers();
+    drawFrame();
     QueuePresent();
+
+    vkQueueWaitIdle(mVKDevice.presentQueue);
+
 }
 
 void VulkanUtils::start()
@@ -1018,8 +1025,8 @@ void VulkanUtils::updateCommandBuffers()
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
 
-//    size_t i = mImageIndex;
-    for (size_t i = 0; i < mCommandBuffers.size(); i++)
+    size_t i = mImageIndex;
+//    for (size_t i = 0; i < mCommandBuffers.size(); i++)
     {
 
         vkBeginCommandBuffer(mCommandBuffers[i], &beginInfo);
@@ -1032,7 +1039,7 @@ void VulkanUtils::updateCommandBuffers()
 
         VkBuffer vertexBuffers[] = {mVertexBuffer.mBuffer};
         VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(mCommandBuffers[i], 0, 1, vertexBuffers, offsets);
+        vkCmdBindVertexBuffers(mCommandBuffers[i], VERTEXT_BUFFER_ID, 1, vertexBuffers, offsets);
 
 //        VkBuffer vertexBuffers1[] = {mVertexBuffer1.mBuffer};     //error
 //        vkCmdBindVertexBuffers(mCommandBuffers[i], 1, 1, vertexBuffers1, offsets); // error
@@ -1071,8 +1078,8 @@ void VulkanUtils::updateCommandBuffers1()
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
 
-//    size_t i = mImageIndex;
-    for (size_t i = 0; i < mCommandBuffers.size(); i++)
+    size_t i = mImageIndex;
+//    for (size_t i = 0; i < mCommandBuffers.size(); i++)
     {
 
         vkBeginCommandBuffer(mCommandBuffers[i], &beginInfo);
@@ -1085,7 +1092,7 @@ void VulkanUtils::updateCommandBuffers1()
 
         VkBuffer vertexBuffers[] = {mVertexBuffer1.mBuffer};
         VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(mCommandBuffers[i], 0, 1, vertexBuffers, offsets);
+        vkCmdBindVertexBuffers(mCommandBuffers[i], VERTEXT_BUFFER_ID, 1, vertexBuffers, offsets);
 
         vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout,
                                 0, 1, &mDescriptorSet, 0, nullptr);
@@ -1232,7 +1239,7 @@ void VulkanUtils::QueuePresent()
         throw std::runtime_error("failed to present swap chain image!");
     }
 
-    vkQueueWaitIdle(mVKDevice.presentQueue);
+//    vkQueueWaitIdle(mVKDevice.presentQueue);
 }
 
 
