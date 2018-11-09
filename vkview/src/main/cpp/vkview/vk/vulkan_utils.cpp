@@ -268,7 +268,7 @@ void VulkanUtils::OnSurfaceCreated()
 
 
 
-    updateCommandBuffers();
+//    updateCommandBuffers();
 
     createSemaphores();
 }
@@ -282,9 +282,6 @@ void VulkanUtils::OnSurfaceChanged()
 
 void VulkanUtils::OnDrawFrame()
 {
-    AcquireNextImage();
-    updateUniformBuffer();
-
     static int count = 0;
     if( count < 500 ) {
         bindDescriptorSetTexture(mTexImage);
@@ -294,14 +291,16 @@ void VulkanUtils::OnDrawFrame()
     ++count;
     if( count > 1000)
         count = 0;
-    updateCommandBuffers1();
+
+    AcquireNextImage();
+    updateUniformBuffer();
 
     updateBufferData();
-
-    drawFrame();
-//    QueuePresent();
-
+    updateCommandBuffers1();
     updateCommandBuffers();
+
+
+
     drawFrame();
     QueuePresent();
 
@@ -1009,31 +1008,8 @@ void VulkanUtils::createCommandBuffers() {
 
 void VulkanUtils::updateCommandBuffers()
 {
-    mInputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    VkCommandBufferBeginInfo beginInfo = {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-    beginInfo.pInheritanceInfo = nullptr; // Optional
-
-    VkRenderPassBeginInfo renderPassInfo = {};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = renderPass;
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = swapchainExtent;
-
-    VkClearValue clearColor = {1.0f, 0.0f, 0.0f, 1.0f};
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clearColor;
 
     size_t i = mImageIndex;
-//    for (size_t i = 0; i < mCommandBuffers.size(); i++)
-    {
-
-        vkBeginCommandBuffer(mCommandBuffers[i], &beginInfo);
-
-        renderPassInfo.framebuffer = mFramebuffers[i];
-
-        vkCmdBeginRenderPass(mCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
 
@@ -1051,43 +1027,13 @@ void VulkanUtils::updateCommandBuffers()
 //        vkCmdDrawIndexed(mCommandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
         vkCmdDraw(mCommandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
-        vkCmdEndRenderPass(mCommandBuffers[i]);
 
-        if (vkEndCommandBuffer(mCommandBuffers[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to record command buffer!");
-        }
-    }
 }
 
 
 void VulkanUtils::updateCommandBuffers1()
 {
-    mInputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    VkCommandBufferBeginInfo beginInfo = {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-    beginInfo.pInheritanceInfo = nullptr; // Optional
-
-    VkRenderPassBeginInfo renderPassInfo = {};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = renderPass;
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = swapchainExtent;
-
-    VkClearValue clearColor = {1.0f, 0.0f, 0.0f, 1.0f};
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clearColor;
-
     size_t i = mImageIndex;
-//    for (size_t i = 0; i < mCommandBuffers.size(); i++)
-    {
-
-        vkBeginCommandBuffer(mCommandBuffers[i], &beginInfo);
-
-        renderPassInfo.framebuffer = mFramebuffers[i];
-
-        vkCmdBeginRenderPass(mCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
         vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
 
         VkBuffer vertexBuffers[] = {mVertexBuffer1.mBuffer};
@@ -1101,12 +1047,6 @@ void VulkanUtils::updateCommandBuffers1()
 //        vkCmdDrawIndexed(mCommandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
         vkCmdDraw(mCommandBuffers[i], static_cast<uint32_t>(vertices1.size()), 1, 0, 0);
 
-        vkCmdEndRenderPass(mCommandBuffers[i]);
-
-        if (vkEndCommandBuffer(mCommandBuffers[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to record command buffer!");
-        }
-    }
 }
 
 void VulkanUtils::createSemaphores() {
@@ -1168,6 +1108,32 @@ void VulkanUtils::AcquireNextImage()
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("failed to acquire swap chain image!");
     }
+
+    mInputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+    beginInfo.pInheritanceInfo = nullptr; // Optional
+
+    VkRenderPassBeginInfo renderPassInfo = {};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = renderPass;
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent = swapchainExtent;
+
+    VkClearValue clearColor = {1.0f, 0.0f, 0.0f, 1.0f};
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues = &clearColor;
+
+    size_t i = mImageIndex;
+
+
+    vkBeginCommandBuffer(mCommandBuffers[i], &beginInfo);
+
+    renderPassInfo.framebuffer = mFramebuffers[i];
+
+    vkCmdBeginRenderPass(mCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
 }
 
 void VulkanUtils::updateBufferData()
@@ -1192,6 +1158,12 @@ void VulkanUtils::updateBufferData()
 }
 
 void VulkanUtils::drawFrame() {
+
+    vkCmdEndRenderPass(mCommandBuffers[mImageIndex]);
+
+    if (vkEndCommandBuffer(mCommandBuffers[mImageIndex]) != VK_SUCCESS) {
+        throw std::runtime_error("failed to record command buffer!");
+    }
 
     VkResult result = VK_SUCCESS;
 
