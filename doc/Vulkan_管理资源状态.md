@@ -1,0 +1,486 @@
+在执行程序的任何时候，每个资源可以处于许多不同状态之一。
+例如，如果图形管道正在绘制图像或将其用作纹理数据的来源，或者如果Vulkan将主机中的数据复制到iamge中，则每种使用场景都不相同。
+对于一些Vulkan实现来说，其中一些状态之间可能没有真正的区别，对于其他状态，准确地知道给定时间点的资源状态可以使您的应用程序在 工作 或 渲染垃圾 之间做一些改变。
+由于命令缓冲区中的命令负责大部分对资源的访问，并且由于命令缓冲区的构建顺序可能与它们提交执行的顺序不同，因此Vulkan实现尝试跟踪某个缓冲区的状态并不实际资源，并确保它适合每种使用情况。特别是，由于命令缓冲区的执行，资源可能会在一个状态中开始并移动到另一个状态。虽然驱动程序可以跟踪在命令缓冲区中使用的资源状态，但当命令缓冲区被释放执行时，跨越命令缓冲区跟踪状态将需要大量工作
+
+1. 因此，这种责任属于您的申请。资源状态对图像来说可能是最重要的，因为它们是复杂的结构化资源。
+
+事实上，验证层确实试图跟踪这种状态。虽然这带来了巨大的性能影响，但该层能够捕获和报告许多与资源状态相关的问题。
+
+图像的状态大致分为两个基本上正交的状态：
+
+其布局决定了数据如何布置在内存中，并在本书前面简要讨论过，并记录了谁最后写入图像， 影响设备上数据的缓存和一致性。 图像的初始布局在创建时指定，然后可以在图像的整个生命周期中进行更改，可以显式使用Barriers或隐式使用renderpass。
+
+Barriers还会从Vulkan管道的不同部分对资源进行访问，并且在某些情况下，将资源从一种布局转换为另一种布局可以在由Barriers执行的其他中间管道同步工作中完成。
+本书稍后会详细讨论每种布局的具体用例。但是，将资源从状态转移到状态的基本行为被称为Barriers，因此，正确设置Barriers并在应用程序中有效使用屏障非常重要。
+
+
+Pipeline Barriers
+
+一个Barrierss是Vulkan管道阶段内存访问管理和资源状态移动的同步机制。 同步访问资源并将它们从状态转移到状态的主要命令是vkCmdPipelineBarrier（），其原型是
+
+void vkCmdPipelineBarrier (
+VkCommandBuffer commandBuffer,
+VkPipelineStageFlags srcStageMask,
+VkPipelineStageFlags dstStageMask,
+VkDependencyFlags dependencyFlags,
+uint32_t memoryBarrierCount,
+const VkMemoryBarrier* pMemoryBarriers,
+uint32_t bufferMemoryBarrierCount,
+const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+uint32_t imageMemoryBarrierCount,
+const VkImageMemoryBarrier* pImageMemoryBarriers);
+
+将执行barrier的命令缓冲区会在commandBuffer中传递。 
+
+接下来的两个参数srcStageMask和dstStageMask指定哪些流水线阶段分别写入资源的最后和哪些阶段将从下一个资源读取。 
+
+也就是说，它们指定屏障所代表的数据流的源和目标。 
+
+每个都由VkPipelineStageFlagBits枚举的许多成员构成。
+
+•VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT：只要设备开始处理命令，就认为管道的顶端被击中。
+•VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT：当管道执行一个间接命令时，它从内存中获取命令的一些参数。这是获取这些参数的阶段。
+•VK_PIPELINE_STAGE_VERTEX_INPUT_BIT：这是从它们各自的缓冲区获取的阶段的顶点属性。在此之后，即使顶点着色器还没有完成执行，顶点缓冲区的内容也可以被覆盖。
+•VK_PIPELINE_STAGE_VERTEX_SHADER_BIT：当绘图命令产生的所有顶点着色器工作完成时，该阶段才会通过。
+•VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT：当作为绘图命令的结果产生的所有镶嵌控制着色器调用都已完成执行时，将传递此阶段。
+•VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT：当绘图命令产生的所有镶嵌评估着色器调用都完成执行时，将传递此阶段。
+•VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT：当作为绘图命令的结果产生的所有几何着色器调用完成执行时，该阶段才会通过。
+•VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT：当作为绘图命令的结果产生的所有片段着色器调用完成执行时，传递该阶段。
+请注意，在生成的片段着色器尚未完成时，无法知道基元已完全栅格化。但是，光栅化不会访问内存，因此这里不会丢失任何信息。
+•VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT：片段着色器启动之前可能发生的所有每片段测试已完成。
+•VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT：片段着色器执行后可能发生的所有每片段测试已完成。请注意，深度和模板附件的输出是测试的一部分，所以此阶段和早期片段测试阶段包括深度和模板输出。
+•VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT：由管道生成的碎片已写入颜色附件。
+•VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT：作为调度结果生成的计算着色器调用已完成。
+•VK_PIPELINE_STAGE_TRANSFER_BIT：例如，由于调用vkCmdCopyImage（）或vkCmdCopyBuffer（）而触发的任何挂起传输已完成。
+•VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT：所有被认为是图形管线一部分的操作都已完成。
+•VK_PIPELINE_STAGE_HOST_BIT：此流水线阶段对应于来自主机的访问。
+•VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT：当用作目标时，这个特殊标志意味着任何流水线阶段都可以访问内存。作为来源，它实际上等同于VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT。
+•VK_PIPELINE_STAGE_ALL_COMMANDS_BIT：这个阶段是大锤子。每当你只是不知道发生了什么，使用这个;它将使一切与所有事物同步。只要明智地使用它。
+
+
+由于srcStageMask和dstStageMask中指定的标志用于指示什么时候发生，因此Vulkan实现可以通过各种方式移动它们或对它们进行解释。 srcStageMask指定源阶段完成读取或写入资源的时间。因此，稍后在管道中移动该阶段的有效位置并不会改变这些访问已完成的事实;这可能只意味着实施等待的时间比它们真正需要完成的时间要长。
+同样，dstStageMask指定流水线在继续前等待的点。
+如果一个实现更早地移动了这个等待点，那仍然可以工作。当流水线的逻辑后端部分开始执行时，它等待的事件仍然会完成。这种实现只是错过了等待工作的机会。
+dependencyFlags参数指定一组标志，描述障碍表示的依赖关系如何影响障碍引用的资源。唯一定义的标志是VK_DEPENDENCY_BY_REGION_BIT，它表示屏障仅影响源级所修改的区域（如果可以确定的话），目标级所消耗的区域。
+对vkCmdPipelineBarrier（）的单个调用可用于触发许多屏障操作。
+有三种类型的障碍操作：全球记忆障碍，缓冲障碍和图像障碍。全局内存障碍会影响主机和设备之间对映射内存的同步访问。缓冲区和图像障碍分别主要影响设备对缓冲区和图像资源的访问。
+
+
+
+Global Memory Barriers
+
+在memoryBarrierCount中指定由vkCmdPipelineBarrier（）触发的全局内存障碍的数量。 如果它不为零，则pMemoryBarriers指向一组memoryBarrierCount VkMemoryBarrier结构，每个结构定义一个单独的内存屏障。 VkMemoryBrier的定义是
+
+typedef struct VkMemoryBarrier {
+VkStructureType sType;
+const void* pNext;
+VkAccessFlags srcAccessMask;
+VkAccessFlags dstAccessMask;
+} VkMemoryBarrier;
+
+VkMemoryBarrier的sType字段应该设置为
+VK_STRUCTURE_TYPE_MEMORY_BARRIER和pNext应该设置为nullptr。 结构中唯一的其他字段分别是在srcAccessMask和dstAccessMask中指定的源和目标访问掩码。 访问掩码是包含VkAccessFlagBits成员的位字段。 源访问掩码指定最后写入内存的方式，目标访问掩码指定下一次将如何读取内存。 可用的访问标志是
+
+•VK_ACCESS_INDIRECT_COMMAND_READ_BIT：引用的内存将成为间接绘图或调度命令（如vkCmdDrawIndirect（）或vkCmdDispatchIndirect（））中的命令源。
+•VK_ACCESS_INDEX_READ_BIT：引用的内存将是索引绘图命令中的索引数据的来源，例如vkCmdDrawIndexed（）或
+vkCmdDrawIndexedIndirect（）。
+•VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT：引用的内存将成为Vulkan固定功能顶点装配阶段获取的顶点数据的来源。
+•VK_ACCESS_UNIFORM_READ_BIT：引用的内存是由着色器访问的统一块的数据源。
+•VK_ACCESS_INPUT_ATTACHMENT_READ_BIT：引用的内存用于备份用作输入附件的图像。
+•VK_ACCESS_SHADER_READ_BIT：引用的内存用于备份在着色器中使用图像加载或纹理读取读取的图像对象。
+•VK_ACCESS_SHADER_WRITE_BIT：引用的内存用于备份在着色器中使用图像存储器写入的图像对象。
+•VK_ACCESS_COLOR_ATTACHMENT_READ_BIT：引用的内存用于备份用作执行读操作的颜色附件的图像，这可能是因为启用了混合。请注意，这与输入附件不同，其中数据由片段着色器显式读取。
+•VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT：引用的内存用于备份用作要写入的颜色附件的图像。
+•VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT：引用的内存用于备份将用作深度或模板附件的图像，因为相关测试已启用，因此将读取该图像。
+•VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT：引用的内存用于备份将用作深度或模板附件的图像，因为相关的写掩码已启用。
+•VK_ACCESS_TRANSFER_READ_BIT：引用的内存用作传输操作（如vkCmdCopyImage（），vkCmdCopyBuffer（）或vkCmdCopyBufferToImage（））中的数据源。
+•VK_ACCESS_TRANSFER_WRITE_BIT：引用的内存用作传输操作的目标。
+•VK_ACCESS_HOST_READ_BIT：被引用的内存被映射，并且将被主机读取。
+•VK_ACCESS_HOST_WRITE_BIT：被引用的内存被映射并且将被主机写入。
+•VK_ACCESS_MEMORY_READ_BIT：上述情况未明确涵盖的所有其他内存读取都应指定此位。
+•VK_ACCESS_MEMORY_WRITE_BIT：上述情况未明确涵盖的所有其他内存写入都应指定此位。
+
+内存障碍提供了两个重要的功能。首先，他们帮助避免危害，并且
+其次，它们有助于确保数据一致性。
+当读取和写入操作相对于其中的顺序重新排序时发生危险
+程序员期望他们执行。他们可能很难诊断，因为他们经常
+平台或时间相关。有三种类型的危害：
+•当编程人员希望从一块文件中读取时，会发生读后写或RaW危险
+最近写入的内存，并且这些读取将会看到写入的结果。如果
+读取被重新安排并且在写入完成之前结束执行，读取将看到旧的
+数据。
+•当程序员期望覆盖一段文件时，会发生后读或WaR危险
+先前已被程序的另一部分读取的内存。如果写入操作
+最终在读取操作之前被调度，然后读取操作将看到新的数据，
+而不是它期望的旧数据。
+•编程人员希望覆盖写入后写入或WaW危险
+在内存中的多次位置，并且只有最后一次写入的结果才可见
+随后的读者。如果写入重新相互调度，那么只有结果
+发生在最后执行的写操作将会被读者看到。
+由于没有数据被修改，因此没有读后读的危险。
+在内存屏障中，源不一定是数据的生产者，而是第一个操作
+受该障碍保护。为了避免RaW危险，源代码实际上是一个读取操作。
+例如，要确保在用副本覆盖图像之前完成所有纹理拾取
+操作，我们需要在srcAccessMask字段中指定VK_ACCESS_SHADER_READ_BIT
+和dstAccessMask字段中的VK_ACCESS_TRANSFER_WRITE_BIT。这告诉Vulkan
+第一阶段是从着色器中的图像读取，第二阶段可能会覆盖该图像
+图像，所以我们不应该在任何可能读取的着色器之前将副本重新排列到图像中
+它。
+请注意，VkAccessFlagBits中的位与其中的位有一些重叠
+VkPipelineStageFlagBits。 VkAccessFlagBits标志指定正在执行的操作
+执行，并且VkPipelineStageFlagBits描述动作在管道中的位置
+执行。
+内存屏障提供的第二项功能是确保内存的一致性
+来自管道不同部分的数据视图。例如，如果应用程序包含着色器
+它从着色器写入缓冲区，然后需要通过映射从缓冲区读取数据
+底层的内存对象，它应该在中指定VK_ACCESS_SHADER_WRITE_BIT
+dstAccessMask中的srcAccessMask和VK_ACCESS_HOST_READ_BIT。如果有缓存
+在可缓冲着色器执行的写入的设备中，可能需要刷新这些高速缓存
+命令主机查看写入操作的结果。
+
+
+
+Buffer Memory Barriers
+
+缓冲区内存屏障提供了对用于备份缓冲区对象的内存的更细粒度的控制。 通过调用vkCmdPipelineBarrier（）来执行的缓冲区内存屏障的数量在bufferMemoryBarrierCount参数中指定，而pBufferMemoryBarriers字段是指向这许多VkBufferMemoryBarrier结构数组的指针，每个VkBufferMemoryBarrier结构都定义了一个缓冲区内存屏障。 VkBufferMemoryBrier的定义是
+
+typedef struct VkBufferMemoryBarrier {
+VkStructureType sType;
+const void* pNext;
+VkAccessFlags srcAccessMask;
+VkAccessFlags dstAccessMask;
+uint32_t srcQueueFamilyIndex;
+uint32_t dstQueueFamilyIndex;
+VkBuffer buffer;
+VkDeviceSize offset;
+VkDeviceSize size;
+} VkBufferMemoryBarrier;
+
+每个VkBufferMemoryBarrier结构的sType字段应该设置为
+VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER和pNext应该设置为nullptr。
+srcAccessMask和dstAccessMask字段的含义与它们在VkMemoryBarrier结构中的含义相同。显然，一些专门指向图像的标志（例如颜色或深度附件）在处理缓冲区内存时意义不大。
+当缓冲区的所有权从一个队列转移到另一个队列，并且这些队列处于不同的系列时，源队列和目标队列的族索引必须分别在srcQueueFamilyIndex和dstQueueFamilyIndex中提供。如果没有所有权转移，则srcQueueFamilyIndex和dstQueueFamilyIndex都可以设置为VK_QUEUE_FAMILY_IGNORED。在这种情况下，假定唯一所有权是正在构建命令缓冲区的队列系列。
+缓冲区中指定了由屏障控制访问的缓冲区。要同步对一系列缓冲区的访问，请使用结构的偏移量和大小字段来指定该范围（以字节为单位）。要控制对整个缓冲区的访问，只需将偏移量设置为零并将其大小设置为VK_WHOLE_SIZE即可。
+如果缓冲区将被多个队列上执行的工作访问，并且这些队列具有不同的系列，则您的应用程序必须执行额外的操作。由于暴露多个队列系列的单个设备实际上可能由多个物理组件组成，并且由于这些组件可能有自己的缓存，调度体系结构，内存控制器等，Vulkan需要知道资源何时从队列移动到队列。如果是这种情况，请在srcQueueFamilyIndex中指定源队列的队列族索引，并在dstQueueFamilyIndex中指定目标队列的族。
+与图像内存障碍类似，如果资源未在属于不同系列的队列之间传输，则srcQueueFamilyIndex和dstQueueFamilyIndex设置为VK_QUEUE_FAMILY_IGNORED。
+
+
+
+Image Memory Barriers
+
+就像使用缓冲区一样，应特别注意图像，并使用图像内存屏障来控制对图像的访问。 调用vkCmdPipelineBarrier（）所执行的图像内存屏障的数量在imageMemoryBarrierCount参数中指定，而pImageMemoryBarriers是指向这许多VkImageMemoryBarrier结构的数组的指针，每个VkImageMemoryBarrier结构都描述一个屏障。 VkImageMemoryBarrier的定义是
+
+typedef struct VkImageMemoryBarrier {
+VkStructureType sType;
+const void* pNext;
+VkAccessFlags srcAccessMask;
+VkAccessFlags dstAccessMask;
+VkImageLayout oldLayout;
+VkImageLayout newLayout;
+uint32_t srcQueueFamilyIndex;
+uint32_t dstQueueFamilyIndex;
+VkImage image;
+VkImageSubresourceRange subresourceRange;
+} VkImageMemoryBarrier;
+
+每个VkImageMemoryBarrier结构的sType字段应该设置为
+VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER和pNext应该设置为nullptr。
+与其他内存障碍一样，srcAccessMask和dstAccessMask字段指定源和目标访问类型。 同样，只有一些访问类型适用于图像。
+另外，当您控制跨队列的访问时，应将srcQueueFamilyIndex和dstQueueFamilyIndex字段设置为源和目标工作将发生的队列的族索引。
+oldLayout和newLayout字段指定在屏障之前和之后用于图像的布局。 这些是创建图像时可以使用的相同字段。 屏障影响的图像在图像中指定，并且要被屏障影响的图像部分在subresourceRange中指定，该图像是VkImageSubresourceRange结构的实例，其定义是
+
+typedef struct VkImageSubresourceRange {
+VkImageAspectFlags aspectMask;
+uint32_t baseMipLevel;
+uint32_t levelCount;
+uint32_t baseArrayLayer;
+uint32_t layerCount;
+} VkImageSubresourceRange;
+
+图像方面是要包含在屏障中的图像的一部分。大多数图像格式和类型只有一个方面。一个常见的例外是深度模板图像，它可能对图像的每个深度和模板组件都有独立的方面。例如，使用方向标志可以丢弃模板数据，同时保留深度数据以供后期采样。
+对于带有mipmap的图像，可通过指定baseMipLevel字段中最小编号（最高分辨率）的mipmap级别和levelCount字段中的级别数量，将mipmap的子集包含在屏障中。如果图像没有完整的mipmap链，则应将baseMipLevel设置为0，并将levelCount设置为1。
+同样，对于阵列图像，通过将baseArrayLayer设置为第一个图层的索引，将layerCount设置为要包含的图层的数量，可以将图像图层的子集包含在屏障中。同样，即使图像不是数组图像，也应该将baseArrayLayer设置为0，将layerCount设置为1.简而言之，将所有图像视为具有mipmaps（即使它只有一个级别），并将所有图像视为数组（即使他们只有一层）。
+清单4.1显示了如何执行图像内存屏障的示例。
+
+Listing 4.1: Image Memory Barrier
+Click here to view code image
+const VkImageMemoryBarrier imageMemoryBarriers =
+{
+VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, // sType
+nullptr, // pNext
+VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, // srcAccessMask
+VK_ACCESS_SHADER_READ_BIT, // dstAccessMask
+VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, // oldLayout
+VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, // newLayout
+VK_QUEUE_FAMILY_IGNORED, // srcQueueFamilyIndex
+VK_QUEUE_FAMILY_IGNORED, // dstQueueFamilyIndex
+image, // image
+{ // subresourceRange
+VK_IMAGE_ASPECT_COLOR_BIT, // aspectMask
+0, // baseMipLevel
+VK_REMAINING_MIP_LEVELS, // levelCount
+0, // baseArrayLayer
+VK_REMAINING_ARRAY_LAYERS // layerCount
+}
+};
+vkCmdPipelineBarrier(m_currentCommandBuffer,
+VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+0,
+0, nullptr,
+0, nullptr,
+1, &imageMemoryBarrier);
+
+清单4.1中显示的图像内存屏障采用之前位于VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL布局中的图像，并将其移至VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL布局。 数据源是从VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT指定的流水线的颜色输出，并且数据的目标是由着色器进行采样，如VK_ACCESS_SHADER_READ_BIT所指定。
+没有在队列间传递所有权，因此srcQueueFamilyIndex和dstQueueFamilyIndex都设置为VK_QUEUE_FAMILY_IGNORED。 此外，我们正在执行图像中所有mipmap级别和数组图层的障碍，因此subresourceRange结构的levelCount和layerCount成员分别设置为VK_REMAINING_MIP_LEVELS和VK_REMAINING_ARRAY_LAYERS。
+此屏障将先前通过图形管道将图像写入颜色附件，并将其移至可由着色器读取的状态。
+
+
+
+Clearing and Filling Buffers
+
+您在第2章“内存和资源”中介绍了缓冲对象。缓冲区是由内存支持的线性数据区域。 为了使缓冲区有用，您需要能够填充数据。 在某些情况下，只需将整个缓冲区清除为已知值即可。 例如，这可让您初始化您最终将使用着色器写入的缓冲区
+一些其他操作。
+要用固定值填充缓冲区，请调用vkCmdFillBuffer（），其原型是
+
+void vkCmdFillBuffer (
+VkCommandBuffer commandBuffer,
+VkBuffer dstBuffer,
+VkDeviceSize dstOffset,
+VkDeviceSize size,
+uint32_t data);
+
+要在其中放置命令的命令缓冲区在commandBuffer中指定。将用dstBuffer指定将用数据填充的缓冲区。要用数据填充缓冲区的一部分，请在dstOffset中指定填充操作的起始偏移量（以字节为单位），并指定区域的大小（再次以字节为单位）。 dstOffset和size都必须是4的倍数。要从dstOffset填充到缓冲区的末尾，请在size参数中传递特殊值VK_WHOLE_SIZE。因此，要填充整个缓冲区，只需将dstOffset设置为0并将其大小设置为VK_WHOLE_SIZE即可。
+您想要填充缓冲区的值将传入数据。这是一个uint32_t变量，可以简单地复制填充操作的区域。就好像缓冲区被解释为uint32_t的数组，并且从dstOffset到该区域末尾的每个元素都被填充了该值。要使用浮点值清除缓冲区，可以将浮点值重新解释为uint32_t值并将其传递给vkCmdFillBuffer（）。清单4.2演示了这一点。
+
+Listing 4.2: Filling a Buffer with Floating-Point Data
+
+void FillBufferWithFloats(VkCommandBuffercmdBuffer,
+VkBuffer dstBuffer,
+VkDeviceSize offset,
+VkDeviceSize length,
+const float value)
+{
+vkCmdFillBuffer(cmdBuffer,
+dstBuffer,
+0,
+1024,
+*(const uint32_t*)&value);
+}
+
+有时，填充具有固定值的缓冲区是不够的，需要将数据更明确地放置在缓冲区对象中。 当需要将大量数据传输到缓冲区中或缓冲区之间时，或者映射缓冲区并将其写入主机，或者使用vkCmdCopyBuffer（）从另一个（可能映射的）缓冲区复制数据是最合适的。 但是，对于小的更新，例如更新矢量或小数据结构的值，可以使用vkCmdUpdateBuffer（）将数据直接放入缓冲区对象。
+vkCmdUpdateBuffer（）的原型是
+
+void vkCmdUpdateBuffer (
+VkCommandBuffer commandBuffer,
+VkBuffer dstBuffer,
+VkDeviceSize dstOffset,
+VkDeviceSize dataSize,
+const uint32_t* pData);
+
+vkCmdUpdateBuffer（）直接将数据从主机内存复制到缓冲区对象中。只要调用vkCmdUpdateBuffer（），就会从主机内存中消耗数据，因此，一旦vkCmdUpdateBuffer（）返回，就可以释放主机内存数据结构或覆盖其内容。但请注意，在提交命令缓冲区后，直到设备执行vkCmdUpdateBuffer（）为止，才会将数据写入缓冲区。
+因此，Vulkan必须复制您提供的数据，并将其保存在与命令缓冲区关联的辅助数据结构中或直接保存在命令缓冲区内。
+同样，包含该命令的命令缓冲区将通过commandBuffer传递，目标缓冲区对象将通过dstBuffer传递。数据的放置位置在dstOffset中传递，放入缓冲区的数据大小在dataSize中传递。 dstOffset和dataSize都以字节为单位，但与vkCmdFillBuffer（）一样，两者都必须是4的倍数。特殊值VK_WHOLE_SIZE不接受size参数
+vkCmdUpdateBuffer（），因为它也用作数据源的主机内存区域的大小。使用vkCmdUpdateBuffer（）可以放入缓冲区的数据的最大大小为65,536字节。
+pData指向包含最终放入缓冲区对象的数据的主机内存。尽管这里所期望的变量类型是指向uint32_t的指针，但任何数据都可以在缓冲区中。只需指定一个指向主机可读的任何内存区域的指针，以便const uint32_t *，并将其传递给pData。确保数据区域的长度至少为大小字节。例如，构造一个与统一或着色器存储块的布局相匹配的C ++数据结构并将其整个内容简单地复制到缓冲区中是合理的，该缓冲区将在着色器中正确使用。
+再次，使用vkCmdFillBuffer（）时要小心。它旨在对缓冲区进行短暂的即时更新。例如，使用vkCmdFillBuffer（）比使用缓冲区映射和对vkCmdCopyBuffer（）的调用可以更高效地将单个值写入统一缓冲区。
+
+
+
+Clearing and Filling Images
+
+就像使用缓冲区一样，可以在图像之间直接复制数据，并用固定值填充图像。 图像是更大，更复杂，不透明的数据结构，所以原始偏移量和数据通常对应用程序不可见。2
+2.当然，可以映射用于支持图像的内存。 特别是，当线性拼贴用于图像时，这是标准做法。 但是，一般来说，这不被推荐。
+要将图像清除为固定值，请调用vkCmdClearColorImage（），其原型是
+
+void vkCmdClearColorImage (
+VkCommandBuffer commandBuffer,
+VkImage image,
+VkImageLayout imageLayout,
+const VkClearColorValue* pColor,
+uint32_t rangeCount,
+const VkImageSubresourceRange* pRanges);
+
+包含clear命令的命令缓冲区将在commandBuffer中传递。 要清除的图像以图像形式传递，执行clear命令时图像预期位于的布局在imageLayout中传递。
+imageLayout接受的布局是VK_IMAGE_LAYOUT_GENERAL和VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL。 要清除处于不同布局的图像，在执行clear命令之前，需要使用管道屏障将它们移动到这两个布局之一。
+清除图像的值在VkClearColorValue联合的实例中指定，其定义是
+
+typedef union VkClearColorValue {
+float float32[4];
+int32_t int32[4];
+uint32_t uint32[4];
+} VkClearColorValue;
+
+VkClearColorValue只是三个数组的四个数组的联合。一个是浮点数据，一个是有符号整数数据，另一个是无符号整数数据。 Vulkan将阅读正在清除的图像格式的相应成员。您的应用程序可以写入匹配数据源的成员。 vkCmdClearColorImage（）不执行数据转换;这取决于你的应用程序正确填充VkClearColorValue联合。
+只要对vkCmdClearColorImage（）进行一次调用即可清除目标图像的任意数目的区域，但每个区域都将使用相同的值清除。如果您需要用不同的颜色清除同一图像的多个区域，则需要多次调用vkCmdClearColorImage（）。但是，要清除具有相同颜色的所有区域，指定rangeCount中的区域数量，并将指针传递给pRanges中的rangeCount VkImageSubresourceRange结构数组。 VkImageSubresourceRange的定义是
+
+typedef struct VkImageSubresourceRange {
+VkImageAspectFlags aspectMask;
+uint32_t baseMipLevel;
+uint32_t levelCount;
+uint32_t baseArrayLayer;
+uint32_t layerCount;
+} VkImageSubresourceRange;
+
+当我们讨论图像视图的创建时，这个结构在第2章“内存和资源”中首次引入。 在这里，它用于定义要清除的图像区域。
+因为我们正在清除彩色图像，所以aspectMask必须设置为VK_IMAGE_ASPECT_COLOR_BIT。 baseMipLevel和levelCount字段分别用于指定要清除的起始mipmap级别和级别数量，如果图像是数组图像，则baseArrayLayer和layerCount字段用于指定要清除的起始图层和图层数量。 如果图像不是数组图像，则应将这些字段设置为0和1，
+分别。
+清除深度模板图像与清除彩色图像类似，只是使用特殊的VkClearDepthStencilValue结构来指定清除值。 vkCmdClearDepthStencilImage（）的原型与vkCmdClearColorImage（）的原型相似，并且
+
+void vkCmdClearDepthStencilImage (
+VkCommandBuffer commandBuffer,
+VkImage image,
+VkImageLayout imageLayout,
+const VkClearDepthStencilValue* pDepthStencil,
+uint32_t rangeCount,
+const VkImageSubresourceRange * pRanges);
+
+同样，在commandBuffer中指定将执行清除操作的命令缓冲区，在图像中指定要清除的图像，并且在清除操作时图像预期处于的布局在imageLayout中指定。 和vkCmdClearColorImage（）一样，imageLayout应该是VK_IMAGE_LAYOUT_GENERAL或者VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL。 没有其他布局适用于清晰操作。
+要清除深度模板图像的值将通过VkClearDepthStencilValue结构的实例传递，该结构包含深度和模板清除值。 它的定义是
+
+typedef struct VkClearDepthStencilValue {
+float depth;
+uint32_t stencil;
+} VkClearDepthStencilValue;
+
+与vkCmdClearColorImage（）一样，可以通过一次调用vkCmdClearDepthStencilImage（）来清除图像的多个范围。要清除的范围数量在rangeCount中指定，并且pRanges参数应指向定义要清除的范围的rangeCount VkImageSubresourceRange结构数组。
+由于深度模板图像可能同时包含深度和模板方面，因此每个pRanges成员的aspectMask字段可以包含VK_IMAGE_ASPECT_DEPTH_BIT，VK_IMAGE_ASPECT_STENCIL_BIT或两者。如果aspectMask包含VK_IMAGE_ASPECT_DEPTH_BIT，则存储在VkClearDepthStencilValue结构的深度字段中的值用于清除指定范围的深度方面。
+同样，如果aspectMask包含VK_IMAGE_ASPECT_STENCIL_BIT，则将使用VkClearDepthStencilValue结构的模板成员清除指定范围的模板方面。
+请注意，指定VK_IMAGE_ASPECT_DEPTH_BIT和VK_IMAGE_ASPECT_STENCIL_BIT集合的单个区域比指定两个只有一个位集的区域通常效率更高。
+
+
+
+Copying Image Data
+
+在上一节中，我们讨论了将图像清理为通过简单结构传递的固定值。 但是，在很多情况下，您需要将纹理数据上传到图像中或在图像之间复制图像数据。 Vulkan支持将图像数据从缓冲区复制到图像，图像之间以及从图像到缓冲区。
+要将数据从缓冲区复制到图像的一个或多个区域，请调用vkCmdCopyBufferToImage（），其原型是
+
+void vkCmdCopyBufferToImage (
+VkCommandBuffer commandBuffer,
+VkBuffer srcBuffer,
+VkImage dstImage,
+VkImageLayout dstImageLayout,
+uint32_t regionCount,
+const VkBufferImageCopy* pRegions);
+
+将执行命令的命令缓冲区在commandBuffer中指定，源缓冲区对象在srcBuffer中指定，并且将在dstImage中指定要复制数据的映像。 与清除目标图像一样，副本的目标图像布局预计为VK_IMAGE_LAYOUT_GENERAL或VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL，并在dstImageLayout参数中指定。
+要更新的区域的数量在regionCount中给出，pRegions是一个指向regionCount VkBufferImageCopy结构数组的指针，每个结构都定义要将数据复制到的图像区域。 VkBufferImageCopy的定义是
+
+typedef struct VkBufferImageCopy {
+VkDeviceSize bufferOffset;
+uint32_t bufferRowLength;
+uint32_t bufferImageHeight;
+VkImageSubresourceLayers imageSubresource;
+VkOffset3D imageOffset;
+VkExtent3D imageExtent;
+} VkBufferImageCopy;
+
+bufferOffset字段包含缓冲区中数据的偏移量，以字节为单位。 缓冲区中的数据从左到右，从上到下布局，如图4.1所示。 bufferRowLength字段指定源图像中纹理元素的数量，bufferImageHeight指定图像中数据的行数。 如果bufferRowLength为零，则认为图像紧密堆栈在缓冲区中，因此等于imageExtent.width。 同样，如果bufferImageHeight为零，则假定源图像中的行数等于imageExtent.height中图像范围的高度。
+
+
+
+Figure 4.1: Data Layout of Images Stored in Buffers
+
+在VkImageSubresourceLayers结构的实例中指定要复制图像数据的子资源，其定义是
+
+typedef struct VkImageSubresourceLayers {
+VkImageAspectFlags aspectMask;
+uint32_t mipLevel;
+uint32_t baseArrayLayer;
+uint32_t layerCount;
+} VkImageSubresourceLayers;
+
+VkImageSubresourceLayers的aspectMask字段包含作为图像副本目标的一个或多个方面。通常，这将是VkImageAspectFlagBits枚举中的单个位。如果目标图像是彩色图像，则应简单地将其设置为VK_IMAGE_ASPECT_COLOR_BIT。如果图像是深度图像，则应该是VK_IMAGE_ASPECT_DEPTH_BIT，如果图像是仅模板图像，则应该是VK_IMAGE_ASPECT_STENCIL_BIT。如果图像是组合的深度模板图像，则可以通过同时指定VK_IMAGE_ASPECT_DEPTH_BIT和VK_IMAGE_ASPECT_STENCIL_BIT将数据复制到深度和模板两个方面。
+目标mipmap级别在mipLevel中指定。您可以将数据仅复制到pRegions数组中的每个元素的单个mipmap级别，尽管您当然可以指定多个元素，每个元素都指向不同的级别。
+如果目标图像是数组图像，则可以分别在baseArrayLayer和layerCount中指定图像副本的起始图层和图层数量。如果图像不是数组图像，则应将这些字段设置为0和1。
+每个区域可以针对每个mipmap级别内的整个mipmap级别或更小的窗口。
+窗口的偏移量在imageOffset中指定，并且窗口的大小在imageExtent中指定。要覆盖整个mipmap级别，请将imageOffset.x和imageOffset.y设置为0，并将imageExtent.width和imageExtent.height设置为mipmap级别的大小。这是由你来计算。 Vulkan不会为你做。
+也可以在相反的方向上执行复制 - 将图像中的数据复制到缓冲区中。为此，请调用vkCmdCopyImageToBuffer（），其原型是
+
+void vkCmdCopyImageToBuffer (
+VkCommandBuffer commandBuffer,
+VkImage srcImage,
+VkImageLayout srcImageLayout,
+VkBuffer dstBuffer,
+uint32_t regionCount,
+const VkBufferImageCopy* pRegions);
+
+执行副本的命令缓冲区在commandBufer中指定，srcImage中的源图像和dstBuffer中的目标缓冲区。与其他复制命令一样，srcImageLayout参数指定源图像预期的布局。
+因为图像现在是数据源，所以布局应该是VK_IMAGE_LAYOUT_GENERAL或VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL。
+同样，可以通过一次调用将许多区域复制到vkCmdCopyImageToBuffer（）中，每个区域都由VkBufferImageCopy结构的一个实例表示。要在regionCount中指定要复制的区域的数量，并且pRegions参数包含一个指向定义每个区域的regionCount VkBufferImageCopy结构数组的指针。这是vkCmdCopyBufferToImage（）接受的相同结构。但是，在此用例中，bufferOffset，bufferRowLength和bufferImageHeight包含用于副本目标的参数，而imageSubresource，imageOffset和imageExtent包含副本源的参数。
+最后，还可以在两个图像之间复制数据。为此，请使用vkCmdCopyImage（）命令，其原型是
+
+void vkCmdCopyImage (
+VkCommandBuffer commandBuffer,
+VkImage srcImage,
+VkImageLayout srcImageLayout,
+VkImage dstImage,
+VkImageLayout dstImageLayout,
+uint32_t regionCount,
+const VkImageCopy* pRegions);
+
+将执行命令的命令缓冲区传递到commandBuffer中，包含源数据的图像将传递到srcImage中，并且作为副本目标的图像将传递到dstImage中。 同样，这两个图像的布局必须传递给复制命令。
+srcImageLayout是复制时源图像的预期布局，应该是VK_IMAGE_LAYOUT_GENERAL或VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL（因为这是传输操作的来源）。 同样，dstImageLayout是目标图像的预期布局，应该是VK_IMAGE_LAYOUT_GENERAL或VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL。
+与缓冲区到图像和图像到缓冲区复制命令一样，vkCmdCopyImage（）可以一次复制多个区域。 要在regionCount中指定要复制的区域的数量，并且每个都由包含在数组中的VkImageCopy结构的实例表示，其中的地址通过pRegion传递。 VkImageCopy的定义是
+
+typedef struct VkImageCopy {
+VkImageSubresourceLayers srcSubresource;
+VkOffset3D srcOffset;
+VkImageSubresourceLayers dstSubresource;
+VkOffset3D dstOffset;
+VkExtent3D extent;
+} VkImageCopy;
+
+每个VkImageCopy实例都包含源和目标窗口的子资源信息和偏移量。 vkCmdCopyImage（）无法调整图像数据的大小，因此源区域和目标区域的范围相同，并且包含在范围字段中。
+srcSubresource包含源数据的子资源定义，其含义与传递给vkCmdCopyImageToBuffer（）的VkBufferImageCopy结构中的imageSubresource字段相同。 同样，dstSubresource字段包含目标区域的子资源定义，其含义与传递给vkCmdCopyBufferToImage（）的VkBufferImageCopy结构中的imageSubresource字段相同。
+srcOffset和dstOffset字段分别包含源窗口和目标窗口的坐标。
+
+
+
+Copying Compressed Image Data
+
+正如第2章“内存和资源”中所讨论的，Vulkan支持许多压缩的图像格式。当前定义的所有压缩格式都是固定块大小的基于块的格式。对于这些格式中的许多格式，块大小为4×4像素。对于ASTC格式，块大小因图像而异。
+在缓冲区和图像之间复制数据时，只能复制整数个块。
+因此，每个图像区域的纹理宽度和高度必须是图像使用的块大小的整数倍。此外，复制区域的起源也必须是块大小的整数倍。
+也可以使用vkCmdCopyImage（）在两个压缩图像之间或在压缩和未压缩图像之间复制数据。当您这样做时，源图像格式和目标图像格式必须具有相同的压缩块大小。也就是说，例如，如果压缩块的大小是64位，则源格式和目标格式都必须是64位块大小的压缩图像，或者未压缩的图像格式必须是64位的每个文本格式。
+从未压缩图像复制到压缩图像时，每个源纹理元素将被视为包含与压缩图像中的块相同位数的单个原始值。该值直接写入压缩图像，就像它是压缩数据一样。纹素值不会被Vulkan压缩。这使您可以在应用程序或着色器中创建压缩图像数据，然后将其复制到压缩图像中供以后处理。 Vulkan不会为您压缩原始图像数据。此外，对于未压缩的压缩副本，VkImageCopy结构的范围字段在源图像中以texels为单位，但必须符合目标图像的块大小要求。
+从压缩格式复制到未压缩格式时，情况正好相反。 Vulkan不会解压缩图像数据。相反，它会从源图像中提取原始的64位或128位压缩块值，并将它们存放在目标图像中。在这种情况下，目标图像应该具有与源图像中每块的位数相同的每像素比特数。对于压缩到未压缩的副本，VkImageCopy结构的范围字段在目标映像中以texels为单位进行度量，但必须符合源图像中块大小施加的要求。
+允许在两个块压缩图像格式之间进行复制，只要两个格式的每个块具有相同数量的比特即可。然而，这个值是有争议的，因为以一种格式压缩的图像数据通常在被解释为另一种格式时不会有意义地解码。无论其值如何，在执行此操作时，要复制的区域仍以texels度量，但所有偏移量和范围必须是公用块大小的整数倍。
+当源图像或目标图像不是块大小宽或高的整数倍时，图像在压缩图像中复制进入，出出和压缩图像之间的复制规则唯一例外与块大小的倍数对齐，并且区域被复制延伸到图像的边缘。
+
+Stretching Images
+
+在迄今为止涉及的所有与图像相关的命令中，没有一个支持对复制区域进行格式转换或调整大小。 要做到这一点，您需要使用vkCmdBlitImage（）命令，该命令可以拍摄不同格式的图像，并在写入目标图像时扩展或缩小要复制的区域。 术语blit是块图像传输的缩写，它指的不仅是复制图像数据，而且还可能在处理过程中对其进行处理。
+vkCmdBlitImage（）的原型是
+
+void vkCmdBlitImage (
+VkCommandBuffer commandBuffer,
+VkImage srcImage,
+VkImageLayout srcImageLayout,
+VkImage dstImage,
+VkImageLayout dstImageLayout,
+uint32_t regionCount,
+const VkImageBlit* pRegions,
+VkFilter filter);
+
+将执行命令的命令缓冲区将在commandBuffer中传递。 源图像和目标图像分别在srcImage和dstImage中传递。 同样，与vkCmdCopyImage（）一样，源图像和目标图像的预期布局也通过srcImageLayout和dstImageLayout传递。 源图像的布局必须是VK_IMAGE_LAYOUT_GENERAL或VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL，并且目标图像的布局必须是VK_IMAGE_LAYOUT_GENERAL或VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL。
+与其他复制命令一样，vkCmdBlitImage（）可以将源图像的任意数量的区域复制到目标图像中，并且每个区域都由数据结构表示。 要复制的区域的数量在regionCount中传递，并且pRegion指向regionCount VkImageBlit结构的数组，每个结构定义要复制的区域之一。 VkImageBlit的定义是
+
+typedef struct VkImageBlit {
+VkImageSubresourceLayers srcSubresource;
+VkOffset3D srcOffsets[2];
+VkImageSubresourceLayers dstSubresource;
+VkOffset3D dstOffsets[2];
+} VkImageBlit;
+
+VkImageBlit的srcSubresource和dstSubresource字段定义源图像和目标图像的子资源。而在VkImageCopy中，每个区域都由VkOffset3D结构定义，并共享一个VkExtent3D结构，而在VkImageBlit中，每个区域由一对VkOffset3D结构定义，并排列为两个元素的数组。
+srcOffsets和dstOffsets数组的第一个元素定义要复制的区域的一个角，这些数组的第二个元素定义该区域的对角。然后将源图像中的srcOffsets定义的区域复制到目标图像中由dstOffsets定义的区域中。如果任一区域相对于另一区域是“颠倒的”，则复制的区域将被垂直翻转。同样，如果一个区域相对于另一个区域“回到前面”，则图像将水平翻转。如果满足这两个条件，则复制的区域将相对于原件旋转180°。
+如果源矩形和目标矩形中的区域大小不同，则会相应地放大或缩小图像数据。在这种情况下，filter参数vkCmdBlitImage（）中指定的过滤器模式将用于过滤数据。过滤器必须是VK_FILTER_NEAREST或VK_FILTER_LINEAR中的一个，分别应用点采样或线性过滤。
+
+源图像的格式必须是支持VK_FORMAT_FEATURE_BLIT_SRC_BIT功能的格式。在大多数实现中，这将包括几乎所有的图像格式。此外，目标格式必须是支持VK_FORMAT_FEATURE_BLIT_DST_BIT的格式。一般来说，这是可以由设备使用着色器中的图像存储呈现或写入的任何格式。任何Vulkan设备都不太可能支持压缩图像格式的传输。
+
+
+
+概要
+本章讨论了如何清除具有固定值的图像和带有数据的完整缓冲区对象。 我们使用嵌入命令缓冲区内的命令将少量数据直接放入缓冲区对象，并解释了Vulkan如何能够在缓冲区和图像之间，图像和缓冲区之间以及图像对之间复制图像数据。 最后，我们向您介绍了blit的概念，它是一种允许缩放图像数据并在复制时进行格式转换的操作。 这些操作为从Vulkan设备获取大量数据以进一步处理提供了基础。

@@ -28,14 +28,24 @@ const int HEIGHT = 448;
 //        {{-0.5f, 0.5f}, {1.0f, 1.0f}}
 //};
 
-const std::vector<Vertex> vertices = {
+std::vector<Vertex> vertices = {
         {{-540.0f, 865.0f}, {1.0f, 0.0f}},
-        {{-540.0f, -865.0}, {0.0f, 0.0f}},
-        {{540.0f, -865.0f}, {0.0f, 1.0f}},
-        {{540.0f, 865.0f}, {1.0f, 1.0f}}
+        {{-540.0f, 0.0},    {0.0f, 0.0f}},
+        {{0.0f,    0.0f},   {0.0f, 1.0f}},
+        {{0.0f,    865.0f}, {1.0f, 1.0f}}
 };
 
-const std::vector<uint16_t> indices = {
+
+std::vector<Vertex> vertices1 = {
+        {{0.0f,   0.0f},   {1.0f, 0.0f}},
+        {{0.0f,   -865.0}, {0.0f, 0.0f}},
+        {{540.0f, -865.0f},{0.0f, 1.0f}},
+        {{540.0f, 0.0f},   {1.0f, 1.0f}}
+
+};
+
+
+std::vector<uint16_t> indices = {
         0, 1, 2, 2, 3, 0
 };
 
@@ -168,8 +178,11 @@ bool GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader,
 }
 
 
+
+
 VulkanUtils::VulkanUtils(AAssetManager *assetManager, const char *vertexShader, const char *fragmentShader) :
         mVertexBuffer(&mVKDevice),
+        mVertexBuffer1(&mVKDevice),
         mIndexBuffer(&mVKDevice),
 //        mUniformBuffer(&mVKDevice),
         mUniformProj(&mVKDevice),
@@ -183,6 +196,7 @@ VulkanUtils::VulkanUtils(AAssetManager *assetManager, const char *vertexShader, 
 
 VulkanUtils::VulkanUtils():
         mVertexBuffer(&mVKDevice),
+        mVertexBuffer1(&mVKDevice),
         mIndexBuffer(&mVKDevice),
 //        mUniformBuffer(&mVKDevice),
         mUniformProj(&mVKDevice),
@@ -243,13 +257,17 @@ void VulkanUtils::OnSurfaceCreated()
     createCommandBuffers();
 //    updateCommandBuffers();
 
+
+    updateCommandBuffers1();
+    updateCommandBuffers();
+
     createSemaphores();
 }
 
 void VulkanUtils::OnSurfaceChanged()
 {
     state = STATE_PAUSED;
-    recreateSwapchain();
+//    recreateSwapchain();
     state = STATE_RUNNING;
 }
 
@@ -257,7 +275,8 @@ void VulkanUtils::OnDrawFrame()
 {
     AcquireNextImage();
     updateUniformBuffer();
-    updateCommandBuffers();
+    updateBufferData();
+
     drawFrame();
     QueuePresent();
 }
@@ -279,6 +298,7 @@ void VulkanUtils::cleanUp() {
 //    mUniformBuffer.destroy();
     mIndexBuffer.destroy();
     mVertexBuffer.destroy();
+    mVertexBuffer1.destroy();
 
     mTexImage.destroyImage();
     mTexImage.destroySampler();
@@ -804,6 +824,14 @@ void VulkanUtils::createVertexBuffer() {
 //    mVertexBuffer.copyBuffer(stagBuffer);
     mVertexBuffer.updateData((void*)vertices.data());
 
+    mVertexBuffer1.createBuffer(bufferSize,
+                               VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+//    mVertexBuffer.copyBuffer(stagBuffer);
+    mVertexBuffer1.updateData((void*)vertices1.data());
+
+
     return;
 }
 
@@ -966,7 +994,9 @@ void VulkanUtils::updateCommandBuffers()
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
 
-    for (size_t i = 0; i < mCommandBuffers.size(); i++) {
+//    size_t i = mImageIndex;
+    for (size_t i = 0; i < mCommandBuffers.size(); i++)
+    {
 
         vkBeginCommandBuffer(mCommandBuffers[i], &beginInfo);
 
@@ -986,6 +1016,56 @@ void VulkanUtils::updateCommandBuffers()
 //        vkCmdBindIndexBuffer(mCommandBuffers[i], mIndexBuffer.mBuffer, 0, VK_INDEX_TYPE_UINT16);
 //        vkCmdDrawIndexed(mCommandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
         vkCmdDraw(mCommandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+
+        vkCmdEndRenderPass(mCommandBuffers[i]);
+
+        if (vkEndCommandBuffer(mCommandBuffers[i]) != VK_SUCCESS) {
+            throw std::runtime_error("failed to record command buffer!");
+        }
+    }
+}
+
+
+void VulkanUtils::updateCommandBuffers1()
+{
+    mInputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+    beginInfo.pInheritanceInfo = nullptr; // Optional
+
+    VkRenderPassBeginInfo renderPassInfo = {};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = renderPass;
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent = swapchainExtent;
+
+    VkClearValue clearColor = {1.0f, 0.0f, 0.0f, 1.0f};
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues = &clearColor;
+
+//    size_t i = mImageIndex;
+    for (size_t i = 0; i < mCommandBuffers.size(); i++)
+    {
+
+        vkBeginCommandBuffer(mCommandBuffers[i], &beginInfo);
+
+        renderPassInfo.framebuffer = mFramebuffers[i];
+
+        vkCmdBeginRenderPass(mCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
+
+        VkBuffer vertexBuffers[] = {mVertexBuffer1.mBuffer};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(mCommandBuffers[i], 0, 1, vertexBuffers, offsets);
+
+        vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout,
+                                0, 1, &mDescriptorSet, 0, nullptr);
+
+//        vkCmdBindIndexBuffer(mCommandBuffers[i], mIndexBuffer.mBuffer, 0, VK_INDEX_TYPE_UINT16);
+//        vkCmdDrawIndexed(mCommandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+        vkCmdDraw(mCommandBuffers[i], static_cast<uint32_t>(vertices1.size()), 1, 0, 0);
 
         vkCmdEndRenderPass(mCommandBuffers[i]);
 
@@ -1054,6 +1134,27 @@ void VulkanUtils::AcquireNextImage()
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("failed to acquire swap chain image!");
     }
+}
+
+void VulkanUtils::updateBufferData()
+{
+    static int step = 0;
+
+    ++step;
+    vertices1[0].pos.x = step;
+    vertices1[1].pos.x = step;
+    vertices1[2].pos.x = step + 540;
+    vertices1[3].pos.x = step + 540;
+    if( step > 200 )
+    {
+        step = 0;
+    }
+
+    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+//    vkCmdUpdateBuffer(mCommandBuffers[mImageIndex], mVertexBuffer1.mBuffer, 0, bufferSize, vertices1.data() );
+
+    mVertexBuffer1.updateData(vertices1.data());
+
 }
 
 void VulkanUtils::drawFrame() {

@@ -80,6 +80,8 @@ public:
     void bindDescriptorSetTexture();
     void createCommandBuffers();
     void updateCommandBuffers();
+    void updateBufferData();
+    void updateCommandBuffers1();
     void createSemaphores();
     void AcquireNextImage();
     void drawFrame();
@@ -118,6 +120,7 @@ public:
     VkPipelineInputAssemblyStateCreateInfo mInputAssembly;
 
     HVkBuffer mVertexBuffer;
+    HVkBuffer mVertexBuffer1;
     HVkBuffer mIndexBuffer;
 //    HVkBuffer mUniformBuffer;
     HVkBuffer mUniformProj;
