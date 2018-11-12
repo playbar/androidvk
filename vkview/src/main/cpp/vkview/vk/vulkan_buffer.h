@@ -21,6 +21,7 @@ public:
 	void* mpData = nullptr;
 public:
 	HVkBuffer(VulkanDevice *device);
+	~HVkBuffer();
 
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
 

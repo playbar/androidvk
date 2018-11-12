@@ -80,9 +80,9 @@ public:
     void bindDescriptorSetTexture(HVkTexture &texImg);
     void bindDescriptorSetTexture1(HVkTexture &texImg);
     void createCommandBuffers();
-    void updateCommandBuffers();
+    void drawCommandBuffers();
     void updateBufferData();
-    void updateCommandBuffers1();
+    void drawCommandBuffers1();
     void createSemaphores();
     void AcquireNextImage();
     void drawFrame();

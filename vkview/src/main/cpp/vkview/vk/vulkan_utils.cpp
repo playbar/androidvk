@@ -264,11 +264,11 @@ void VulkanUtils::OnSurfaceCreated()
     bindDescriptorSet();
 
     createCommandBuffers();
-//    updateCommandBuffers();
+//    drawCommandBuffers();
 
 
 
-//    updateCommandBuffers();
+//    drawCommandBuffers();
 
     createSemaphores();
 }
@@ -297,16 +297,20 @@ void VulkanUtils::OnDrawFrame()
     AcquireNextImage();
     updateUniformBuffer();
 
+
     updateBufferData();
-    updateCommandBuffers1();
-    updateCommandBuffers();
+    drawCommandBuffers1();
+
+//    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+//    vkCmdUpdateBuffer(mCommandBuffers[mImageIndex], mVertexBuffer.mBuffer, 0, bufferSize, vertices.data() );
+    drawCommandBuffers();
 
 
 
     drawFrame();
     QueuePresent();
-
     vkQueueWaitIdle(mVKDevice.presentQueue);
+    mVertexBuffer.destroy();
 
 }
 
@@ -1037,32 +1041,42 @@ void VulkanUtils::createCommandBuffers() {
 
 }
 
-void VulkanUtils::updateCommandBuffers()
+void VulkanUtils::drawCommandBuffers()
 {
 
     size_t i = mImageIndex;
 
-        vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
+//    HVkBuffer vertexBuffer(&mVKDevice);
+    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+    mVertexBuffer.createBuffer(bufferSize,
+                               VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        VkBuffer vertexBuffers[] = {mVertexBuffer.mBuffer};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(mCommandBuffers[i], VERTEXT_BUFFER_ID, 1, vertexBuffers, offsets);
+    mVertexBuffer.updateData((void*)vertices.data());
+    mVertexBuffer.flush(bufferSize);
+
+    vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
+
+    VkBuffer vertexBuffers[] = {mVertexBuffer.mBuffer};
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(mCommandBuffers[i], VERTEXT_BUFFER_ID, 1, vertexBuffers, offsets);
 
 //        VkBuffer vertexBuffers1[] = {mVertexBuffer1.mBuffer};     //error
 //        vkCmdBindVertexBuffers(mCommandBuffers[i], 1, 1, vertexBuffers1, offsets); // error
 
-        vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout,
-                                0, 1, &mDescriptorSet, 0, nullptr);
+    vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout,
+                            0, 1, &mDescriptorSet, 0, nullptr);
 
 //        vkCmdBindIndexBuffer(mCommandBuffers[i], mIndexBuffer.mBuffer, 0, VK_INDEX_TYPE_UINT16);
 //        vkCmdDrawIndexed(mCommandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
-        vkCmdDraw(mCommandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+    vkCmdDraw(mCommandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
+//    vertexBuffer.destroy();
 
 }
 
 
-void VulkanUtils::updateCommandBuffers1()
+void VulkanUtils::drawCommandBuffers1()
 {
     size_t i = mImageIndex;
         vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
@@ -1260,7 +1274,7 @@ void VulkanUtils::recreateSwapchain() {
     createGraphicsPipeline();
     createFramebuffers();
     createCommandBuffers();
-//    updateCommandBuffers();
+//    drawCommandBuffers();
 }
 
 void VulkanUtils::cleanupSwapchain() {

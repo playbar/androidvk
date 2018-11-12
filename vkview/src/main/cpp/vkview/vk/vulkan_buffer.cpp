@@ -11,6 +11,11 @@ HVkBuffer::HVkBuffer(VulkanDevice *device)
 	mSize = 0;
 }
 
+HVkBuffer::~HVkBuffer()
+{
+//	destroy();
+}
+
 
 void HVkBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
 {
