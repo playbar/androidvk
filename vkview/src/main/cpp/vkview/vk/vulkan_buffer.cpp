@@ -44,12 +44,19 @@ void HVkBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
 	}
 
 	vkBindBufferMemory(mVkDevice->logicalDevice, mBuffer, mMemory, 0);
+	void* mapped_ptr = nullptr;
+	vkMapMemory(mVkDevice->logicalDevice, mMemory, 0, mSize, 0, &mapped_ptr);
+	mpData = (unsigned char*)mapped_ptr;
 	return;
 }
 
 VkResult HVkBuffer::map(VkDeviceSize size, VkDeviceSize offset)
 {
-	return vkMapMemory(mVkDevice->logicalDevice, mMemory, offset, size, 0, &mpData);
+	void* mapped_ptr = nullptr;
+	VkResult re = vkMapMemory(mVkDevice->logicalDevice, mMemory, offset, size, 0, &mapped_ptr);
+	mpData = (unsigned char*)mapped_ptr;
+	return re;
+
 }
 
 void HVkBuffer::copyTo(void* data, VkDeviceSize size)
@@ -58,16 +65,13 @@ void HVkBuffer::copyTo(void* data, VkDeviceSize size)
     memcpy(mpData, data, size);
 }
 
-void HVkBuffer::updateData(void* data)
+void HVkBuffer::updateData(void* data, uint32_t length)
 {
-	void* pData = NULL;
-	vkMapMemory(mVkDevice->logicalDevice, mMemory, 0, mSize, 0, &pData);
-	if( pData == NULL ){
-		return;
+	if( mOffset + length >= mSize )
+	{
+		mOffset = 0;
 	}
-	memcpy(pData, data, mSize);
-	vkUnmapMemory(mVkDevice->logicalDevice, mMemory);
-	pData = NULL;
+	memcpy(mpData + mOffset, data, length);
 }
 
 void HVkBuffer::unmap()
@@ -131,15 +135,27 @@ void HVkBuffer::setupDescriptor(VkDeviceSize size, VkDeviceSize offset)
 
 
 
-VkResult HVkBuffer::flush(VkDeviceSize size, VkDeviceSize offset)
+VkResult HVkBuffer::flush(VkDeviceSize size)
 {
 	VkMappedMemoryRange mappedRange = {};
 	mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
 	mappedRange.memory = mMemory;
-	mappedRange.offset = offset;
+	mappedRange.offset = mOffset;
 	mappedRange.size = size;
-	return vkFlushMappedMemoryRanges(mVkDevice->logicalDevice, 1, &mappedRange);
+	VkResult re = vkFlushMappedMemoryRanges(mVkDevice->logicalDevice, 1, &mappedRange);
+	mOffset += size;
+	if( mOffset >= mSize )
+	{
+		mOffset = 0;
+	}
+	return re;
 }
+
+void HVkBuffer::reset()
+{
+    mOffset = 0;
+}
+
 
 VkResult HVkBuffer::invalidate(VkDeviceSize size, VkDeviceSize offset)
 {
@@ -154,6 +170,12 @@ VkResult HVkBuffer::invalidate(VkDeviceSize size, VkDeviceSize offset)
 
 void HVkBuffer::destroy()
 {
+	if (mpData)
+	{
+		vkUnmapMemory(mVkDevice->logicalDevice, mMemory);
+		mpData = nullptr;
+	}
+
 	if (mBuffer)
 	{
 		vkDestroyBuffer(mVkDevice->logicalDevice, mBuffer, nullptr);

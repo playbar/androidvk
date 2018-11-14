@@ -295,22 +295,26 @@ void VulkanUtils::OnDrawFrame()
         count = 0;
 
     AcquireNextImage();
-    updateUniformBuffer();
 
 
-    updateBufferData();
+    updateUniformBuffer1();
+//    updateBufferData();
+//    bindDescriptorSetTexture1(mTexImage1);
+    drawCommandBuffers();
     drawCommandBuffers1();
 
 //    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 //    vkCmdUpdateBuffer(mCommandBuffers[mImageIndex], mVertexBuffer.mBuffer, 0, bufferSize, vertices.data() );
-    drawCommandBuffers();
+//    bindDescriptorSetTexture1(mTexImage);
 
-
+//    updateUniformBuffer();
 
     drawFrame();
     QueuePresent();
     vkQueueWaitIdle(mVKDevice.presentQueue);
-    mVertexBuffer.destroy();
+
+    mVertexBuffer.reset();
+//    mVertexBuffer.destroy();
 
 }
 
@@ -853,19 +857,19 @@ void VulkanUtils::createVertexBuffer() {
 //
 //    stagBuffer.updateData((void*)vertices.data());
 
-    mVertexBuffer.createBuffer(bufferSize,
+    mVertexBuffer.createBuffer(MAX_BUFFER_SIZE,
                  VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 //    mVertexBuffer.copyBuffer(stagBuffer);
-    mVertexBuffer.updateData((void*)vertices.data());
+    mVertexBuffer.updateData((void*)vertices.data(), bufferSize);
 
-    mVertexBuffer1.createBuffer(bufferSize,
+    mVertexBuffer1.createBuffer(MAX_BUFFER_SIZE,
                                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 //    mVertexBuffer.copyBuffer(stagBuffer);
-    mVertexBuffer1.updateData((void*)vertices1.data());
+    mVertexBuffer1.updateData((void*)vertices1.data(), bufferSize);
 
 
     return;
@@ -880,7 +884,7 @@ void VulkanUtils::createIndexBuffer() {
                  VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    stagBuffer.updateData((void*)indices.data());
+    stagBuffer.updateData((void*)indices.data(), bufferSize);
 
 
     mIndexBuffer.createBuffer(bufferSize,
@@ -1048,17 +1052,15 @@ void VulkanUtils::drawCommandBuffers()
 
 //    HVkBuffer vertexBuffer(&mVKDevice);
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
-    mVertexBuffer.createBuffer(bufferSize,
-                               VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    mVertexBuffer.updateData((void*)vertices.data());
+    VkDeviceSize offset = mVertexBuffer.mOffset;
+    mVertexBuffer.updateData(vertices.data(), bufferSize );
     mVertexBuffer.flush(bufferSize);
 
     vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
 
     VkBuffer vertexBuffers[] = {mVertexBuffer.mBuffer};
-    VkDeviceSize offsets[] = {0};
+    VkDeviceSize offsets[] = {offset};
     vkCmdBindVertexBuffers(mCommandBuffers[i], VERTEXT_BUFFER_ID, 1, vertexBuffers, offsets);
 
 //        VkBuffer vertexBuffers1[] = {mVertexBuffer1.mBuffer};     //error
@@ -1078,19 +1080,36 @@ void VulkanUtils::drawCommandBuffers()
 
 void VulkanUtils::drawCommandBuffers1()
 {
+    static int step = 0;
+
+    ++step;
+    vertices1[0].pos.x = step;
+    vertices1[1].pos.x = step;
+    vertices1[2].pos.x = step + 540;
+    vertices1[3].pos.x = step + 540;
+    if( step > 200 )
+    {
+        step = 0;
+    }
+
+    VkDeviceSize bufferSize = sizeof(vertices1[0]) * vertices1.size();
+    VkDeviceSize offset = mVertexBuffer.mOffset;
+    mVertexBuffer.updateData(vertices1.data(), bufferSize );
+    mVertexBuffer.flush(bufferSize);
+
     size_t i = mImageIndex;
-        vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
+    vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
 
-        VkBuffer vertexBuffers[] = {mVertexBuffer1.mBuffer};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(mCommandBuffers[i], VERTEXT_BUFFER_ID, 1, vertexBuffers, offsets);
+    VkBuffer vertexBuffers[] = {mVertexBuffer.mBuffer};
+    VkDeviceSize offsets[] = {offset};
+    vkCmdBindVertexBuffers(mCommandBuffers[i], VERTEXT_BUFFER_ID, 1, vertexBuffers, offsets);
 
-        vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout,
-                                0, 1, &mDescriptorSet1, 0, nullptr);
+    vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout,
+                            0, 1, &mDescriptorSet1, 0, nullptr);
 
 //        vkCmdBindIndexBuffer(mCommandBuffers[i], mIndexBuffer.mBuffer, 0, VK_INDEX_TYPE_UINT16);
 //        vkCmdDrawIndexed(mCommandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
-        vkCmdDraw(mCommandBuffers[i], static_cast<uint32_t>(vertices1.size()), 1, 0, 0);
+    vkCmdDraw(mCommandBuffers[i], static_cast<uint32_t>(vertices1.size()), 1, 0, 0);
 
 }
 
@@ -1122,6 +1141,48 @@ void VulkanUtils::updateUniformBuffer() {
 //                                     swapchainExtent.width / (float) swapchainExtent.height, 0.1f, 10.0f),
 
     };
+//    ubo.model = glm::rotate(ubo.model, time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    UniformBufferProj uboproj = {
+            .proj = glm::perspective(glm::radians(90.0f),
+                                     swapchainExtent.width / (float) swapchainExtent.height, 0.001f, 1000.0f),
+    };
+//    ubo.proj[1][1] *= -1;
+//    uboproj.proj[1][1] *= -1;
+
+//    mUniformBuffer.map(sizeof(ubo), 0);
+//    mUniformBuffer.copyTo(&ubo, sizeof(ubo));
+//    mUniformBuffer.unmap();
+
+    uboproj.proj *= ubo.view;
+    uboproj.proj *= ubo.model;
+
+    mUniformProj.map(sizeof(uboproj), 0 );
+    mUniformProj.copyTo(&uboproj, sizeof(uboproj));
+    mUniformProj.unmap();
+    return;
+}
+
+void VulkanUtils::updateUniformBuffer1()
+{
+    static auto startTime = std::chrono::high_resolution_clock::now();
+
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1e3f;
+
+    UniformBufferObject ubo = {
+//            .model = glm::rotate(glm::mat4(), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+            .model = glm::scale( glm::mat4(), glm::vec3(0.002, 0.002f, 1.0f)),
+            .view = glm::lookAt(glm::vec3(0.0f, 0.0f, -2.0f),
+                                glm::vec3(0.0f, 0.0f, 1.0f),
+                                glm::vec3(1.0f, 0.0f, 0.0f)),
+
+//            .proj = glm::perspective(glm::radians(45.0f),
+//                                     swapchainExtent.width / (float) swapchainExtent.height, 0.1f, 10.0f),
+
+    };
+//    ubo.model = glm::rotate(ubo.model, time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
     UniformBufferProj uboproj = {
             .proj = glm::perspective(glm::radians(90.0f),
                                      swapchainExtent.width / (float) swapchainExtent.height, 0.001f, 1000.0f),

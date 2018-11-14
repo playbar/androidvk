@@ -70,6 +70,7 @@ public:
     void createIndexBuffer();
     void createUniformBuffer();
     void updateUniformBuffer();
+    void updateUniformBuffer1();
 
 public:
 

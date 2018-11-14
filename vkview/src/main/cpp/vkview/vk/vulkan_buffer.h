@@ -6,6 +6,8 @@
 #include <vulkan_wrapper.h>
 #include "vulkan_device.h"
 
+#define MAX_BUFFER_SIZE 4096
+
 class HVkBuffer
 {
 public:
@@ -15,10 +17,11 @@ public:
 
 	VkDescriptorBufferInfo mDescriptor;
 	VkDeviceSize mSize = 0;
+	VkDeviceSize mOffset = 0;
 	VkDeviceSize alignment = 0;
 	VkBufferUsageFlags usageFlags;
 	VkMemoryPropertyFlags memoryPropertyFlags;
-	void* mpData = nullptr;
+	unsigned  char* mpData = nullptr;
 public:
 	HVkBuffer(VulkanDevice *device);
 	~HVkBuffer();
@@ -29,7 +32,7 @@ public:
 
 	void copyTo(void* data, VkDeviceSize size);
 
-	void updateData(void* data);
+	void updateData(void* data, uint32_t length);
 
 	void unmap();
 
@@ -39,9 +42,11 @@ public:
 
 	void setupDescriptor(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
-	VkResult flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+	VkResult flush(VkDeviceSize size);
 
 	VkResult invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+
+	void reset();
 
 	void destroy();
 

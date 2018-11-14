@@ -128,7 +128,7 @@ void HVkTexture::createTextureImage(const char *imgName)
     stagBuffer.createBuffer(imageSize,VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    stagBuffer.updateData(pixels);
+    stagBuffer.updateData(pixels, imageSize);
 
 //    stagBuffer.map(imageSize, 0);
 //    stagBuffer.copyTo(pixels, static_cast<size_t >(imageSize));
