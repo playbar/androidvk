@@ -1170,7 +1170,7 @@ void VulkanUtils::drawCommandBuffers1()
 
     VkDescriptorBufferInfo bufferInfoProj = {
             .buffer = mUniformProj.mBuffer,
-            .offset = sizeof(UniformBufferProj),
+            .offset = 0,
             .range = sizeof(UniformBufferProj),
     };
 
@@ -1201,7 +1201,7 @@ void VulkanUtils::drawCommandBuffers1()
     vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites.size()),
                            descriptorWrites.data(), 0, nullptr);
 
-    uint32_t uniform_buffer_offset = 0;
+    uint32_t uniform_buffer_offset = sizeof(UniformBufferProj);
 
 
     //////////
