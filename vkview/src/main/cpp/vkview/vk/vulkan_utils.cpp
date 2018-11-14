@@ -185,7 +185,6 @@ bool GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader,
 
 VulkanUtils::VulkanUtils(AAssetManager *assetManager, const char *vertexShader, const char *fragmentShader) :
         mVertexBuffer(&mVKDevice),
-        mVertexBuffer1(&mVKDevice),
         mIndexBuffer(&mVKDevice),
 //        mUniformBuffer(&mVKDevice),
         mUniformProj(&mVKDevice),
@@ -200,7 +199,6 @@ VulkanUtils::VulkanUtils(AAssetManager *assetManager, const char *vertexShader, 
 
 VulkanUtils::VulkanUtils():
         mVertexBuffer(&mVKDevice),
-        mVertexBuffer1(&mVKDevice),
         mIndexBuffer(&mVKDevice),
 //        mUniformBuffer(&mVKDevice),
         mUniformProj(&mVKDevice),
@@ -297,23 +295,27 @@ void VulkanUtils::OnDrawFrame()
     AcquireNextImage();
 
 
-    updateUniformBuffer1();
 //    updateBufferData();
-//    bindDescriptorSetTexture1(mTexImage1);
+
+    updateUniformBuffer();
     drawCommandBuffers();
+
+    updateUniformBuffer1();
     drawCommandBuffers1();
+
 
 //    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 //    vkCmdUpdateBuffer(mCommandBuffers[mImageIndex], mVertexBuffer.mBuffer, 0, bufferSize, vertices.data() );
 //    bindDescriptorSetTexture1(mTexImage);
 
-//    updateUniformBuffer();
+//
 
     drawFrame();
     QueuePresent();
     vkQueueWaitIdle(mVKDevice.presentQueue);
 
     mVertexBuffer.reset();
+    mUniformProj.reset();
 //    mVertexBuffer.destroy();
 
 }
@@ -335,7 +337,6 @@ void VulkanUtils::cleanUp() {
 //    mUniformBuffer.destroy();
     mIndexBuffer.destroy();
     mVertexBuffer.destroy();
-    mVertexBuffer1.destroy();
 
     mTexImage.destroyImage();
     mTexImage.destroySampler();
@@ -864,14 +865,6 @@ void VulkanUtils::createVertexBuffer() {
 //    mVertexBuffer.copyBuffer(stagBuffer);
     mVertexBuffer.updateData((void*)vertices.data(), bufferSize);
 
-    mVertexBuffer1.createBuffer(MAX_BUFFER_SIZE,
-                               VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-//    mVertexBuffer.copyBuffer(stagBuffer);
-    mVertexBuffer1.updateData((void*)vertices1.data(), bufferSize);
-
-
     return;
 }
 
@@ -902,7 +895,7 @@ void VulkanUtils::createUniformBuffer() {
 //                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkDeviceSize bufferSizeProj = sizeof(UniformBufferProj);
-    mUniformProj.createBuffer(bufferSizeProj,
+    mUniformProj.createBuffer(MAX_BUFFER_SIZE,
                                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
@@ -961,7 +954,6 @@ void VulkanUtils::bindDescriptorSet()
     };
 
 
-
     std::array<VkWriteDescriptorSet, 1> descriptorWrites = {};
 
     descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -973,19 +965,28 @@ void VulkanUtils::bindDescriptorSet()
     descriptorWrites[0].pBufferInfo = &bufferInfoProj;
 
 
-//    descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-//    descriptorWrites[1].dstSet = mDescriptorSet;
-//    descriptorWrites[1].dstBinding = 1;
-//    descriptorWrites[1].dstArrayElement = 0;
-//    descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-//    descriptorWrites[1].descriptorCount = 1;
-//    descriptorWrites[1].pBufferInfo = &bufferInfoProj;
-
     vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 
-    descriptorWrites[0].dstSet = mDescriptorSet1;
-    vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 
+    //////////////
+
+    VkDescriptorBufferInfo bufferInfoProj1 = {
+            .buffer = mUniformProj.mBuffer,
+            .offset = sizeof(UniformBufferProj),
+            .range = sizeof(UniformBufferProj),
+    };
+    std::array<VkWriteDescriptorSet, 1> descriptorWrites1 = {};
+
+    descriptorWrites1[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites1[0].dstSet = mDescriptorSet1;
+    descriptorWrites1[0].dstBinding = 1;
+    descriptorWrites1[0].dstArrayElement = 0;
+    descriptorWrites1[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWrites1[0].descriptorCount = 1;
+    descriptorWrites1[0].pBufferInfo = &bufferInfoProj1;
+    vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites1.size()), descriptorWrites1.data(), 0, nullptr);
+
+    return;
 }
 
 void VulkanUtils::bindDescriptorSetTexture(HVkTexture &texImg)
@@ -1141,25 +1142,19 @@ void VulkanUtils::updateUniformBuffer() {
 //                                     swapchainExtent.width / (float) swapchainExtent.height, 0.1f, 10.0f),
 
     };
-//    ubo.model = glm::rotate(ubo.model, time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.model = glm::rotate(ubo.model, time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
     UniformBufferProj uboproj = {
             .proj = glm::perspective(glm::radians(90.0f),
                                      swapchainExtent.width / (float) swapchainExtent.height, 0.001f, 1000.0f),
     };
-//    ubo.proj[1][1] *= -1;
-//    uboproj.proj[1][1] *= -1;
-
-//    mUniformBuffer.map(sizeof(ubo), 0);
-//    mUniformBuffer.copyTo(&ubo, sizeof(ubo));
-//    mUniformBuffer.unmap();
 
     uboproj.proj *= ubo.view;
     uboproj.proj *= ubo.model;
 
-    mUniformProj.map(sizeof(uboproj), 0 );
-    mUniformProj.copyTo(&uboproj, sizeof(uboproj));
-    mUniformProj.unmap();
+    mUniformProj.updateData(&uboproj, sizeof(uboproj));
+    mUniformProj.flush(sizeof(uboproj));
+
     return;
 }
 
@@ -1187,19 +1182,13 @@ void VulkanUtils::updateUniformBuffer1()
             .proj = glm::perspective(glm::radians(90.0f),
                                      swapchainExtent.width / (float) swapchainExtent.height, 0.001f, 1000.0f),
     };
-//    ubo.proj[1][1] *= -1;
-//    uboproj.proj[1][1] *= -1;
-
-//    mUniformBuffer.map(sizeof(ubo), 0);
-//    mUniformBuffer.copyTo(&ubo, sizeof(ubo));
-//    mUniformBuffer.unmap();
 
     uboproj.proj *= ubo.view;
     uboproj.proj *= ubo.model;
 
-    mUniformProj.map(sizeof(uboproj), 0 );
-    mUniformProj.copyTo(&uboproj, sizeof(uboproj));
-    mUniformProj.unmap();
+    mUniformProj.updateData(&uboproj, sizeof(uboproj));
+    mUniformProj.flush(sizeof(uboproj));
+
     return;
 }
 
@@ -1242,26 +1231,27 @@ void VulkanUtils::AcquireNextImage()
 
 }
 
-void VulkanUtils::updateBufferData()
-{
-    static int step = 0;
 
-    ++step;
-    vertices1[0].pos.x = step;
-    vertices1[1].pos.x = step;
-    vertices1[2].pos.x = step + 540;
-    vertices1[3].pos.x = step + 540;
-    if( step > 200 )
-    {
-        step = 0;
-    }
-
-    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
-    vkCmdUpdateBuffer(mCommandBuffers[mImageIndex], mVertexBuffer1.mBuffer, 0, bufferSize, vertices1.data() );
-
-//    mVertexBuffer1.updateData(vertices1.data());
-
-}
+//void VulkanUtils::updateBufferData()
+//{
+//    static int step = 0;
+//
+//    ++step;
+//    vertices1[0].pos.x = step;
+//    vertices1[1].pos.x = step;
+//    vertices1[2].pos.x = step + 540;
+//    vertices1[3].pos.x = step + 540;
+//    if( step > 200 )
+//    {
+//        step = 0;
+//    }
+//
+//    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+//    vkCmdUpdateBuffer(mCommandBuffers[mImageIndex], mVertexBuffer1.mBuffer, 0, bufferSize, vertices1.data() );
+//
+////    mVertexBuffer1.updateData(vertices1.data());
+//
+//}
 
 void VulkanUtils::drawFrame() {
 
