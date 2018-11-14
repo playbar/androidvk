@@ -1062,7 +1062,6 @@ void VulkanUtils::drawCommandBuffers()
 
     size_t i = mImageIndex;
 
-
     VkDescriptorSet descriptorSet;
 
     VkDescriptorSetAllocateInfo allocInfo = {
@@ -1135,7 +1134,7 @@ void VulkanUtils::drawCommandBuffers()
 //        vkCmdDrawIndexed(mCommandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
     vkCmdDraw(mCommandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
-    vkFreeDescriptorSets(mVKDevice.logicalDevice, mDescriptorPools[i], 1, &descriptorSet);
+//    vkFreeDescriptorSets(mVKDevice.logicalDevice, mDescriptorPools[i], 1, &descriptorSet);
 //    vertexBuffer.destroy();
 
 }
@@ -1144,7 +1143,6 @@ void VulkanUtils::drawCommandBuffers()
 void VulkanUtils::drawCommandBuffers1()
 {
     static int step = 0;
-
     ++step;
     vertices1[0].pos.x = step;
     vertices1[1].pos.x = step;
@@ -1155,12 +1153,65 @@ void VulkanUtils::drawCommandBuffers1()
         step = 0;
     }
 
+    size_t i = mImageIndex;
+    /////////
+    VkDescriptorSet descriptorSet;
+
+    VkDescriptorSetAllocateInfo allocInfo = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+            .descriptorPool = mDescriptorPools[i],
+            .descriptorSetCount = 1,
+            .pSetLayouts = &mDescriptorSetLayout,
+    };
+    if (vkAllocateDescriptorSets(mVKDevice.logicalDevice, &allocInfo, &descriptorSet) != VK_SUCCESS) {
+//        throw std::runtime_error("failed to allocate descriptor set!");
+        return;
+    }
+
+    VkDescriptorBufferInfo bufferInfoProj = {
+            .buffer = mUniformProj.mBuffer,
+            .offset = sizeof(UniformBufferProj),
+            .range = sizeof(UniformBufferProj),
+    };
+
+    std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
+    descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[0].dstSet = descriptorSet;
+    descriptorWrites[0].dstBinding = 1;
+    descriptorWrites[0].dstArrayElement = 0;
+    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    descriptorWrites[0].descriptorCount = 1;
+    descriptorWrites[0].pBufferInfo = &bufferInfoProj;
+
+    VkDescriptorImageInfo imageInfo = {
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .imageView = mTexImage1.mTextureImageView,
+            .sampler = mTexImage1.mTextureSampler,
+    };
+
+    descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[1].dstSet = descriptorSet;
+    descriptorWrites[1].dstBinding = 10;
+    descriptorWrites[1].dstArrayElement = 0;
+    descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrites[1].descriptorCount = 1;
+    descriptorWrites[1].pImageInfo = &imageInfo;
+
+
+    vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites.size()),
+                           descriptorWrites.data(), 0, nullptr);
+
+    uint32_t uniform_buffer_offset = 0;
+
+
+    //////////
+
     VkDeviceSize bufferSize = sizeof(vertices1[0]) * vertices1.size();
     VkDeviceSize offset = mVertexBuffer.mOffset;
     mVertexBuffer.updateData(vertices1.data(), bufferSize );
     mVertexBuffer.flush(bufferSize);
 
-    size_t i = mImageIndex;
+
     vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
 
     VkBuffer vertexBuffers[] = {mVertexBuffer.mBuffer};
@@ -1168,7 +1219,7 @@ void VulkanUtils::drawCommandBuffers1()
     vkCmdBindVertexBuffers(mCommandBuffers[i], VERTEXT_BUFFER_ID, 1, vertexBuffers, offsets);
 
     vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout,
-                            0, 1, &mDescriptorSet1, 0, nullptr);
+                            0, 1, &descriptorSet, 1, &uniform_buffer_offset);
 
 //        vkCmdBindIndexBuffer(mCommandBuffers[i], mIndexBuffer.mBuffer, 0, VK_INDEX_TYPE_UINT16);
 //        vkCmdDrawIndexed(mCommandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
@@ -1285,11 +1336,15 @@ void VulkanUtils::AcquireNextImage()
     size_t i = mImageIndex;
 
 
+    mVKDevice.resetCommandPool();
+    vkResetCommandBuffer(mCommandBuffers[i], 0);
     vkBeginCommandBuffer(mCommandBuffers[i], &beginInfo);
 
     renderPassInfo.framebuffer = mFramebuffers[i];
 
     vkCmdBeginRenderPass(mCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    vkResetDescriptorPool(mVKDevice.logicalDevice, mDescriptorPools[i], 0);
 
 }
 

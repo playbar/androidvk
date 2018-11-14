@@ -407,6 +407,11 @@ void VulkanDevice::createCommandPool()
     return;
 }
 
+void VulkanDevice::resetCommandPool()
+{
+    vkResetCommandPool(logicalDevice, mCommandPool, 0);
+}
+
 
 VkCommandBuffer VulkanDevice::beginSingleTimeCommands()
 {

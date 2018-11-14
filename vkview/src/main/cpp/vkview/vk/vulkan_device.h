@@ -28,6 +28,7 @@ public:
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
     void createCommandPool();
+    void resetCommandPool();
     VkCommandBuffer beginSingleTimeCommands();
     void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 
