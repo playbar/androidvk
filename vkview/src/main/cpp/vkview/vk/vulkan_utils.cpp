@@ -476,7 +476,7 @@ void VulkanUtils::createDescriptorSetLayout() {
 
     VkDescriptorSetLayoutBinding uboLayoutProjBinding = {
             .binding = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
             .descriptorCount = 1,
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
             .pImmutableSamplers = nullptr,
@@ -903,10 +903,10 @@ void VulkanUtils::createUniformBuffer() {
 
 void VulkanUtils::createDescriptorPool() {
     std::array<VkDescriptorPoolSize, 2> poolSizes = {};
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = 10;
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    poolSizes[0].descriptorCount = 100;
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = 10;
+    poolSizes[1].descriptorCount = 100;
 
     VkDescriptorPoolCreateInfo poolInfo = {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
@@ -916,6 +916,17 @@ void VulkanUtils::createDescriptorPool() {
     };
     if (vkCreateDescriptorPool(mVKDevice.logicalDevice, &poolInfo, nullptr, &mDescriptorPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
+    }
+    /////
+    int size = swapchainImages.size();
+    for( int i = 0; i < size; ++i )
+    {
+        VkDescriptorPool despool;
+        if (vkCreateDescriptorPool(mVKDevice.logicalDevice, &poolInfo, nullptr, &despool) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create descriptor pool!");
+        }
+        mDescriptorPools.push_back(despool);
     }
 }
 
@@ -960,7 +971,7 @@ void VulkanUtils::bindDescriptorSet()
     descriptorWrites[0].dstSet = mDescriptorSet;
     descriptorWrites[0].dstBinding = 1;
     descriptorWrites[0].dstArrayElement = 0;
-    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     descriptorWrites[0].descriptorCount = 1;
     descriptorWrites[0].pBufferInfo = &bufferInfoProj;
 
@@ -981,7 +992,7 @@ void VulkanUtils::bindDescriptorSet()
     descriptorWrites1[0].dstSet = mDescriptorSet1;
     descriptorWrites1[0].dstBinding = 1;
     descriptorWrites1[0].dstArrayElement = 0;
-    descriptorWrites1[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWrites1[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     descriptorWrites1[0].descriptorCount = 1;
     descriptorWrites1[0].pBufferInfo = &bufferInfoProj1;
     vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites1.size()), descriptorWrites1.data(), 0, nullptr);
@@ -1051,6 +1062,56 @@ void VulkanUtils::drawCommandBuffers()
 
     size_t i = mImageIndex;
 
+
+    VkDescriptorSet descriptorSet;
+
+    VkDescriptorSetAllocateInfo allocInfo = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+            .descriptorPool = mDescriptorPools[i],
+            .descriptorSetCount = 1,
+            .pSetLayouts = &mDescriptorSetLayout,
+    };
+    if (vkAllocateDescriptorSets(mVKDevice.logicalDevice, &allocInfo, &descriptorSet) != VK_SUCCESS) {
+//        throw std::runtime_error("failed to allocate descriptor set!");
+        return;
+    }
+
+    VkDescriptorBufferInfo bufferInfoProj = {
+            .buffer = mUniformProj.mBuffer,
+            .offset = 0,
+            .range = sizeof(UniformBufferProj),
+    };
+
+    std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
+    descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[0].dstSet = descriptorSet;
+    descriptorWrites[0].dstBinding = 1;
+    descriptorWrites[0].dstArrayElement = 0;
+    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    descriptorWrites[0].descriptorCount = 1;
+    descriptorWrites[0].pBufferInfo = &bufferInfoProj;
+
+    VkDescriptorImageInfo imageInfo = {
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .imageView = mTexImage.mTextureImageView,
+            .sampler = mTexImage.mTextureSampler,
+    };
+
+    descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[1].dstSet = descriptorSet;
+    descriptorWrites[1].dstBinding = 10;
+    descriptorWrites[1].dstArrayElement = 0;
+    descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrites[1].descriptorCount = 1;
+    descriptorWrites[1].pImageInfo = &imageInfo;
+
+
+    vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites.size()),
+                           descriptorWrites.data(), 0, nullptr);
+
+    uint32_t uniform_buffer_offset = 0;
+
+    /////////////////
 //    HVkBuffer vertexBuffer(&mVKDevice);
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
@@ -1068,12 +1129,13 @@ void VulkanUtils::drawCommandBuffers()
 //        vkCmdBindVertexBuffers(mCommandBuffers[i], 1, 1, vertexBuffers1, offsets); // error
 
     vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout,
-                            0, 1, &mDescriptorSet, 0, nullptr);
+                            0, 1, &descriptorSet, 1, &uniform_buffer_offset);
 
 //        vkCmdBindIndexBuffer(mCommandBuffers[i], mIndexBuffer.mBuffer, 0, VK_INDEX_TYPE_UINT16);
 //        vkCmdDrawIndexed(mCommandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
     vkCmdDraw(mCommandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
+    vkFreeDescriptorSets(mVKDevice.logicalDevice, mDescriptorPools[i], 1, &descriptorSet);
 //    vertexBuffer.destroy();
 
 }

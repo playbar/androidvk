@@ -118,6 +118,7 @@ public:
     std::vector<VkImageView> swapchainImageViews;
     std::vector<VkFramebuffer> mFramebuffers;
     std::vector<VkCommandBuffer> mCommandBuffers;
+    std::vector<VkDescriptorPool >mDescriptorPools;
 
     VkPipelineInputAssemblyStateCreateInfo mInputAssembly;
 
