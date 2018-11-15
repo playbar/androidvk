@@ -66,9 +66,6 @@ public:
 
 public:
 
-    void createVertexBuffer();
-    void createIndexBuffer();
-    void createUniformBuffer();
     void updateUniformBuffer();
     void updateUniformBuffer1();
 
@@ -114,17 +111,25 @@ public:
 
     VkFormat swapchainImageFormat;
     VkExtent2D swapchainExtent;
-    std::vector<VkImage> swapchainImages;
-    std::vector<VkImageView> swapchainImageViews;
+    std::vector<VkImage> mSwapchainImages;
+    std::vector<VkImageView> mSwapchainImageViews;
     std::vector<VkFramebuffer> mFramebuffers;
     std::vector<VkCommandBuffer> mCommandBuffers;
     std::vector<VkDescriptorPool >mDescriptorPools;
 
     VkPipelineInputAssemblyStateCreateInfo mInputAssembly;
 
-    HVkBuffer mVertexBuffer;
-    HVkBuffer mIndexBuffer;
-    HVkBuffer mUniformProj;
+//    HVkBuffer mVertexBuffer;
+//    HVkBuffer mIndexBuffer;
+//    HVkBuffer mUniformBuffer;
+
+    std::vector<HVkBuffer*> mVertexBuffers;
+    std::vector<HVkBuffer*> mIndexBuffers;
+    std::vector<HVkBuffer*> mUniformBuffers;
+//    void createVertexBuffer();
+//    void createIndexBuffer();
+//    void createUniformBuffer();
+    void createCacheBuffers();
 
     HVkTexture mTexImage;
     HVkTexture mTexImage1;
