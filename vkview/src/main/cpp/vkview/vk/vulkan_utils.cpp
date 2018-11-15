@@ -259,15 +259,9 @@ void VulkanUtils::OnSurfaceCreated()
     createUniformBuffer();
     createDescriptorPool();
     createDescriptorSet();
-    bindDescriptorSet();
+//    bindDescriptorSet();
 
     createCommandBuffers();
-//    drawCommandBuffers();
-
-
-
-//    drawCommandBuffers();
-
     createSemaphores();
 }
 
@@ -1170,7 +1164,7 @@ void VulkanUtils::drawCommandBuffers1()
 
     VkDescriptorBufferInfo bufferInfoProj = {
             .buffer = mUniformProj.mBuffer,
-            .offset = 0,
+            .offset = sizeof(UniformBufferProj),
             .range = sizeof(UniformBufferProj),
     };
 
@@ -1201,7 +1195,7 @@ void VulkanUtils::drawCommandBuffers1()
     vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites.size()),
                            descriptorWrites.data(), 0, nullptr);
 
-    uint32_t uniform_buffer_offset = sizeof(UniformBufferProj);
+    uint32_t uniform_buffer_offset = 0; //sizeof(UniformBufferProj);
 
 
     //////////

@@ -19,7 +19,12 @@ HVkBuffer::~HVkBuffer()
 
 void HVkBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
 {
+	float data[2];
+	data[0] = 1;
+	data[1] = 2;
+
 	uint32_t leng = VK_WHOLE_SIZE;
+	leng = sizeof( data);
 	mSize = size;
 	VkBufferCreateInfo bufferInfo = {
 			.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
