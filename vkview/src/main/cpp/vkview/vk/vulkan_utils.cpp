@@ -274,20 +274,7 @@ void VulkanUtils::OnSurfaceChanged()
 
 void VulkanUtils::OnDrawFrame()
 {
-    static int count = 0;
-    if( count < 500 ) {
-        bindDescriptorSetTexture(mTexImage);
-        bindDescriptorSetTexture1(mTexImage1);
-    }else{
-        bindDescriptorSetTexture(mTexImage1);
-        bindDescriptorSetTexture1(mTexImage);
-    }
-    ++count;
-    if( count > 1000)
-        count = 0;
-
     AcquireNextImage();
-
 
 //    updateBufferData();
 
@@ -467,6 +454,13 @@ void VulkanUtils::createRenderPass()
 
 void VulkanUtils::createDescriptorSetLayout() {
 
+    VkDescriptorSetLayoutBinding uboLayoutBinding = {
+            .binding = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .pImmutableSamplers = nullptr,
+    };
 
     VkDescriptorSetLayoutBinding uboLayoutProjBinding = {
             .binding = 1,
@@ -484,8 +478,11 @@ void VulkanUtils::createDescriptorSetLayout() {
             .pImmutableSamplers = nullptr,
     };
 
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutProjBinding,
-                                                            samplerLayoutBinding};
+    std::array<VkDescriptorSetLayoutBinding, 3> bindings = {
+            uboLayoutBinding,
+            uboLayoutProjBinding,
+            samplerLayoutBinding
+            };
 
     VkDescriptorSetLayoutCreateInfo layoutInfo = {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
@@ -1069,20 +1066,37 @@ void VulkanUtils::drawCommandBuffers()
         return;
     }
 
+    VkDeviceSize offsetUni = 0;
+    VkDescriptorBufferInfo bufferInfo = {
+            .buffer = mUniformProj.mBuffer,
+            .offset = offsetUni,
+            .range = sizeof(UniformBufferObject),
+    };
+
+    offsetUni = sizeof(UniformBufferObject);
     VkDescriptorBufferInfo bufferInfoProj = {
             .buffer = mUniformProj.mBuffer,
-            .offset = 0,
+            .offset = offsetUni,
             .range = sizeof(UniformBufferProj),
     };
 
-    std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
+    std::array<VkWriteDescriptorSet, 3> descriptorWrites = {};
+
     descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptorWrites[0].dstSet = descriptorSet;
-    descriptorWrites[0].dstBinding = 1;
+    descriptorWrites[0].dstBinding = 0;
     descriptorWrites[0].dstArrayElement = 0;
-    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptorWrites[0].descriptorCount = 1;
-    descriptorWrites[0].pBufferInfo = &bufferInfoProj;
+    descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+    descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[1].dstSet = descriptorSet;
+    descriptorWrites[1].dstBinding = 1;
+    descriptorWrites[1].dstArrayElement = 0;
+    descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    descriptorWrites[1].descriptorCount = 1;
+    descriptorWrites[1].pBufferInfo = &bufferInfoProj;
 
     VkDescriptorImageInfo imageInfo = {
             .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -1090,13 +1104,13 @@ void VulkanUtils::drawCommandBuffers()
             .sampler = mTexImage.mTextureSampler,
     };
 
-    descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[1].dstSet = descriptorSet;
-    descriptorWrites[1].dstBinding = 10;
-    descriptorWrites[1].dstArrayElement = 0;
-    descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptorWrites[1].descriptorCount = 1;
-    descriptorWrites[1].pImageInfo = &imageInfo;
+    descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[2].dstSet = descriptorSet;
+    descriptorWrites[2].dstBinding = 10;
+    descriptorWrites[2].dstArrayElement = 0;
+    descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrites[2].descriptorCount = 1;
+    descriptorWrites[2].pImageInfo = &imageInfo;
 
 
     vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites.size()),
@@ -1162,20 +1176,38 @@ void VulkanUtils::drawCommandBuffers1()
         return;
     }
 
+    VkDeviceSize offsetUni = sizeof(UniformBufferObject) + sizeof(UniformBufferProj);
+    VkDescriptorBufferInfo bufferInfo = {
+            .buffer = mUniformProj.mBuffer,
+            .offset = offsetUni,
+            .range = sizeof(UniformBufferObject),
+    };
+
+    offsetUni += sizeof(UniformBufferObject);
+
     VkDescriptorBufferInfo bufferInfoProj = {
             .buffer = mUniformProj.mBuffer,
-            .offset = sizeof(UniformBufferProj),
+            .offset = offsetUni,
             .range = sizeof(UniformBufferProj),
     };
 
-    std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
+    std::array<VkWriteDescriptorSet, 3> descriptorWrites = {};
+
     descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptorWrites[0].dstSet = descriptorSet;
-    descriptorWrites[0].dstBinding = 1;
+    descriptorWrites[0].dstBinding = 0;
     descriptorWrites[0].dstArrayElement = 0;
-    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptorWrites[0].descriptorCount = 1;
-    descriptorWrites[0].pBufferInfo = &bufferInfoProj;
+    descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+    descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[1].dstSet = descriptorSet;
+    descriptorWrites[1].dstBinding = 1;
+    descriptorWrites[1].dstArrayElement = 0;
+    descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    descriptorWrites[1].descriptorCount = 1;
+    descriptorWrites[1].pBufferInfo = &bufferInfoProj;
 
     VkDescriptorImageInfo imageInfo = {
             .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -1183,13 +1215,13 @@ void VulkanUtils::drawCommandBuffers1()
             .sampler = mTexImage1.mTextureSampler,
     };
 
-    descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[1].dstSet = descriptorSet;
-    descriptorWrites[1].dstBinding = 10;
-    descriptorWrites[1].dstArrayElement = 0;
-    descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptorWrites[1].descriptorCount = 1;
-    descriptorWrites[1].pImageInfo = &imageInfo;
+    descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[2].dstSet = descriptorSet;
+    descriptorWrites[2].dstBinding = 10;
+    descriptorWrites[2].dstArrayElement = 0;
+    descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrites[2].descriptorCount = 1;
+    descriptorWrites[2].pImageInfo = &imageInfo;
 
 
     vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites.size()),
@@ -1256,8 +1288,12 @@ void VulkanUtils::updateUniformBuffer() {
                                      swapchainExtent.width / (float) swapchainExtent.height, 0.001f, 1000.0f),
     };
 
-    uboproj.proj *= ubo.view;
-    uboproj.proj *= ubo.model;
+    mUniformProj.updateData(&ubo, sizeof(ubo));
+    mUniformProj.flush(sizeof(ubo));
+
+
+//    uboproj.proj *= ubo.view;
+//    uboproj.proj *= ubo.model;
 
     mUniformProj.updateData(&uboproj, sizeof(uboproj));
     mUniformProj.flush(sizeof(uboproj));
@@ -1290,8 +1326,11 @@ void VulkanUtils::updateUniformBuffer1()
                                      swapchainExtent.width / (float) swapchainExtent.height, 0.001f, 1000.0f),
     };
 
-    uboproj.proj *= ubo.view;
-    uboproj.proj *= ubo.model;
+    mUniformProj.updateData(&ubo, sizeof(ubo));
+    mUniformProj.flush(sizeof(ubo));
+
+//    uboproj.proj *= ubo.view;
+//    uboproj.proj *= ubo.model;
 
     mUniformProj.updateData(&uboproj, sizeof(uboproj));
     mUniformProj.flush(sizeof(uboproj));

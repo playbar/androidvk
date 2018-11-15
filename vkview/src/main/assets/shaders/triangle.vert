@@ -4,6 +4,11 @@
 layout(location = 0) in vec2 inPosition;
 layout(location = 1) in vec2 inTexCoord;
 
+layout(binding = 0) uniform UniformBufferObject {
+    mat4 model;
+    mat4 view;
+} ubo;
+
 layout(binding = 1) uniform UProj {
     mat4 proj;
 } uproj;
@@ -16,6 +21,6 @@ out gl_PerVertex
 };
 
 void main() {
-    gl_Position = uproj.proj * vec4(inPosition, 1.0, 1.0);
+    gl_Position = uproj.proj * ubo.view * ubo.model * vec4(inPosition, 0.0, 1.0);
     fragTexCoord = inTexCoord;
 }
