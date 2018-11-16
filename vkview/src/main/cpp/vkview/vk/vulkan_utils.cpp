@@ -296,8 +296,7 @@ void VulkanUtils::OnDrawFrame()
     QueuePresent();
     vkQueueWaitIdle(mVKDevice.presentQueue);
 
-    mVertexBuffers[mImageIndex]->reset();
-    mUniformBuffers[mImageIndex]->reset();
+
 //    mVertexBuffer.destroy();
 
 }
@@ -1095,7 +1094,9 @@ void VulkanUtils::drawCommandBuffers()
         return;
     }
 
+    uint32_t uniform_buffer_offset[2];
     VkDeviceSize offsetUni = 0;
+    uniform_buffer_offset[0] = 0;
     VkDescriptorBufferInfo bufferInfo = {
             .buffer = mUniformBuffers[mImageIndex]->mBuffer,
             .offset = offsetUni,
@@ -1103,6 +1104,7 @@ void VulkanUtils::drawCommandBuffers()
     };
 
     offsetUni = sizeof(UniformBufferObject);
+    uniform_buffer_offset[1] = offsetUni;
     VkDescriptorBufferInfo bufferInfoProj = {
             .buffer = mUniformBuffers[mImageIndex]->mBuffer,
             .offset = offsetUni,
@@ -1115,7 +1117,7 @@ void VulkanUtils::drawCommandBuffers()
     descriptorWrites[0].dstSet = descriptorSet;
     descriptorWrites[0].dstBinding = 0;
     descriptorWrites[0].dstArrayElement = 0;
-    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     descriptorWrites[0].descriptorCount = 1;
     descriptorWrites[0].pBufferInfo = &bufferInfo;
 
@@ -1145,8 +1147,6 @@ void VulkanUtils::drawCommandBuffers()
     vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites.size()),
                            descriptorWrites.data(), 0, nullptr);
 
-    uint32_t uniform_buffer_offset = 0;
-
     /////////////////
 //    HVkBuffer vertexBuffer(&mVKDevice);
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
@@ -1166,7 +1166,7 @@ void VulkanUtils::drawCommandBuffers()
 //        vkCmdBindVertexBuffers(mCommandBuffers[i], 1, 1, vertexBuffers1, offsets); // error
 
     vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout,
-                            0, 1, &descriptorSet, 1, &uniform_buffer_offset);
+                            0, 1, &descriptorSet, 0, uniform_buffer_offset);
 
 //        vkCmdBindIndexBuffer(mCommandBuffers[i], mIndexBuffer.mBuffer, 0, VK_INDEX_TYPE_UINT16);
 //        vkCmdDrawIndexed(mCommandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
@@ -1206,7 +1206,9 @@ void VulkanUtils::drawCommandBuffers1()
         return;
     }
 
+    uint32_t uniform_buffer_offset; //sizeof(UniformBufferProj);
     VkDeviceSize offsetUni = sizeof(UniformBufferObject) + sizeof(UniformBufferProj);
+    uniform_buffer_offset = offsetUni;
     VkDescriptorBufferInfo bufferInfo = {
             .buffer = mUniformBuffers[mImageIndex]->mBuffer,
             .offset = offsetUni,
@@ -1227,7 +1229,7 @@ void VulkanUtils::drawCommandBuffers1()
     descriptorWrites[0].dstSet = descriptorSet;
     descriptorWrites[0].dstBinding = 0;
     descriptorWrites[0].dstArrayElement = 0;
-    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     descriptorWrites[0].descriptorCount = 1;
     descriptorWrites[0].pBufferInfo = &bufferInfo;
 
@@ -1257,8 +1259,6 @@ void VulkanUtils::drawCommandBuffers1()
     vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites.size()),
                            descriptorWrites.data(), 0, nullptr);
 
-    uint32_t uniform_buffer_offset = 0; //sizeof(UniformBufferProj);
-
 
     //////////
 
@@ -1276,7 +1276,7 @@ void VulkanUtils::drawCommandBuffers1()
     vkCmdBindVertexBuffers(mCommandBuffers[i], VERTEXT_BUFFER_ID, 1, vertexBuffers, offsets);
 
     vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout,
-                            0, 1, &descriptorSet, 1, &uniform_buffer_offset);
+                            0, 1, &descriptorSet, 0, &uniform_buffer_offset);
 
 //        vkCmdBindIndexBuffer(mCommandBuffers[i], mIndexBuffer.mBuffer, 0, VK_INDEX_TYPE_UINT16);
 //        vkCmdDrawIndexed(mCommandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
@@ -1399,7 +1399,8 @@ void VulkanUtils::AcquireNextImage()
 
     size_t i = mImageIndex;
 
-
+    mVertexBuffers[mImageIndex]->reset();
+    mUniformBuffers[mImageIndex]->reset();
     mVKDevice.resetCommandPool();
     vkResetCommandBuffer(mCommandBuffers[i], 0);
     vkBeginCommandBuffer(mCommandBuffers[i], &beginInfo);

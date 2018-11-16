@@ -50,9 +50,9 @@ void HVkBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
 	}
 
 	vkBindBufferMemory(mVkDevice->logicalDevice, mBuffer, mMemory, 0);
-	void* mapped_ptr = nullptr;
-	vkMapMemory(mVkDevice->logicalDevice, mMemory, 0, mSize, 0, &mapped_ptr);
-	mpData = (unsigned char*)mapped_ptr;
+//	void* mapped_ptr = nullptr;
+//	vkMapMemory(mVkDevice->logicalDevice, mMemory, 0, mSize, 0, &mapped_ptr);
+//	mpData = (unsigned char*)mapped_ptr;
 	return;
 }
 
@@ -73,11 +73,21 @@ void HVkBuffer::copyTo(void* data, VkDeviceSize size)
 
 void HVkBuffer::updateData(void* data, uint32_t length)
 {
+	void* mapped_ptr = nullptr;
+	vkMapMemory(mVkDevice->logicalDevice, mMemory, 0, mSize, 0, &mapped_ptr);
+	mpData = (unsigned char*)mapped_ptr;
+
 	if( mOffset + length >= mSize )
 	{
 		mOffset = 0;
 	}
 	memcpy(mpData + mOffset, data, length);
+
+	if (mpData)
+	{
+		vkUnmapMemory(mVkDevice->logicalDevice, mMemory);
+		mpData = nullptr;
+	}
 }
 
 void HVkBuffer::unmap()
