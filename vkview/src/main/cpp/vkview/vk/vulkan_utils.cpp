@@ -949,23 +949,80 @@ void VulkanUtils::createDescriptorPool() {
     }
 }
 
-void VulkanUtils::createDescriptorSet() {
-    VkDescriptorSetLayout layouts[] = {mDescriptorSetLayout};
+VkDescriptorSet VulkanUtils::createDescriptorSet() {
+
+    VkDescriptorSet descriptorSet;
+
     VkDescriptorSetAllocateInfo allocInfo = {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            .descriptorPool = mDescriptorPool,
+            .descriptorPool = mDescriptorPools[mImageIndex],
             .descriptorSetCount = 1,
-            .pSetLayouts = layouts,
+            .pSetLayouts = &mDescriptorSetLayout,
     };
-    if (vkAllocateDescriptorSets(mVKDevice.logicalDevice, &allocInfo, &mDescriptorSet) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate descriptor set!");
+    if (vkAllocateDescriptorSets(mVKDevice.logicalDevice, &allocInfo, &descriptorSet) != VK_SUCCESS) {
+//        throw std::runtime_error("failed to allocate descriptor set!");
+        return NULL;
     }
 
+    uint32_t uniform_buffer_offset[2];
+    VkDeviceSize offsetUni = OFFSET_VALUE;
+    uniform_buffer_offset[0] = 0;
 
-    if (vkAllocateDescriptorSets(mVKDevice.logicalDevice, &allocInfo, &mDescriptorSet1) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate descriptor set!");
-    }
+    VkDescriptorBufferInfo bufferInfo = {};
+    bufferInfo.buffer = mUniformBuffers[mImageIndex]->mBuffer;
+    bufferInfo.offset = offsetUni;
+    bufferInfo.range = sizeof(UniformBufferObject);
 
+
+    offsetUni += sizeof(UniformBufferObject);
+    uniform_buffer_offset[1] = offsetUni;
+    VkDescriptorBufferInfo bufferInfoProj = {};
+    bufferInfoProj.buffer = mUniformBuffers[mImageIndex]->mBuffer;
+    bufferInfoProj.offset = offsetUni;
+    bufferInfoProj.range = sizeof(UniformBufferProj);
+
+
+    std::array<VkWriteDescriptorSet, 3> descriptorWrites = {};
+
+    descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[0].dstSet = descriptorSet;
+    descriptorWrites[0].dstBinding = 0;
+    descriptorWrites[0].dstArrayElement = 0;
+    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    descriptorWrites[0].descriptorCount = 1;
+    descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+//    bufferInfo.buffer = mUniformBuffers[mImageIndex]->mBuffer;
+//    bufferInfo.offset = offsetUni;
+//    bufferInfo.range = sizeof(UniformBufferProj);
+
+    descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[1].dstSet = descriptorSet;
+    descriptorWrites[1].dstBinding = 1;
+    descriptorWrites[1].dstArrayElement = 0;
+    descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    descriptorWrites[1].descriptorCount = 1;
+    descriptorWrites[1].pBufferInfo = &bufferInfoProj;
+
+    VkDescriptorImageInfo imageInfo = {
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .imageView = mTexImage.mTextureImageView,
+            .sampler = mTexImage.mTextureSampler,
+    };
+
+    descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[2].dstSet = descriptorSet;
+    descriptorWrites[2].dstBinding = 10;
+    descriptorWrites[2].dstArrayElement = 0;
+    descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrites[2].descriptorCount = 1;
+    descriptorWrites[2].pImageInfo = &imageInfo;
+
+
+    vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites.size()),
+                           descriptorWrites.data(), 0, nullptr);
+
+    return descriptorSet;
 
 }
 
@@ -1081,76 +1138,7 @@ void VulkanUtils::drawCommandBuffers()
 
     size_t i = mImageIndex;
 
-    VkDescriptorSet descriptorSet;
-
-    VkDescriptorSetAllocateInfo allocInfo = {
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            .descriptorPool = mDescriptorPools[i],
-            .descriptorSetCount = 1,
-            .pSetLayouts = &mDescriptorSetLayout,
-    };
-    if (vkAllocateDescriptorSets(mVKDevice.logicalDevice, &allocInfo, &descriptorSet) != VK_SUCCESS) {
-//        throw std::runtime_error("failed to allocate descriptor set!");
-        return;
-    }
-
-    uint32_t uniform_buffer_offset[2];
-    VkDeviceSize offsetUni = OFFSET_VALUE;
-    uniform_buffer_offset[0] = 0;
-
-    VkDescriptorBufferInfo bufferInfo = {};
-    bufferInfo.buffer = mUniformBuffers[mImageIndex]->mBuffer;
-    bufferInfo.offset = offsetUni;
-    bufferInfo.range = sizeof(UniformBufferObject);
-
-
-    offsetUni += sizeof(UniformBufferObject);
-    uniform_buffer_offset[1] = offsetUni;
-    VkDescriptorBufferInfo bufferInfoProj = {};
-    bufferInfoProj.buffer = mUniformBuffers[mImageIndex]->mBuffer;
-    bufferInfoProj.offset = offsetUni;
-    bufferInfoProj.range = sizeof(UniformBufferProj);
-
-
-    std::array<VkWriteDescriptorSet, 3> descriptorWrites = {};
-
-    descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[0].dstSet = descriptorSet;
-    descriptorWrites[0].dstBinding = 0;
-    descriptorWrites[0].dstArrayElement = 0;
-    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    descriptorWrites[0].descriptorCount = 1;
-    descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-//    bufferInfo.buffer = mUniformBuffers[mImageIndex]->mBuffer;
-//    bufferInfo.offset = offsetUni;
-//    bufferInfo.range = sizeof(UniformBufferProj);
-
-    descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[1].dstSet = descriptorSet;
-    descriptorWrites[1].dstBinding = 1;
-    descriptorWrites[1].dstArrayElement = 0;
-    descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    descriptorWrites[1].descriptorCount = 1;
-    descriptorWrites[1].pBufferInfo = &bufferInfoProj;
-
-    VkDescriptorImageInfo imageInfo = {
-            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            .imageView = mTexImage.mTextureImageView,
-            .sampler = mTexImage.mTextureSampler,
-    };
-
-    descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[2].dstSet = descriptorSet;
-    descriptorWrites[2].dstBinding = 10;
-    descriptorWrites[2].dstArrayElement = 0;
-    descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptorWrites[2].descriptorCount = 1;
-    descriptorWrites[2].pImageInfo = &imageInfo;
-
-
-    vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites.size()),
-                           descriptorWrites.data(), 0, nullptr);
+    VkDescriptorSet descriptorSet = createDescriptorSet();
 
     /////////////////
 //    HVkBuffer vertexBuffer(&mVKDevice);
@@ -1171,7 +1159,7 @@ void VulkanUtils::drawCommandBuffers()
 //        vkCmdBindVertexBuffers(mCommandBuffers[i], 1, 1, vertexBuffers1, offsets); // error
 
     vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout,
-                            0, 1, &descriptorSet, 0, uniform_buffer_offset);
+                            0, 1, &descriptorSet, 0, NULL);
 
 //        vkCmdBindIndexBuffer(mCommandBuffers[i], mIndexBuffer.mBuffer, 0, VK_INDEX_TYPE_UINT16);
 //        vkCmdDrawIndexed(mCommandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);

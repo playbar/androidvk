@@ -55,31 +55,31 @@ public:
 
     void createImageViews();
     void createRenderPass();
-
+    void createCommandBuffers();
     void createDescriptorSetLayout();
 
     void createGraphicsPipelineTest();
 
     void createGraphicsPipeline();
-
     void createFramebuffers();
 
 public:
-
-    void updateUniformBuffer();
-    void updateUniformBuffer1();
 
 public:
 
 
     void createDescriptorPool();
-    void createDescriptorSet();
+    VkDescriptorSet createDescriptorSet();
+    void updateUniformBuffer();
+    void drawCommandBuffers();
+
+    void updateUniformBuffer1();
+    void drawCommandBuffers1();
+
     void bindDescriptorSet();
     void bindDescriptorSetTexture(HVkTexture &texImg);
     void bindDescriptorSetTexture1(HVkTexture &texImg);
-    void createCommandBuffers();
-    void drawCommandBuffers();
-    void drawCommandBuffers1();
+
     void createSemaphores();
     void AcquireNextImage();
     void drawFrame();
