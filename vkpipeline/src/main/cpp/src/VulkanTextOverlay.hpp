@@ -54,7 +54,7 @@ private:
 	VkSampler sampler;
 	VkImage image;
 	VkImageView view;
-	VksBuffer vertexBuffer;
+	HVKBuffer vertexBuffer;
 	VkDeviceMemory imageMemory;
 	VkDescriptorPool descriptorPool;
 	VkDescriptorSetLayout descriptorSetLayout;
@@ -66,7 +66,7 @@ private:
 	VkCommandPool commandPool;
 	std::vector<VkFramebuffer*> frameBuffers;
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-	VkFence fence;
+	VkFence mFence;
 
 	// Used during text updates
 	glm::vec4 *mappedLocal = nullptr;

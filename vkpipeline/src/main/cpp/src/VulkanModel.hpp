@@ -67,10 +67,10 @@ struct VksModelCreateInfo
 
 };
 
-struct VksModel {
+struct HVKModel {
     VkDevice device = nullptr;
-    VksBuffer vertices;
-    VksBuffer indices;
+    HVKBuffer vertices;
+    HVKBuffer indices;
     uint32_t indexCount = 0;
     uint32_t vertexCount = 0;
 

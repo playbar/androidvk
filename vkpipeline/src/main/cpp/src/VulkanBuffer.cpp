@@ -1,7 +1,7 @@
 #include "VulkanBuffer.hpp"
 #include "mylog.h"
 
-VkResult VksBuffer::map(VkDeviceSize size, VkDeviceSize offset)
+VkResult HVKBuffer::map(VkDeviceSize size, VkDeviceSize offset)
 {
 	return vkMapMemory(device, memory, offset, size, 0, &mapped);
 }
@@ -11,7 +11,7 @@ VkResult VksBuffer::map(VkDeviceSize size, VkDeviceSize offset)
 *
 * @note Does not return a result as vkUnmapMemory can't fail
 */
-void VksBuffer::unmap()
+void HVKBuffer::unmap()
 {
 	if (mapped)
 	{
@@ -27,7 +27,7 @@ void VksBuffer::unmap()
 *
 * @return VkResult of the bindBufferMemory call
 */
-VkResult VksBuffer::bind(VkDeviceSize offset)
+VkResult HVKBuffer::bind(VkDeviceSize offset)
 {
 	return vkBindBufferMemory(device, buffer, memory, offset);
 }
@@ -39,7 +39,7 @@ VkResult VksBuffer::bind(VkDeviceSize offset)
 * @param offset (Optional) Byte offset from beginning
 *
 */
-void VksBuffer::setupDescriptor(VkDeviceSize size, VkDeviceSize offset)
+void HVKBuffer::setupDescriptor(VkDeviceSize size, VkDeviceSize offset)
 {
 	descriptor.offset = offset;
 	descriptor.buffer = buffer;
@@ -56,7 +56,7 @@ void VksBuffer::setupDescriptor(VkDeviceSize size, VkDeviceSize offset)
 * @param size Size of the data to copy in machine units
 *
 */
-void VksBuffer::copyTo(void* data, VkDeviceSize size)
+void HVKBuffer::copyTo(void* data, VkDeviceSize size)
 {
 	assert(mapped);
 	memcpy(mapped, data, size);
@@ -72,7 +72,7 @@ void VksBuffer::copyTo(void* data, VkDeviceSize size)
 *
 * @return VkResult of the flush call
 */
-VkResult VksBuffer::flush(VkDeviceSize size, VkDeviceSize offset)
+VkResult HVKBuffer::flush(VkDeviceSize size, VkDeviceSize offset)
 {
 	VkMappedMemoryRange mappedRange = {};
 	mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
@@ -92,7 +92,7 @@ VkResult VksBuffer::flush(VkDeviceSize size, VkDeviceSize offset)
 *
 * @return VkResult of the invalidate call
 */
-VkResult VksBuffer::invalidate(VkDeviceSize size, VkDeviceSize offset)
+VkResult HVKBuffer::invalidate(VkDeviceSize size, VkDeviceSize offset)
 {
 	VkMappedMemoryRange mappedRange = {};
 	mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
@@ -105,7 +105,7 @@ VkResult VksBuffer::invalidate(VkDeviceSize size, VkDeviceSize offset)
 /**
 * Release all Vulkan resources held by this buffer
 */
-void VksBuffer::destroy()
+void HVKBuffer::destroy()
 {
 	if (buffer)
 	{

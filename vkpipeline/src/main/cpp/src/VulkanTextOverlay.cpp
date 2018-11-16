@@ -53,7 +53,7 @@ VulkanTextOverlay::~VulkanTextOverlay()
 	vkDestroyRenderPass(vulkanDevice->mLogicalDevice, mRenderPass, nullptr);
 	vkFreeCommandBuffers(vulkanDevice->mLogicalDevice, commandPool, static_cast<uint32_t>(mCmdBuffers.size()), mCmdBuffers.data());
 	vkDestroyCommandPool(vulkanDevice->mLogicalDevice, commandPool, nullptr);
-	vkDestroyFence(vulkanDevice->mLogicalDevice, fence, nullptr);
+	vkDestroyFence(vulkanDevice->mLogicalDevice, mFence, nullptr);
 }
 
 /**
@@ -117,7 +117,7 @@ void VulkanTextOverlay::prepareResources()
 	VK_CHECK_RESULT(vkBindImageMemory(vulkanDevice->mLogicalDevice, image, imageMemory, 0));
 
 	// Staging
-	VksBuffer stagingBuffer;
+	HVKBuffer stagingBuffer;
 
 	VK_CHECK_RESULT(vulkanDevice->createBuffer(
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -268,7 +268,7 @@ void VulkanTextOverlay::prepareResources()
 
 	// Command buffer execution fence
 	VkFenceCreateInfo fenceCreateInfo = InitFenceCreateInfo();
-	VK_CHECK_RESULT(vkCreateFence(vulkanDevice->mLogicalDevice, &fenceCreateInfo, nullptr, &fence));
+	VK_CHECK_RESULT(vkCreateFence(vulkanDevice->mLogicalDevice, &fenceCreateInfo, nullptr, &mFence));
 }
 
 /**
@@ -626,10 +626,10 @@ void VulkanTextOverlay::submit(VkQueue queue, uint32_t bufferindex, VkSubmitInfo
 	submitInfo.pCommandBuffers = &mCmdBuffers[bufferindex];
 	submitInfo.commandBufferCount = 1;
 
-	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, fence));
+	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, mFence));
 
-	VK_CHECK_RESULT(vkWaitForFences(vulkanDevice->mLogicalDevice, 1, &fence, VK_TRUE, UINT64_MAX));
-	VK_CHECK_RESULT(vkResetFences(vulkanDevice->mLogicalDevice, 1, &fence));
+	VK_CHECK_RESULT(vkWaitForFences(vulkanDevice->mLogicalDevice, 1, &mFence, VK_TRUE, UINT64_MAX));
+	VK_CHECK_RESULT(vkResetFences(vulkanDevice->mLogicalDevice, 1, &mFence));
 }
 
 /**

@@ -55,7 +55,7 @@ VksModelCreateInfo::VksModelCreateInfo(float scale, float uvscale, float center)
 
 
 /** @brief Release all Vulkan resources of this model */
-void VksModel::destroy()
+void HVKModel::destroy()
 {
 	assert(device);
 	vkDestroyBuffer(device, vertices.buffer, nullptr);
@@ -77,7 +77,7 @@ void VksModel::destroy()
 * @param copyQueue Queue used for the memory staging copy commands (must support transfer)
 * @param (Optional) flags ASSIMP model loading flags
 */
-bool VksModel::loadFromFile(const std::string& filename, VksVertexLayout layout, VksModelCreateInfo *createInfo,
+bool HVKModel::loadFromFile(const std::string& filename, VksVertexLayout layout, VksModelCreateInfo *createInfo,
 							VulkanDevice *device, VkQueue copyQueue, const int flags)
 {
 	this->device = device->mLogicalDevice;
@@ -234,7 +234,7 @@ bool VksModel::loadFromFile(const std::string& filename, VksVertexLayout layout,
 
 		// Use staging buffer to move vertex and index buffer to device local memory
 		// Create staging buffers
-		VksBuffer vertexStaging, indexStaging;
+		HVKBuffer vertexStaging, indexStaging;
 
 		// Vertex buffer
 		VK_CHECK_RESULT(device->createBuffer(
@@ -308,7 +308,7 @@ bool VksModel::loadFromFile(const std::string& filename, VksVertexLayout layout,
 * @param copyQueue Queue used for the memory staging copy commands (must support transfer)
 * @param (Optional) flags ASSIMP model loading flags
 */
-bool VksModel::loadFromFile(const std::string& filename, VksVertexLayout layout, float scale,
+bool HVKModel::loadFromFile(const std::string& filename, VksVertexLayout layout, float scale,
 							VulkanDevice *device, VkQueue copyQueue, const int flags)
 {
 	VksModelCreateInfo modelCreateInfo(scale, 1.0f, 0.0f);
