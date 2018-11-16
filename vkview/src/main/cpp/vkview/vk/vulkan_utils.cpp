@@ -1095,21 +1095,22 @@ void VulkanUtils::drawCommandBuffers()
     }
 
     uint32_t uniform_buffer_offset[2];
-    VkDeviceSize offsetUni = 0;
+    VkDeviceSize offsetUni = OFFSET_VALUE;
     uniform_buffer_offset[0] = 0;
-    VkDescriptorBufferInfo bufferInfo = {
-            .buffer = mUniformBuffers[mImageIndex]->mBuffer,
-            .offset = offsetUni,
-            .range = sizeof(UniformBufferObject),
-    };
 
-    offsetUni = sizeof(UniformBufferObject);
+    VkDescriptorBufferInfo bufferInfo = {};
+    bufferInfo.buffer = mUniformBuffers[mImageIndex]->mBuffer;
+    bufferInfo.offset = offsetUni;
+    bufferInfo.range = sizeof(UniformBufferObject);
+
+
+    offsetUni += sizeof(UniformBufferObject);
     uniform_buffer_offset[1] = offsetUni;
-    VkDescriptorBufferInfo bufferInfoProj = {
-            .buffer = mUniformBuffers[mImageIndex]->mBuffer,
-            .offset = offsetUni,
-            .range = sizeof(UniformBufferProj),
-    };
+    VkDescriptorBufferInfo bufferInfoProj = {};
+    bufferInfoProj.buffer = mUniformBuffers[mImageIndex]->mBuffer;
+    bufferInfoProj.offset = offsetUni;
+    bufferInfoProj.range = sizeof(UniformBufferProj);
+
 
     std::array<VkWriteDescriptorSet, 3> descriptorWrites = {};
 
@@ -1120,6 +1121,10 @@ void VulkanUtils::drawCommandBuffers()
     descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     descriptorWrites[0].descriptorCount = 1;
     descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+//    bufferInfo.buffer = mUniformBuffers[mImageIndex]->mBuffer;
+//    bufferInfo.offset = offsetUni;
+//    bufferInfo.range = sizeof(UniformBufferProj);
 
     descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptorWrites[1].dstSet = descriptorSet;
@@ -1207,8 +1212,8 @@ void VulkanUtils::drawCommandBuffers1()
     }
 
     uint32_t uniform_buffer_offset; //sizeof(UniformBufferProj);
-    VkDeviceSize offsetUni = sizeof(UniformBufferObject) + sizeof(UniformBufferProj);
-    uniform_buffer_offset = offsetUni;
+    VkDeviceSize offsetUni = sizeof(UniformBufferObject) + sizeof(UniformBufferProj) + OFFSET_VALUE;
+    uniform_buffer_offset = 0;
     VkDescriptorBufferInfo bufferInfo = {
             .buffer = mUniformBuffers[mImageIndex]->mBuffer,
             .offset = offsetUni,
@@ -1276,7 +1281,7 @@ void VulkanUtils::drawCommandBuffers1()
     vkCmdBindVertexBuffers(mCommandBuffers[i], VERTEXT_BUFFER_ID, 1, vertexBuffers, offsets);
 
     vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout,
-                            0, 1, &descriptorSet, 0, &uniform_buffer_offset);
+                            0, 1, &descriptorSet, 1, &uniform_buffer_offset);
 
 //        vkCmdBindIndexBuffer(mCommandBuffers[i], mIndexBuffer.mBuffer, 0, VK_INDEX_TYPE_UINT16);
 //        vkCmdDrawIndexed(mCommandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);

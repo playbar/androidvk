@@ -6,7 +6,8 @@
 #include <vulkan_wrapper.h>
 #include "vulkan_device.h"
 
-#define MAX_BUFFER_SIZE 4096
+#define MAX_BUFFER_SIZE 8192
+#define OFFSET_VALUE 16
 
 class HVkBuffer
 {

@@ -9,6 +9,7 @@ HVkBuffer::HVkBuffer(VulkanDevice *device)
 	mMemory = NULL;
 	mBuffer = NULL;
 	mSize = 0;
+	mOffset = OFFSET_VALUE;
 }
 
 HVkBuffer::~HVkBuffer()
@@ -79,7 +80,7 @@ void HVkBuffer::updateData(void* data, uint32_t length)
 
 	if( mOffset + length >= mSize )
 	{
-		mOffset = 0;
+		mOffset = OFFSET_VALUE;
 	}
 	memcpy(mpData + mOffset, data, length);
 
@@ -162,14 +163,14 @@ VkResult HVkBuffer::flush(VkDeviceSize size)
 	mOffset += size;
 	if( mOffset >= mSize )
 	{
-		mOffset = 0;
+		mOffset = OFFSET_VALUE;
 	}
 	return re;
 }
 
 void HVkBuffer::reset()
 {
-    mOffset = 0;
+    mOffset = OFFSET_VALUE;
 }
 
 
