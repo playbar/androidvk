@@ -23,11 +23,9 @@
 class VulkanUtils {
 public:
 
-    VulkanUtils(AAssetManager *assetManager, const char *vertexShader, const char *fragmentShader);
-
+    VulkanUtils(AAssetManager *assetManager);
     VulkanUtils();
     ~VulkanUtils();
-    void SetData(AAssetManager *assetManager, const char *vertexShader, const char *fragmentShader);
 
 public:
     void OnSurfaceCreated();
@@ -56,14 +54,32 @@ public:
     void createImageViews();
     void createRenderPass();
     void createCommandBuffers();
-    void createDescriptorSetLayout();
 
+
+public:
     void createGraphicsPipelineTest();
 
-    void createGraphicsPipeline();
+    void createPipeline();
+    void createMVPPipeline();
+    void createDescriptorSetLayout();
+    void createMVPDescriptorSetLayout();
+    VkPipeline mPipeline;
+    VkPipelineLayout mPipelineLayout;
+    VkDescriptorSetLayout mDescriptorSetLayout;
+
+    VkPipeline mMVPPipeline;
+    VkPipelineLayout mMVPPipelineLayout;
+    VkDescriptorSetLayout mMVPDescriptorSetLayout;
+
     void createFramebuffers();
 
 public:
+    // no use
+    void bindDescriptorSet();
+    void bindDescriptorSetTexture(HVkTexture &texImg);
+    void bindDescriptorSetTexture1(HVkTexture &texImg);
+    VkDescriptorSet mDescriptorSet;
+    VkDescriptorSet mDescriptorSet1;
 
 public:
 
@@ -73,13 +89,11 @@ public:
     void updateUniformBuffer();
     void drawCommandBuffers();
 
-    void updateUniformBuffer1();
-    void drawCommandBuffers1();
+    VkDescriptorSet createMVPDescriptorSet();
+    void updateUniformBufferMVP();
+    void drawCommandBuffersMVP();
 
-    void bindDescriptorSet();
-    void bindDescriptorSetTexture(HVkTexture &texImg);
-    void bindDescriptorSetTexture1(HVkTexture &texImg);
-
+public:
     void createSemaphores();
     void AcquireNextImage();
     void drawFrame();
@@ -91,9 +105,7 @@ public:
     VkShaderModule createShaderModule(const std::vector<char> &code);
     VkShaderModule createShaderModule(const std::vector<uint32_t> &code);
 
-    AAssetManager *assetManager;
-    std::string vertexShader;
-    std::string fragmentShader;
+    AAssetManager *mAssetManager;
     int state;
 
     ANativeWindow *window;
@@ -102,11 +114,6 @@ public:
     VkSwapchainKHR swapchain;
     VkRenderPass renderPass;
     VkDescriptorPool mDescriptorPool;
-    VkDescriptorSetLayout mDescriptorSetLayout;
-    VkDescriptorSet mDescriptorSet;
-    VkDescriptorSet mDescriptorSet1;
-    VkPipelineLayout mPipelineLayout;
-    VkPipeline mGraphicsPipeline;
 
 
     VkFormat swapchainImageFormat;
@@ -117,15 +124,14 @@ public:
     std::vector<VkCommandBuffer> mCommandBuffers;
     std::vector<VkDescriptorPool >mDescriptorPools;
 
-    VkPipelineInputAssemblyStateCreateInfo mInputAssembly;
-
-//    HVkBuffer mVertexBuffer;
-//    HVkBuffer mIndexBuffer;
-//    HVkBuffer mUniformBuffer;
 
     std::vector<HVkBuffer*> mVertexBuffers;
     std::vector<HVkBuffer*> mIndexBuffers;
     std::vector<HVkBuffer*> mUniformBuffers;
+
+//    HVkBuffer mVertexBuffer;
+//    HVkBuffer mIndexBuffer;
+//    HVkBuffer mUniformBuffer;
 //    void createVertexBuffer();
 //    void createIndexBuffer();
 //    void createUniformBuffer();

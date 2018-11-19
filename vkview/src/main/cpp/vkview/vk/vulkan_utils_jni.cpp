@@ -44,7 +44,7 @@ Java_com_bar_vkview_VKUtilsLib_nativeCreate(
     const char *vertexShader = env->GetStringUTFChars(vertexShader_, 0);
     const char *fragmentShader = env->GetStringUTFChars(fragmentShader_, 0);
 
-    VulkanUtils *app = new VulkanUtils(assetManager, vertexShader, fragmentShader);
+    VulkanUtils *app = new VulkanUtils(assetManager);
 
     env->ReleaseStringUTFChars(vertexShader_, vertexShader);
     env->ReleaseStringUTFChars(fragmentShader_, fragmentShader);

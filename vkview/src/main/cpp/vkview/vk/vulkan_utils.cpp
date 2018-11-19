@@ -183,16 +183,14 @@ bool GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader,
 
 
 
-VulkanUtils::VulkanUtils(AAssetManager *assetManager, const char *vertexShader, const char *fragmentShader) :
+VulkanUtils::VulkanUtils(AAssetManager *assetManager) :
 //        mVertexBuffer(&mVKDevice),
 //        mIndexBuffer(&mVKDevice),
 //        mUniformBuffer(&mVKDevice),
 //        mUniformBuffer(&mVKDevice),
         mTexImage(&mVKDevice),
         mTexImage1(&mVKDevice),
-    assetManager(assetManager),
-    vertexShader(std::string(vertexShader)),
-    fragmentShader(std::string(fragmentShader)),
+    mAssetManager(assetManager),
     state(STATE_RUNNING)
 {
 }
@@ -211,13 +209,6 @@ VulkanUtils::VulkanUtils():
 VulkanUtils::~VulkanUtils()
 {
     LOGE("VulkanUtils::~VulkanUtils");
-}
-
-void VulkanUtils::SetData(AAssetManager *assetMgr, const char *verShader, const char *fraShader)
-{
-    assetManager = assetMgr;
-    vertexShader = std::string(verShader);
-    fragmentShader = std::string(fraShader);
 }
 
 void VulkanUtils::pause() {
@@ -243,24 +234,22 @@ void VulkanUtils::OnSurfaceCreated()
     createRenderPass();
     createFramebuffers();
     createDescriptorSetLayout();
-    createGraphicsPipeline();
+    createMVPDescriptorSetLayout();
+    createPipeline();
+    createMVPPipeline();
 
 
-    mTexImage.createTextureImage(assetManager, IMAGE_PATH);
+    mTexImage.createTextureImage(mAssetManager, IMAGE_PATH);
     mTexImage.createTextureImageView();
     mTexImage.createTextureSampler();
 
-    mTexImage1.createTextureImage(assetManager, IMAGE_APPLE );
+    mTexImage1.createTextureImage(mAssetManager, IMAGE_APPLE );
     mTexImage1.createTextureImageView();
     mTexImage1.createTextureSampler();
 
     createCacheBuffers();
-//    createVertexBuffer();
-//    createIndexBuffer();
-//    createUniformBuffer();
     createDescriptorPool();
-    createDescriptorSet();
-//    bindDescriptorSet();
+//    createDescriptorSet();
 
     createCommandBuffers();
     createSemaphores();
@@ -282,8 +271,8 @@ void VulkanUtils::OnDrawFrame()
     updateUniformBuffer();
     drawCommandBuffers();
 
-    updateUniformBuffer1();
-    drawCommandBuffers1();
+    updateUniformBufferMVP();
+    drawCommandBuffersMVP();
 
 
 //    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
@@ -507,6 +496,53 @@ void VulkanUtils::createDescriptorSetLayout() {
 
 }
 
+void VulkanUtils::createMVPDescriptorSetLayout()
+{
+
+    VkDescriptorSetLayoutBinding uboLayoutProjBinding = {
+            .binding = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .pImmutableSamplers = nullptr,
+    };
+
+    VkDescriptorSetLayoutBinding samplerLayoutBinding = {
+            .binding = 10,
+            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .pImmutableSamplers = nullptr,
+    };
+
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {
+            uboLayoutProjBinding,
+            samplerLayoutBinding
+    };
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .bindingCount = static_cast<uint32_t>(bindings.size()),
+            .pBindings = bindings.data(),
+    };
+
+    if (vkCreateDescriptorSetLayout(mVKDevice.logicalDevice, &layoutInfo, nullptr, &mMVPDescriptorSetLayout)
+        != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    }
+
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+            .setLayoutCount = 1,
+            .pSetLayouts = &mDescriptorSetLayout,
+    };
+    if (vkCreatePipelineLayout(mVKDevice.logicalDevice, &pipelineLayoutInfo, nullptr, &mMVPPipelineLayout)
+        != VK_SUCCESS) {
+        throw std::runtime_error("failed to create pipeline layout!");
+    }
+
+}
+
 //void VulkanUtils::createGraphicsPipelineTest()
 //{
 //    const char *srcVSInfo = "9000000000000000100000006d00000001000000706f736974696f6e000000000000000000000000000000260000001e0000000001000000080000006700000001000000746578436f6f7264000000000000000000000000000000260000001e00000000000000004000000000000000020000004d56500000000000000000000000000000000000000000200000001d00000000";
@@ -678,7 +714,7 @@ void VulkanUtils::createDescriptorSetLayout() {
 
 //#define USE_SPV
 
-void VulkanUtils::createGraphicsPipeline() {
+void VulkanUtils::createPipeline() {
 
 #ifdef USE_SPV
     vertexShader = "shaders/triangle.vert.spv";
@@ -724,7 +760,7 @@ void VulkanUtils::createGraphicsPipeline() {
             .pVertexAttributeDescriptions = attrDesc.data(),
     };
 
-    mInputAssembly = {
+    VkPipelineInputAssemblyStateCreateInfo mInputAssembly= {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
             .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
             .primitiveRestartEnable = VK_TRUE,
@@ -806,7 +842,7 @@ void VulkanUtils::createGraphicsPipeline() {
     };
 
     VkResult vkre = vkCreateGraphicsPipelines(mVKDevice.logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
-                                              &mGraphicsPipeline);
+                                              &mPipeline);
     if ( vkre != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
@@ -814,6 +850,145 @@ void VulkanUtils::createGraphicsPipeline() {
     vkDestroyShaderModule(mVKDevice.logicalDevice, vertexShaderModule, nullptr);
     vkDestroyShaderModule(mVKDevice.logicalDevice, fragmentShaderModule, nullptr);
 }
+
+
+void VulkanUtils::createMVPPipeline() {
+
+#ifdef USE_SPV
+    vertexShader = "shaders/triangle.vert.spv";
+    fragmentShader = "shaders/triangle.frag.spv";
+    auto vertexShaderCode = readAsset(vertexShader);
+    auto fragmentShaderCode = readAsset(fragmentShader);
+    VkShaderModule vertexShaderModule = createShaderModule(vertexShaderCode);
+    VkShaderModule fragmentShaderModule = createShaderModule(fragmentShaderCode);
+#else
+    auto vertexShaderCode = readAsset("shaders/trianglemvp.vert");
+    auto fragmentShaderCode = readAsset("shaders/trianglemvp.frag");
+    std::vector<unsigned int> vtx_spv;
+    std::vector<unsigned int> frag_spv;
+    GLSLtoSPV(VK_SHADER_STAGE_VERTEX_BIT, vertexShaderCode.data(), vtx_spv);
+    GLSLtoSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fragmentShaderCode.data(), frag_spv);
+    VkShaderModule vertexShaderModule = createShaderModule(vtx_spv);
+    VkShaderModule fragmentShaderModule = createShaderModule(frag_spv);
+#endif
+
+    VkPipelineShaderStageCreateInfo vertexShaderStageInfo = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage = VK_SHADER_STAGE_VERTEX_BIT,
+            .module = vertexShaderModule,
+            .pName = "main",
+    };
+    VkPipelineShaderStageCreateInfo fragmentShaderStageInfo = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .module = fragmentShaderModule,
+            .pName = "main",
+    };
+    VkPipelineShaderStageCreateInfo shaderStages[] = {
+            vertexShaderStageInfo, fragmentShaderStageInfo
+    };
+
+    auto bindingDesc = Vertex::getBindingDescription();
+    auto attrDesc =    Vertex::getAttributeDescriptions();
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+            .vertexBindingDescriptionCount = 1,
+            .pVertexBindingDescriptions = &bindingDesc,
+            .vertexAttributeDescriptionCount = static_cast<uint32_t>(attrDesc.size()),
+            .pVertexAttributeDescriptions = attrDesc.data(),
+    };
+
+    VkPipelineInputAssemblyStateCreateInfo mInputAssembly= {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+            .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
+            .primitiveRestartEnable = VK_TRUE,
+    };
+
+    VkViewport viewport = {
+            .x = 0.0f,
+            .y = 0.0f,
+            .width = (float) swapchainExtent.width,
+            .height = (float) swapchainExtent.height,
+            .minDepth = 0.0f,
+            .maxDepth = 1.0f,
+    };
+
+    VkRect2D scissor = {
+            .offset = {0, 0},
+            .extent = swapchainExtent,
+    };
+
+    VkPipelineViewportStateCreateInfo viewportState = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+            .viewportCount = 1,
+            .pViewports = &viewport,
+            .scissorCount = 1,
+            .pScissors = &scissor,
+    };
+
+    VkPipelineRasterizationStateCreateInfo rasterizer = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+            .depthClampEnable = VK_FALSE,
+            .rasterizerDiscardEnable = VK_FALSE,
+            .polygonMode = VK_POLYGON_MODE_FILL,
+            .lineWidth = 1.0f,
+            .cullMode = VK_CULL_MODE_BACK_BIT,
+            .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+            .depthBiasEnable = VK_FALSE,
+    };
+
+    VkPipelineMultisampleStateCreateInfo multisampling = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+            .sampleShadingEnable = VK_FALSE,
+            .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
+    };
+
+    VkPipelineColorBlendAttachmentState colorBlendAttachment = {
+            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT
+                              | VK_COLOR_COMPONENT_G_BIT
+                              | VK_COLOR_COMPONENT_B_BIT
+                              | VK_COLOR_COMPONENT_A_BIT,
+            .blendEnable = VK_FALSE,
+    };
+    VkPipelineColorBlendStateCreateInfo colorBlending = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+            .logicOpEnable = VK_FALSE,
+            .logicOp = VK_LOGIC_OP_COPY,
+            .attachmentCount = 1,
+            .pAttachments = &colorBlendAttachment,
+            .blendConstants[0] = 0.0f,
+            .blendConstants[1] = 0.0f,
+            .blendConstants[2] = 0.0f,
+            .blendConstants[3] = 0.0f,
+    };
+
+
+    VkGraphicsPipelineCreateInfo pipelineInfo = {
+            .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+            .stageCount = 2,
+            .pStages = shaderStages,
+            .pVertexInputState = &vertexInputInfo,
+            .pInputAssemblyState = &mInputAssembly,
+            .pViewportState = &viewportState,
+            .pRasterizationState = &rasterizer,
+            .pMultisampleState = &multisampling,
+            .pColorBlendState = &colorBlending,
+            .layout = mPipelineLayout,
+            .renderPass = renderPass,
+            .subpass = 0,
+            .basePipelineHandle = VK_NULL_HANDLE,
+    };
+
+    VkResult vkre = vkCreateGraphicsPipelines(mVKDevice.logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo,
+                                              nullptr,  &mMVPPipeline);
+    if ( vkre != VK_SUCCESS) {
+        throw std::runtime_error("failed to create graphics pipeline!");
+    }
+
+    vkDestroyShaderModule(mVKDevice.logicalDevice, vertexShaderModule, nullptr);
+    vkDestroyShaderModule(mVKDevice.logicalDevice, fragmentShaderModule, nullptr);
+}
+
 
 void VulkanUtils::createFramebuffers() {
     mFramebuffers.resize(mSwapchainImageViews.size());
@@ -839,6 +1014,34 @@ void VulkanUtils::createFramebuffers() {
     }
 }
 
+void VulkanUtils::createCacheBuffers()
+{
+    int size = mSwapchainImageViews.size();
+    for( int i = 0; i < size; ++i )
+    {
+        HVkBuffer *pVerBuffer = new HVkBuffer(&mVKDevice);
+        pVerBuffer->createBuffer(MAX_BUFFER_SIZE,
+                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        HVkBuffer *pIndBuffer = new HVkBuffer(&mVKDevice);
+        pIndBuffer->createBuffer(MAX_BUFFER_SIZE,
+                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        HVkBuffer *pUniBuffer = new HVkBuffer(&mVKDevice);
+        pUniBuffer->createBuffer(MAX_BUFFER_SIZE,
+                                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+        mVertexBuffers.push_back(pVerBuffer);
+        mIndexBuffers.push_back(pIndBuffer);
+        mUniformBuffers.push_back(pUniBuffer);
+    }
+    return;
+
+}
+
 //void VulkanUtils::createVertexBuffer() {
 //    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 //
@@ -858,34 +1061,6 @@ void VulkanUtils::createFramebuffers() {
 //
 //    return;
 //}
-
-void VulkanUtils::createCacheBuffers()
-{
-    int size = mSwapchainImageViews.size();
-    for( int i = 0; i < size; ++i )
-    {
-        HVkBuffer *pVerBuffer = new HVkBuffer(&mVKDevice);
-        pVerBuffer->createBuffer(MAX_BUFFER_SIZE,
-                                  VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-        HVkBuffer *pIndBuffer = new HVkBuffer(&mVKDevice);
-        pIndBuffer->createBuffer(MAX_BUFFER_SIZE,
-                                  VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-        HVkBuffer *pUniBuffer = new HVkBuffer(&mVKDevice);
-        pUniBuffer->createBuffer(MAX_BUFFER_SIZE,
-                                  VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-        mVertexBuffers.push_back(pVerBuffer);
-        mIndexBuffers.push_back(pIndBuffer);
-        mUniformBuffers.push_back(pUniBuffer);
-    }
-    return;
-
-}
 
 //void VulkanUtils::createIndexBuffer() {
 //    VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
@@ -966,6 +1141,7 @@ VkDescriptorSet VulkanUtils::createDescriptorSet() {
 
     uint32_t uniform_buffer_offset[2];
     VkDeviceSize offsetUni = OFFSET_VALUE;
+    int len = sizeof(VkDeviceSize);
     uniform_buffer_offset[0] = 0;
 
     VkDescriptorBufferInfo bufferInfo = {};
@@ -1188,7 +1364,7 @@ void VulkanUtils::drawCommandBuffers()
     pbuffer->updateData(vertices.data(), bufferSize );
     pbuffer->flush(bufferSize);
 
-    vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
+    vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline);
 
     VkBuffer vertexBuffers[] = {pbuffer->mBuffer};
     VkDeviceSize offsets[] = {offset};
@@ -1210,7 +1386,7 @@ void VulkanUtils::drawCommandBuffers()
 }
 
 
-void VulkanUtils::drawCommandBuffers1()
+void VulkanUtils::drawCommandBuffersMVP()
 {
     static int step = 0;
     ++step;
@@ -1301,7 +1477,7 @@ void VulkanUtils::drawCommandBuffers1()
     pbuffer->flush(bufferSize);
 
 
-    vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
+    vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline);
 
     VkBuffer vertexBuffers[] = {pbuffer->mBuffer};
     VkDeviceSize offsets[] = {offset};
@@ -1364,7 +1540,83 @@ void VulkanUtils::updateUniformBuffer() {
     return;
 }
 
-void VulkanUtils::updateUniformBuffer1()
+VkDescriptorSet VulkanUtils::createMVPDescriptorSet() {
+
+    VkDescriptorSet descriptorSet;
+
+    VkDescriptorSetAllocateInfo allocInfo = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+            .descriptorPool = mDescriptorPools[mImageIndex],
+            .descriptorSetCount = 1,
+            .pSetLayouts = &mDescriptorSetLayout,
+    };
+    if (vkAllocateDescriptorSets(mVKDevice.logicalDevice, &allocInfo, &descriptorSet) != VK_SUCCESS) {
+//        throw std::runtime_error("failed to allocate descriptor set!");
+        return NULL;
+    }
+
+    uint32_t uniform_buffer_offset[2];
+    VkDeviceSize offsetUni = OFFSET_VALUE;
+    int len = sizeof(VkDeviceSize);
+    uniform_buffer_offset[0] = 0;
+
+    VkDescriptorBufferInfo bufferInfo = {};
+    bufferInfo.buffer = mUniformBuffers[mImageIndex]->mBuffer;
+    bufferInfo.offset = offsetUni;
+    bufferInfo.range = sizeof(UniformBufferObject);
+
+    offsetUni += sizeof(UniformBufferObject);
+    uniform_buffer_offset[1] = offsetUni;
+    VkDescriptorBufferInfo bufferInfoProj = {};
+    bufferInfoProj.buffer = mUniformBuffers[mImageIndex]->mBuffer;
+    bufferInfoProj.offset = offsetUni;
+    bufferInfoProj.range = sizeof(UniformBufferProj);
+
+
+    VkWriteDescriptorSet desSet;
+    desSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    desSet.dstSet = descriptorSet;
+    desSet.dstBinding = 0;
+    desSet.dstArrayElement = 0;
+    desSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    desSet.descriptorCount = 1;
+    desSet.pBufferInfo = &bufferInfo;
+    vkUpdateDescriptorSets(mVKDevice.logicalDevice, 1, &desSet, 0, nullptr);
+
+    bufferInfo.buffer = mUniformBuffers[mImageIndex]->mBuffer;
+    bufferInfo.offset = offsetUni;
+    bufferInfo.range = sizeof(UniformBufferProj);
+
+    desSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    desSet.dstSet = descriptorSet;
+    desSet.dstBinding = 1;
+    desSet.dstArrayElement = 0;
+    desSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    desSet.descriptorCount = 1;
+    desSet.pBufferInfo = &bufferInfo;
+    vkUpdateDescriptorSets(mVKDevice.logicalDevice, 1, &desSet, 0, nullptr);
+
+
+    VkDescriptorImageInfo imageInfo = {
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .imageView = mTexImage.mTextureImageView,
+            .sampler = mTexImage.mTextureSampler,
+    };
+
+    desSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    desSet.dstSet = descriptorSet;
+    desSet.dstBinding = 10;
+    desSet.dstArrayElement = 0;
+    desSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    desSet.descriptorCount = 1;
+    desSet.pImageInfo = &imageInfo;
+    vkUpdateDescriptorSets(mVKDevice.logicalDevice, 1, &desSet, 0, nullptr);
+
+    return descriptorSet;
+
+}
+
+void VulkanUtils::updateUniformBufferMVP()
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -1413,7 +1665,6 @@ void VulkanUtils::AcquireNextImage()
         throw std::runtime_error("failed to acquire swap chain image!");
     }
 
-    mInputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
@@ -1536,7 +1787,9 @@ void VulkanUtils::recreateSwapchain() {
     createImageViews();
     createRenderPass();
     createDescriptorSetLayout();
-    createGraphicsPipeline();
+    createMVPDescriptorSetLayout();
+    createPipeline();
+    createMVPPipeline();
     createFramebuffers();
     createCommandBuffers();
 //    drawCommandBuffers();
@@ -1550,7 +1803,7 @@ void VulkanUtils::cleanupSwapchain() {
     vkFreeCommandBuffers(mVKDevice.logicalDevice, mVKDevice.mCommandPool, static_cast<uint32_t>(mCommandBuffers.size()),
                          mCommandBuffers.data());
 
-    vkDestroyPipeline(mVKDevice.logicalDevice, mGraphicsPipeline, nullptr);
+    vkDestroyPipeline(mVKDevice.logicalDevice, mPipeline, nullptr);
     vkDestroyPipelineLayout(mVKDevice.logicalDevice, mPipelineLayout, nullptr);
     vkDestroyRenderPass(mVKDevice.logicalDevice, renderPass, nullptr);
 
@@ -1562,7 +1815,7 @@ void VulkanUtils::cleanupSwapchain() {
 }
 
 std::vector<char> VulkanUtils::readAsset(std::string name) {
-    AAsset *file = AAssetManager_open(assetManager, name.c_str(), AASSET_MODE_BUFFER);
+    AAsset *file = AAssetManager_open(mAssetManager, name.c_str(), AASSET_MODE_BUFFER);
     size_t len = AAsset_getLength(file);
     std::vector<char> buffer(len);
 

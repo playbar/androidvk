@@ -7,7 +7,7 @@
 #include "vulkan_device.h"
 
 #define MAX_BUFFER_SIZE 8192
-#define OFFSET_VALUE 16
+#define OFFSET_VALUE 0
 
 class HVkBuffer
 {

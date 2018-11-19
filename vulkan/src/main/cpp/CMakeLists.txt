@@ -35,7 +35,7 @@ add_library(vkvulkan SHARED
             base/VulkanModel.cpp
             base/VulkanTexture.cpp
             base/VulkanTools.cpp
-            src/radialblur.cpp
+            src/bloom.cpp
             src/vulkangear.cpp
             )
 
