@@ -24,6 +24,8 @@ const char *IMAGE_APPLE = "apple.png";
 const int WIDTH = 800;
 const int HEIGHT = 448;
 
+#define TEST_OFFSET 16
+
 //const std::vector<Vertex> vertices = {
 //        {{-0.5f, -0.5f}, {1.0f, 0.0f}},
 //        {{0.5f, -0.5f}, {0.0f, 0.0f}},
@@ -39,7 +41,7 @@ std::vector<Vertex> vertices = {
 };
 
 
-std::vector<Vertex> vertices1 = {
+std::vector<Vertex> verticesMVP = {
         {{0.0f,   0.0f},   {1.0f, 0.0f}},
         {{0.0f,   -865.0}, {0.0f, 0.0f}},
         {{540.0f, -865.0f},{0.0f, 1.0f}},
@@ -268,11 +270,11 @@ void VulkanUtils::OnDrawFrame()
 
 //    updateBufferData();
 
-    updateUniformBuffer();
-    drawCommandBuffers();
-
     updateUniformBufferMVP();
     drawCommandBuffersMVP();
+
+    updateUniformBuffer();
+    drawCommandBuffers();
 
 
 //    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
@@ -534,7 +536,7 @@ void VulkanUtils::createMVPDescriptorSetLayout()
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .setLayoutCount = 1,
-            .pSetLayouts = &mDescriptorSetLayout,
+            .pSetLayouts = &mMVPDescriptorSetLayout,
     };
     if (vkCreatePipelineLayout(mVKDevice.logicalDevice, &pipelineLayoutInfo, nullptr, &mMVPPipelineLayout)
         != VK_SUCCESS) {
@@ -973,7 +975,7 @@ void VulkanUtils::createMVPPipeline() {
             .pRasterizationState = &rasterizer,
             .pMultisampleState = &multisampling,
             .pColorBlendState = &colorBlending,
-            .layout = mPipelineLayout,
+            .layout = mMVPPipelineLayout,
             .renderPass = renderPass,
             .subpass = 0,
             .basePipelineHandle = VK_NULL_HANDLE,
@@ -1139,10 +1141,8 @@ VkDescriptorSet VulkanUtils::createDescriptorSet() {
         return NULL;
     }
 
-    uint32_t uniform_buffer_offset[2];
-    VkDeviceSize offsetUni = OFFSET_VALUE;
+    VkDeviceSize offsetUni = OFFSET_VALUE + sizeof(UniformBufferProj) + TEST_OFFSET;
     int len = sizeof(VkDeviceSize);
-    uniform_buffer_offset[0] = 0;
 
     VkDescriptorBufferInfo bufferInfo = {};
     bufferInfo.buffer = mUniformBuffers[mImageIndex]->mBuffer;
@@ -1150,7 +1150,6 @@ VkDescriptorSet VulkanUtils::createDescriptorSet() {
     bufferInfo.range = sizeof(UniformBufferObject);
 
     offsetUni += sizeof(UniformBufferObject);
-    uniform_buffer_offset[1] = offsetUni;
     VkDescriptorBufferInfo bufferInfoProj = {};
     bufferInfoProj.buffer = mUniformBuffers[mImageIndex]->mBuffer;
     bufferInfoProj.offset = offsetUni;
@@ -1196,46 +1195,6 @@ VkDescriptorSet VulkanUtils::createDescriptorSet() {
     desSet.pImageInfo = &imageInfo;
     vkUpdateDescriptorSets(mVKDevice.logicalDevice, 1, &desSet, 0, nullptr);
 
-
-//    std::array<VkWriteDescriptorSet, 3> descriptorWrites = {};
-//
-//    descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-//    descriptorWrites[0].dstSet = descriptorSet;
-//    descriptorWrites[0].dstBinding = 0;
-//    descriptorWrites[0].dstArrayElement = 0;
-//    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-//    descriptorWrites[0].descriptorCount = 1;
-//    descriptorWrites[0].pBufferInfo = &bufferInfo;
-//
-////    bufferInfo.buffer = mUniformBuffers[mImageIndex]->mBuffer;
-////    bufferInfo.offset = offsetUni;
-////    bufferInfo.range = sizeof(UniformBufferProj);
-//
-//    descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-//    descriptorWrites[1].dstSet = descriptorSet;
-//    descriptorWrites[1].dstBinding = 1;
-//    descriptorWrites[1].dstArrayElement = 0;
-//    descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-//    descriptorWrites[1].descriptorCount = 1;
-//    descriptorWrites[1].pBufferInfo = &bufferInfoProj;
-//
-//    VkDescriptorImageInfo imageInfo = {
-//            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-//            .imageView = mTexImage.mTextureImageView,
-//            .sampler = mTexImage.mTextureSampler,
-//    };
-//
-//    descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-//    descriptorWrites[2].dstSet = descriptorSet;
-//    descriptorWrites[2].dstBinding = 10;
-//    descriptorWrites[2].dstArrayElement = 0;
-//    descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-//    descriptorWrites[2].descriptorCount = 1;
-//    descriptorWrites[2].pImageInfo = &imageInfo;
-//
-//
-//    vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites.size()),
-//                           descriptorWrites.data(), 0, nullptr);
 
     return descriptorSet;
 
@@ -1390,10 +1349,10 @@ void VulkanUtils::drawCommandBuffersMVP()
 {
     static int step = 0;
     ++step;
-    vertices1[0].pos.x = step;
-    vertices1[1].pos.x = step;
-    vertices1[2].pos.x = step + 540;
-    vertices1[3].pos.x = step + 540;
+    verticesMVP[0].pos.x = step;
+    verticesMVP[1].pos.x = step;
+    verticesMVP[2].pos.x = step + 540;
+    verticesMVP[3].pos.x = step + 540;
     if( step > 200 )
     {
         step = 0;
@@ -1407,7 +1366,7 @@ void VulkanUtils::drawCommandBuffersMVP()
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
             .descriptorPool = mDescriptorPools[i],
             .descriptorSetCount = 1,
-            .pSetLayouts = &mDescriptorSetLayout,
+            .pSetLayouts = &mMVPDescriptorSetLayout,
     };
     if (vkAllocateDescriptorSets(mVKDevice.logicalDevice, &allocInfo, &descriptorSet) != VK_SUCCESS) {
 //        throw std::runtime_error("failed to allocate descriptor set!");
@@ -1415,15 +1374,8 @@ void VulkanUtils::drawCommandBuffersMVP()
     }
 
     uint32_t uniform_buffer_offset; //sizeof(UniformBufferProj);
-    VkDeviceSize offsetUni = sizeof(UniformBufferObject) + sizeof(UniformBufferProj) + OFFSET_VALUE;
+    VkDeviceSize offsetUni = 0;//sizeof(UniformBufferObject) + sizeof(UniformBufferProj) + OFFSET_VALUE;
     uniform_buffer_offset = 0;
-    VkDescriptorBufferInfo bufferInfo = {
-            .buffer = mUniformBuffers[mImageIndex]->mBuffer,
-            .offset = offsetUni,
-            .range = sizeof(UniformBufferObject),
-    };
-
-    offsetUni += sizeof(UniformBufferObject);
 
     VkDescriptorBufferInfo bufferInfoProj = {
             .buffer = mUniformBuffers[mImageIndex]->mBuffer,
@@ -1431,15 +1383,15 @@ void VulkanUtils::drawCommandBuffersMVP()
             .range = sizeof(UniformBufferProj),
     };
 
-    std::array<VkWriteDescriptorSet, 3> descriptorWrites = {};
+    std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
 
     descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptorWrites[0].dstSet = descriptorSet;
-    descriptorWrites[0].dstBinding = 0;
+    descriptorWrites[0].dstBinding = 1;
     descriptorWrites[0].dstArrayElement = 0;
     descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     descriptorWrites[0].descriptorCount = 1;
-    descriptorWrites[0].pBufferInfo = &bufferInfo;
+    descriptorWrites[0].pBufferInfo = &bufferInfoProj;
 
     VkDescriptorImageInfo imageInfo = {
             .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -1455,13 +1407,13 @@ void VulkanUtils::drawCommandBuffersMVP()
     descriptorWrites[1].descriptorCount = 1;
     descriptorWrites[1].pImageInfo = &imageInfo;
 
-    descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[2].dstSet = descriptorSet;
-    descriptorWrites[2].dstBinding = 1;
-    descriptorWrites[2].dstArrayElement = 0;
-    descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    descriptorWrites[2].descriptorCount = 1;
-    descriptorWrites[2].pBufferInfo = &bufferInfoProj;
+//    descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+//    descriptorWrites[2].dstSet = descriptorSet;
+//    descriptorWrites[2].dstBinding = 0;
+//    descriptorWrites[2].dstArrayElement = 0;
+//    descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+//    descriptorWrites[2].descriptorCount = 1;
+//    descriptorWrites[2].pBufferInfo = &bufferInfo;
 
 
     vkUpdateDescriptorSets(mVKDevice.logicalDevice, static_cast<uint32_t>(descriptorWrites.size()),
@@ -1470,25 +1422,25 @@ void VulkanUtils::drawCommandBuffersMVP()
 
     //////////
 
-    VkDeviceSize bufferSize = sizeof(vertices1[0]) * vertices1.size();
+    VkDeviceSize bufferSize = sizeof(verticesMVP[0]) * verticesMVP.size();
     HVkBuffer *pbuffer = mVertexBuffers[mImageIndex];
     VkDeviceSize offset = pbuffer->mOffset;
-    pbuffer->updateData(vertices1.data(), bufferSize );
+    pbuffer->updateData(verticesMVP.data(), bufferSize );
     pbuffer->flush(bufferSize);
 
 
-    vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline);
+    vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mMVPPipeline);
 
     VkBuffer vertexBuffers[] = {pbuffer->mBuffer};
     VkDeviceSize offsets[] = {offset};
     vkCmdBindVertexBuffers(mCommandBuffers[i], VERTEXT_BUFFER_ID, 1, vertexBuffers, offsets);
 
-    vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout,
+    vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mMVPPipelineLayout,
                             0, 1, &descriptorSet, 1, &uniform_buffer_offset);
 
 //        vkCmdBindIndexBuffer(mCommandBuffers[i], mIndexBuffer.mBuffer, 0, VK_INDEX_TYPE_UINT16);
 //        vkCmdDrawIndexed(mCommandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
-    vkCmdDraw(mCommandBuffers[i], static_cast<uint32_t>(vertices1.size()), 1, 0, 0);
+    vkCmdDraw(mCommandBuffers[i], static_cast<uint32_t>(verticesMVP.size()), 1, 0, 0);
 
 }
 
@@ -1548,7 +1500,7 @@ VkDescriptorSet VulkanUtils::createMVPDescriptorSet() {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
             .descriptorPool = mDescriptorPools[mImageIndex],
             .descriptorSetCount = 1,
-            .pSetLayouts = &mDescriptorSetLayout,
+            .pSetLayouts = &mMVPDescriptorSetLayout,
     };
     if (vkAllocateDescriptorSets(mVKDevice.logicalDevice, &allocInfo, &descriptorSet) != VK_SUCCESS) {
 //        throw std::runtime_error("failed to allocate descriptor set!");
@@ -1641,14 +1593,16 @@ void VulkanUtils::updateUniformBufferMVP()
                                      swapchainExtent.width / (float) swapchainExtent.height, 0.001f, 1000.0f),
     };
 
-    mUniformBuffers[mImageIndex]->updateData(&ubo, sizeof(ubo));
-    mUniformBuffers[mImageIndex]->flush(sizeof(ubo));
+//    mUniformBuffers[mImageIndex]->updateData(&ubo, sizeof(ubo));
+//    mUniformBuffers[mImageIndex]->flush(sizeof(ubo));
 
-//    uboproj.proj *= ubo.view;
-//    uboproj.proj *= ubo.model;
+    uboproj.proj *= ubo.view;
+    uboproj.proj *= ubo.model;
 
     mUniformBuffers[mImageIndex]->updateData(&uboproj, sizeof(uboproj));
     mUniformBuffers[mImageIndex]->flush(sizeof(uboproj));
+
+    mUniformBuffers[mImageIndex]->mOffset += TEST_OFFSET;
 
     return;
 }
@@ -1702,19 +1656,19 @@ void VulkanUtils::AcquireNextImage()
 //    static int step = 0;
 //
 //    ++step;
-//    vertices1[0].pos.x = step;
-//    vertices1[1].pos.x = step;
-//    vertices1[2].pos.x = step + 540;
-//    vertices1[3].pos.x = step + 540;
+//    verticesMVP[0].pos.x = step;
+//    verticesMVP[1].pos.x = step;
+//    verticesMVP[2].pos.x = step + 540;
+//    verticesMVP[3].pos.x = step + 540;
 //    if( step > 200 )
 //    {
 //        step = 0;
 //    }
 //
 //    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
-//    vkCmdUpdateBuffer(mCommandBuffers[mImageIndex], mVertexBuffer1.mBuffer, 0, bufferSize, vertices1.data() );
+//    vkCmdUpdateBuffer(mCommandBuffers[mImageIndex], mVertexBuffer1.mBuffer, 0, bufferSize, verticesMVP.data() );
 //
-////    mVertexBuffer1.updateData(vertices1.data());
+////    mVertexBuffer1.updateData(verticesMVP.data());
 //
 //}
 
