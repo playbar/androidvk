@@ -19,7 +19,7 @@ public:
 	VkDescriptorBufferInfo mDescriptor;
 	VkDeviceSize mSize = 0;
 	VkDeviceSize mOffset = 0;
-	VkDeviceSize alignment = 0;
+	VkDeviceSize mAlignment = 0;
 	VkBufferUsageFlags usageFlags;
 	VkMemoryPropertyFlags memoryPropertyFlags;
 	unsigned  char* mpData = nullptr;
@@ -43,6 +43,7 @@ public:
 
 	void setupDescriptor(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
+	uint32_t calc_align(uint32_t n,uint32_t align);
 	VkResult flush(VkDeviceSize size);
 
 	VkResult invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);

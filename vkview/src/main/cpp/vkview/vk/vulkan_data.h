@@ -58,12 +58,12 @@ struct Vertex {
 
 };
 
-struct UniformBufferObject {
+struct UniformBufferMV {
     glm::mat4 model;
     glm::mat4 view;
 };
 
-struct UniformBufferProj {
+struct UniformBufferMVP {
     glm::mat4 proj;
 };
 

@@ -112,7 +112,7 @@ public:
     VulkanDevice mVKDevice;
 
     VkSwapchainKHR swapchain;
-    VkRenderPass renderPass;
+    VkRenderPass mRenderPass;
     VkDescriptorPool mDescriptorPool;
 
 

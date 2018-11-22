@@ -232,6 +232,7 @@ void VulkanDevice::pickPhysicalDevice() {
 
 void VulkanDevice::createLogicalDevice()
 {
+    vkGetPhysicalDeviceProperties(physicalDevice, &m_device_properties);
     QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;

@@ -24,7 +24,7 @@ const char *IMAGE_APPLE = "apple.png";
 const int WIDTH = 800;
 const int HEIGHT = 448;
 
-#define TEST_OFFSET 16
+#define TEST_OFFSET 0
 
 //const std::vector<Vertex> vertices = {
 //        {{-0.5f, -0.5f}, {1.0f, 0.0f}},
@@ -437,7 +437,7 @@ void VulkanUtils::createRenderPass()
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
 
-    if (vkCreateRenderPass(mVKDevice.logicalDevice, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
+    if (vkCreateRenderPass(mVKDevice.logicalDevice, &renderPassInfo, nullptr, &mRenderPass) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create render pass!");
     }
@@ -699,7 +699,7 @@ void VulkanUtils::createMVPDescriptorSetLayout()
 //            .pMultisampleState = &multisampling,
 //            .pColorBlendState = &colorBlending,
 //            .layout = mPipelineLayout,
-//            .renderPass = renderPass,
+//            .renderPass = mRenderPass,
 //            .subpass = 0,
 //            .basePipelineHandle = VK_NULL_HANDLE,
 //    };
@@ -807,13 +807,20 @@ void VulkanUtils::createPipeline() {
             .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
     };
 
-    VkPipelineColorBlendAttachmentState colorBlendAttachment = {
-            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT
+    VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
+    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT
                               | VK_COLOR_COMPONENT_G_BIT
                               | VK_COLOR_COMPONENT_B_BIT
-                              | VK_COLOR_COMPONENT_A_BIT,
-            .blendEnable = VK_FALSE,
-    };
+                              | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachment.blendEnable = VK_TRUE;
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+
+
     VkPipelineColorBlendStateCreateInfo colorBlending = {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
             .logicOpEnable = VK_FALSE,
@@ -838,7 +845,7 @@ void VulkanUtils::createPipeline() {
             .pMultisampleState = &multisampling,
             .pColorBlendState = &colorBlending,
             .layout = mPipelineLayout,
-            .renderPass = renderPass,
+            .renderPass = mRenderPass,
             .subpass = 0,
             .basePipelineHandle = VK_NULL_HANDLE,
     };
@@ -976,7 +983,7 @@ void VulkanUtils::createMVPPipeline() {
             .pMultisampleState = &multisampling,
             .pColorBlendState = &colorBlending,
             .layout = mMVPPipelineLayout,
-            .renderPass = renderPass,
+            .renderPass = mRenderPass,
             .subpass = 0,
             .basePipelineHandle = VK_NULL_HANDLE,
     };
@@ -1002,7 +1009,7 @@ void VulkanUtils::createFramebuffers() {
 
         VkFramebufferCreateInfo framebufferInfo = {};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = renderPass;
+        framebufferInfo.renderPass = mRenderPass;
         framebufferInfo.attachmentCount = 1;
         framebufferInfo.pAttachments = attachments;
         framebufferInfo.width = swapchainExtent.width;
@@ -1126,80 +1133,6 @@ void VulkanUtils::createDescriptorPool() {
     }
 }
 
-VkDescriptorSet VulkanUtils::createDescriptorSet() {
-
-    VkDescriptorSet descriptorSet;
-
-    VkDescriptorSetAllocateInfo allocInfo = {
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            .descriptorPool = mDescriptorPools[mImageIndex],
-            .descriptorSetCount = 1,
-            .pSetLayouts = &mDescriptorSetLayout,
-    };
-    if (vkAllocateDescriptorSets(mVKDevice.logicalDevice, &allocInfo, &descriptorSet) != VK_SUCCESS) {
-//        throw std::runtime_error("failed to allocate descriptor set!");
-        return NULL;
-    }
-
-    VkDeviceSize offsetUni = OFFSET_VALUE + sizeof(UniformBufferProj) + TEST_OFFSET;
-    int len = sizeof(VkDeviceSize);
-
-    VkDescriptorBufferInfo bufferInfo = {};
-    bufferInfo.buffer = mUniformBuffers[mImageIndex]->mBuffer;
-    bufferInfo.offset = offsetUni;
-    bufferInfo.range = sizeof(UniformBufferObject);
-
-    offsetUni += sizeof(UniformBufferObject);
-    VkDescriptorBufferInfo bufferInfoProj = {};
-    bufferInfoProj.buffer = mUniformBuffers[mImageIndex]->mBuffer;
-    bufferInfoProj.offset = offsetUni;
-    bufferInfoProj.range = sizeof(UniformBufferProj);
-
-
-    VkWriteDescriptorSet desSet;
-    desSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    desSet.dstSet = descriptorSet;
-    desSet.dstBinding = 0;
-    desSet.dstArrayElement = 0;
-    desSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    desSet.descriptorCount = 1;
-    desSet.pBufferInfo = &bufferInfo;
-    vkUpdateDescriptorSets(mVKDevice.logicalDevice, 1, &desSet, 0, nullptr);
-
-    bufferInfo.buffer = mUniformBuffers[mImageIndex]->mBuffer;
-    bufferInfo.offset = offsetUni;
-    bufferInfo.range = sizeof(UniformBufferProj);
-
-    desSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    desSet.dstSet = descriptorSet;
-    desSet.dstBinding = 1;
-    desSet.dstArrayElement = 0;
-    desSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    desSet.descriptorCount = 1;
-    desSet.pBufferInfo = &bufferInfo;
-    vkUpdateDescriptorSets(mVKDevice.logicalDevice, 1, &desSet, 0, nullptr);
-
-
-    VkDescriptorImageInfo imageInfo = {
-            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            .imageView = mTexImage.mTextureImageView,
-            .sampler = mTexImage.mTextureSampler,
-    };
-
-    desSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    desSet.dstSet = descriptorSet;
-    desSet.dstBinding = 10;
-    desSet.dstArrayElement = 0;
-    desSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    desSet.descriptorCount = 1;
-    desSet.pImageInfo = &imageInfo;
-    vkUpdateDescriptorSets(mVKDevice.logicalDevice, 1, &desSet, 0, nullptr);
-
-
-    return descriptorSet;
-
-}
-
 void VulkanUtils::bindDescriptorSet()
 {
 //    VkDescriptorBufferInfo bufferInfo = {
@@ -1211,7 +1144,7 @@ void VulkanUtils::bindDescriptorSet()
     VkDescriptorBufferInfo bufferInfoProj = {
             .buffer = mUniformBuffers[mImageIndex]->mBuffer,
             .offset = 0,
-            .range = sizeof(UniformBufferProj),
+            .range = sizeof(UniformBufferMVP),
     };
 
 
@@ -1233,8 +1166,8 @@ void VulkanUtils::bindDescriptorSet()
 
     VkDescriptorBufferInfo bufferInfoProj1 = {
             .buffer = mUniformBuffers[mImageIndex]->mBuffer,
-            .offset = sizeof(UniformBufferProj),
-            .range = sizeof(UniformBufferProj),
+            .offset = sizeof(UniformBufferMVP),
+            .range = sizeof(UniformBufferMVP),
     };
     std::array<VkWriteDescriptorSet, 1> descriptorWrites1 = {};
 
@@ -1380,7 +1313,7 @@ void VulkanUtils::drawCommandBuffersMVP()
     VkDescriptorBufferInfo bufferInfoProj = {
             .buffer = mUniformBuffers[mImageIndex]->mBuffer,
             .offset = offsetUni,
-            .range = sizeof(UniformBufferProj),
+            .range = sizeof(UniformBufferMVP),
     };
 
     std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
@@ -1461,7 +1394,7 @@ void VulkanUtils::updateUniformBuffer() {
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1e3f;
 
-    UniformBufferObject ubo = {
+    UniformBufferMV uniMV = {
 //            .model = glm::rotate(glm::mat4(), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
             .model = glm::scale( glm::mat4(), glm::vec3(0.002, 0.002f, 1.0f)),
             .view = glm::lookAt(glm::vec3(0.0f, 0.0f, -2.0f),
@@ -1472,25 +1405,98 @@ void VulkanUtils::updateUniformBuffer() {
 //                                     swapchainExtent.width / (float) swapchainExtent.height, 0.1f, 10.0f),
 
     };
-    ubo.model = glm::rotate(ubo.model, time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    uniMV.model = glm::rotate(uniMV.model, time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-    UniformBufferProj uboproj = {
+    UniformBufferMVP uniMVP = {
             .proj = glm::perspective(glm::radians(90.0f),
                                      swapchainExtent.width / (float) swapchainExtent.height, 0.001f, 1000.0f),
     };
 
-    mUniformBuffers[mImageIndex]->updateData(&ubo, sizeof(ubo));
-    mUniformBuffers[mImageIndex]->flush(sizeof(ubo));
 
+//    uniMVP.proj *= uniMV.view;
+//    uniMVP.proj *= uniMV.model;
 
-//    uboproj.proj *= ubo.view;
-//    uboproj.proj *= ubo.model;
+    mUniformBuffers[mImageIndex]->updateData(&uniMVP, sizeof(uniMVP));
+    mUniformBuffers[mImageIndex]->flush(sizeof(uniMVP));
 
-    mUniformBuffers[mImageIndex]->updateData(&uboproj, sizeof(uboproj));
-    mUniformBuffers[mImageIndex]->flush(sizeof(uboproj));
+    mUniformBuffers[mImageIndex]->updateData(&uniMV, sizeof(uniMV));
+    mUniformBuffers[mImageIndex]->flush(sizeof(uniMV));
 
     return;
 }
+
+
+VkDescriptorSet VulkanUtils::createDescriptorSet() {
+
+    VkDescriptorSet descriptorSet;
+
+    VkDescriptorSetAllocateInfo allocInfo = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+            .descriptorPool = mDescriptorPools[mImageIndex],
+            .descriptorSetCount = 1,
+            .pSetLayouts = &mDescriptorSetLayout,
+    };
+    if (vkAllocateDescriptorSets(mVKDevice.logicalDevice, &allocInfo, &descriptorSet) != VK_SUCCESS) {
+//        throw std::runtime_error("failed to allocate descriptor set!");
+        return NULL;
+    }
+    VkWriteDescriptorSet desSet;
+    VkDeviceSize offsetUni = OFFSET_VALUE + sizeof(UniformBufferMVP) + TEST_OFFSET;
+
+
+    VkDescriptorBufferInfo bufferInfo = {};
+    bufferInfo.buffer = mUniformBuffers[mImageIndex]->mBuffer;
+    bufferInfo.offset = offsetUni;
+    bufferInfo.range = sizeof(UniformBufferMVP);
+
+    desSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    desSet.dstSet = descriptorSet;
+    desSet.dstBinding = 1;
+    desSet.dstArrayElement = 0;
+    desSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    desSet.descriptorCount = 1;
+    desSet.pBufferInfo = &bufferInfo;
+    vkUpdateDescriptorSets(mVKDevice.logicalDevice, 1, &desSet, 0, nullptr);
+
+    //////////////
+
+    offsetUni += sizeof(UniformBufferMVP);
+    bufferInfo.buffer = mUniformBuffers[mImageIndex]->mBuffer;
+    bufferInfo.offset = offsetUni;
+    bufferInfo.range = sizeof(UniformBufferMV);
+
+    desSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    desSet.dstSet = descriptorSet;
+    desSet.dstBinding = 0;
+    desSet.dstArrayElement = 0;
+    desSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    desSet.descriptorCount = 1;
+    desSet.pBufferInfo = &bufferInfo;
+    vkUpdateDescriptorSets(mVKDevice.logicalDevice, 1, &desSet, 0, nullptr);
+
+    /////////////
+
+
+    VkDescriptorImageInfo imageInfo = {
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .imageView = mTexImage.mTextureImageView,
+            .sampler = mTexImage.mTextureSampler,
+    };
+
+    desSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    desSet.dstSet = descriptorSet;
+    desSet.dstBinding = 10;
+    desSet.dstArrayElement = 0;
+    desSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    desSet.descriptorCount = 1;
+    desSet.pImageInfo = &imageInfo;
+    vkUpdateDescriptorSets(mVKDevice.logicalDevice, 1, &desSet, 0, nullptr);
+
+
+    return descriptorSet;
+
+}
+
 
 VkDescriptorSet VulkanUtils::createMVPDescriptorSet() {
 
@@ -1515,14 +1521,14 @@ VkDescriptorSet VulkanUtils::createMVPDescriptorSet() {
     VkDescriptorBufferInfo bufferInfo = {};
     bufferInfo.buffer = mUniformBuffers[mImageIndex]->mBuffer;
     bufferInfo.offset = offsetUni;
-    bufferInfo.range = sizeof(UniformBufferObject);
+    bufferInfo.range = sizeof(UniformBufferMV);
 
-    offsetUni += sizeof(UniformBufferObject);
+    offsetUni += sizeof(UniformBufferMV);
     uniform_buffer_offset[1] = offsetUni;
     VkDescriptorBufferInfo bufferInfoProj = {};
     bufferInfoProj.buffer = mUniformBuffers[mImageIndex]->mBuffer;
     bufferInfoProj.offset = offsetUni;
-    bufferInfoProj.range = sizeof(UniformBufferProj);
+    bufferInfoProj.range = sizeof(UniformBufferMVP);
 
 
     VkWriteDescriptorSet desSet;
@@ -1537,7 +1543,7 @@ VkDescriptorSet VulkanUtils::createMVPDescriptorSet() {
 
     bufferInfo.buffer = mUniformBuffers[mImageIndex]->mBuffer;
     bufferInfo.offset = offsetUni;
-    bufferInfo.range = sizeof(UniformBufferProj);
+    bufferInfo.range = sizeof(UniformBufferMVP);
 
     desSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     desSet.dstSet = descriptorSet;
@@ -1575,7 +1581,7 @@ void VulkanUtils::updateUniformBufferMVP()
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1e3f;
 
-    UniformBufferObject ubo = {
+    UniformBufferMV ubo = {
 //            .model = glm::rotate(glm::mat4(), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
             .model = glm::scale( glm::mat4(), glm::vec3(0.002, 0.002f, 1.0f)),
             .view = glm::lookAt(glm::vec3(0.0f, 0.0f, -2.0f),
@@ -1588,7 +1594,7 @@ void VulkanUtils::updateUniformBufferMVP()
     };
 //    ubo.model = glm::rotate(ubo.model, time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-    UniformBufferProj uboproj = {
+    UniformBufferMVP uboproj = {
             .proj = glm::perspective(glm::radians(90.0f),
                                      swapchainExtent.width / (float) swapchainExtent.height, 0.001f, 1000.0f),
     };
@@ -1626,7 +1632,7 @@ void VulkanUtils::AcquireNextImage()
 
     VkRenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = renderPass;
+    renderPassInfo.renderPass = mRenderPass;
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = swapchainExtent;
 
@@ -1759,7 +1765,7 @@ void VulkanUtils::cleanupSwapchain() {
 
     vkDestroyPipeline(mVKDevice.logicalDevice, mPipeline, nullptr);
     vkDestroyPipelineLayout(mVKDevice.logicalDevice, mPipelineLayout, nullptr);
-    vkDestroyRenderPass(mVKDevice.logicalDevice, renderPass, nullptr);
+    vkDestroyRenderPass(mVKDevice.logicalDevice, mRenderPass, nullptr);
 
     for (size_t i = 0; i < mSwapchainImageViews.size(); i++) {
         vkDestroyImageView(mVKDevice.logicalDevice, mSwapchainImageViews[i], nullptr);

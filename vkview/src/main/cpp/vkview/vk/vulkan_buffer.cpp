@@ -1,4 +1,5 @@
 #include <cstring>
+#include <mylog.h>
 #include "vulkan_buffer.h"
 #include "vulkan_utils.h"
 
@@ -39,6 +40,11 @@ void HVkBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
 
 	VkMemoryRequirements memRequirements;
 	vkGetBufferMemoryRequirements(mVkDevice->logicalDevice, mBuffer, &memRequirements);
+
+    mAlignment = memRequirements.alignment;
+
+	LOGE("vkbuffer, size:%lld, align:%lld, membit:%d", memRequirements.size, memRequirements.alignment,
+		memRequirements.memoryTypeBits);
 
 	VkMemoryAllocateInfo allocInfo = {
 			.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
@@ -151,6 +157,19 @@ void HVkBuffer::setupDescriptor(VkDeviceSize size, VkDeviceSize offset)
 }
 
 
+static uint32_t AlignUp(uint32_t value, size_t size)
+{
+	return (value + (size - value % size) % size);
+}
+
+uint32_t HVkBuffer::calc_align(uint32_t n,uint32_t align)
+{
+	return ((n + align - 1) & (~(align - 1)));
+//    if ( n / align * align == n)
+//        return n;
+//
+//    return  (n / align + 1) * align;
+}
 
 VkResult HVkBuffer::flush(VkDeviceSize size)
 {
@@ -160,7 +179,9 @@ VkResult HVkBuffer::flush(VkDeviceSize size)
 	mappedRange.offset = mOffset;
 	mappedRange.size = size;
 	VkResult re = vkFlushMappedMemoryRanges(mVkDevice->logicalDevice, 1, &mappedRange);
-	mOffset += size;
+
+	mOffset += calc_align(size, mAlignment);
+
 	if( mOffset >= mSize )
 	{
 		mOffset = OFFSET_VALUE;

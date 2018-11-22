@@ -148,11 +148,17 @@ static VkPipelineColorBlendAttachmentState GetVulkanAttachmentBlendState(const B
 
   if (state.usedualsrc && g_vulkan_context->SupportsDualSourceBlend())
   {
-    static constexpr std::array<VkBlendFactor, 8> src_factors = {
-        {VK_BLEND_FACTOR_ZERO, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_DST_COLOR,
-         VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR, VK_BLEND_FACTOR_SRC1_ALPHA,
-         VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA, VK_BLEND_FACTOR_DST_ALPHA,
-         VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA}};
+    static constexpr std::array<VkBlendFactor, 8> src_factors =
+            {{
+                     VK_BLEND_FACTOR_ZERO,
+                     VK_BLEND_FACTOR_ONE,
+                     VK_BLEND_FACTOR_DST_COLOR,
+                     VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR,
+                     VK_BLEND_FACTOR_SRC1_ALPHA,
+                     VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA,
+                     VK_BLEND_FACTOR_DST_ALPHA,
+                     VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA
+             }};
     static constexpr std::array<VkBlendFactor, 8> dst_factors = {
         {VK_BLEND_FACTOR_ZERO, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_SRC_COLOR,
          VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR, VK_BLEND_FACTOR_SRC1_ALPHA,
@@ -254,9 +260,12 @@ VkPipeline ShaderCache::CreatePipeline(const PipelineInfo& info)
       info.vertex_format ? info.vertex_format->GetVertexInputStateInfo() : empty_vertex_input_state;
 
   // Input assembly
-  static constexpr std::array<VkPrimitiveTopology, 4> vk_primitive_topologies = {
-      {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
-       VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP}};
+  static constexpr std::array<VkPrimitiveTopology, 4> vk_primitive_topologies = {{
+              VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
+              VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+              VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+              VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP}};
+
   VkPipelineInputAssemblyStateCreateInfo input_assembly_state = {
       VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
       vk_primitive_topologies[static_cast<u32>(info.rasterization_state.primitive.Value())],

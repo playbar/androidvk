@@ -31,8 +31,26 @@ public:
     void resetCommandPool();
     VkCommandBuffer beginSingleTimeCommands();
     void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+    
+    VkDeviceSize GetUniformBufferAlignment() const
+    {
+        return m_device_properties.limits.minUniformBufferOffsetAlignment;
+    }
+    VkDeviceSize GetTexelBufferAlignment() const
+    {
+        return m_device_properties.limits.minUniformBufferOffsetAlignment;
+    }
+    VkDeviceSize GetBufferImageGranularity() const
+    {
+        return m_device_properties.limits.bufferImageGranularity;
+    }
+    float GetMaxSamplerAnisotropy() const
+    {
+        return m_device_properties.limits.maxSamplerAnisotropy;
+    }
 
 public:
+    VkPhysicalDeviceProperties m_device_properties = {};
     VkDebugReportCallbackEXT callback;
     VkInstance instance;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
