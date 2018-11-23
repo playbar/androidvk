@@ -418,7 +418,7 @@ VulkanMain::~VulkanMain()
 		vkDestroyDescriptorPool(mVulkanDevice->mLogicalDevice, mDescriptorPool, nullptr);
 	}
 	destroyCommandBuffers();
-	vkDestroyRenderPass(mVulkanDevice->mLogicalDevice, renderPass, nullptr);
+	vkDestroyRenderPass(mVulkanDevice->mLogicalDevice, mRenderPass, nullptr);
 	for (uint32_t i = 0; i < mFrameBuffers.size(); i++)
 	{
 		vkDestroyFramebuffer(mVulkanDevice->mLogicalDevice, mFrameBuffers[i], nullptr);
@@ -732,7 +732,7 @@ void VulkanMain::updateCommandBuffers()
 	clearValues[1].depthStencil = { 1.0f, 0 };
 
 	VkRenderPassBeginInfo renderPassBeginInfo = InitRenderPassBeginInfo();
-	renderPassBeginInfo.renderPass = renderPass;
+	renderPassBeginInfo.renderPass = mRenderPass;
 	renderPassBeginInfo.renderArea.offset.x = 0;
 	renderPassBeginInfo.renderArea.offset.y = 0;
 	renderPassBeginInfo.renderArea.extent.width = width;
@@ -860,7 +860,7 @@ void VulkanMain::setupFrameBuffer()
 	VkFramebufferCreateInfo frameBufferCreateInfo = {};
 	frameBufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 	frameBufferCreateInfo.pNext = NULL;
-	frameBufferCreateInfo.renderPass = renderPass;
+	frameBufferCreateInfo.renderPass = mRenderPass;
 	frameBufferCreateInfo.attachmentCount = 2;
 	frameBufferCreateInfo.pAttachments = attachments;
 	frameBufferCreateInfo.width = width;
@@ -945,7 +945,7 @@ void VulkanMain::setupRenderPass()
 	renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
 	renderPassInfo.pDependencies = dependencies.data();
 
-	VK_CHECK_RESULT(vkCreateRenderPass(mVulkanDevice->mLogicalDevice, &renderPassInfo, nullptr, &renderPass));
+	VK_CHECK_RESULT(vkCreateRenderPass(mVulkanDevice->mLogicalDevice, &renderPassInfo, nullptr, &mRenderPass));
 }
 
 void VulkanMain::getEnabledFeatures()
@@ -1144,7 +1144,7 @@ void VulkanMain::preparePipelines()
             InitPipelineDynamicStateCreateInfo(dynamicStateEnables);
 
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo =
-            InitPipelineCreateInfo(mPipelineLayout, renderPass);
+            InitPipelineCreateInfo(mPipelineLayout, mRenderPass);
 
 	std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
 

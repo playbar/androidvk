@@ -100,7 +100,7 @@ protected:
 	VkPipelineStageFlags submitPipelineStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	VkSubmitInfo mSubmitInfo;
 
-	VkRenderPass renderPass;
+	VkRenderPass mRenderPass;
 	std::vector<VkFramebuffer> mFrameBuffers;
 	std::vector<VkCommandBuffer> mDrawCmdBuffers;
 	uint32_t currentBuffer = 0;
