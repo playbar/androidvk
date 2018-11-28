@@ -201,7 +201,7 @@ void VulkanMain::prepare()
 	setupDescriptorPool();
 	setupDescriptorSet();
     updateCommandBuffers();
-	prepared = true;
+	mPrepared = true;
 
 }
 
@@ -218,7 +218,7 @@ VkPipelineShaderStageCreateInfo VulkanMain::loadShader(std::string fileName, VkS
 #endif
 	shaderStage.pName = "main"; // todo : make param
 	assert(shaderStage.module != VK_NULL_HANDLE);
-	shaderModules.push_back(shaderStage.module);
+	mShaderModules.push_back(shaderStage.module);
 	return shaderStage;
 }
 
@@ -258,7 +258,7 @@ void VulkanMain::renderLoop()
 		}
 
 		// Render frame
-		if (prepared)
+		if (mPrepared)
 		{
 			auto tStart = std::chrono::high_resolution_clock::now();
 			render();
@@ -396,6 +396,12 @@ VulkanMain::VulkanMain(bool enableValidation)
 
 VulkanMain::~VulkanMain()
 {
+	Destroy();
+}
+
+void VulkanMain::Destroy()
+{
+    mPrepared = false;
 	// Clean up used Vulkan resources
 	// Note : Inherited destructor cleans up resources stored in base class
 	vkDestroyPipeline(mVulkanDevice->mLogicalDevice, mPipeLinePhong, nullptr);
@@ -424,10 +430,12 @@ VulkanMain::~VulkanMain()
 		vkDestroyFramebuffer(mVulkanDevice->mLogicalDevice, mFrameBuffers[i], nullptr);
 	}
 
-	for (auto& shaderModule : shaderModules)
+	for (auto& shaderModule : mShaderModules)
 	{
 		vkDestroyShaderModule(mVulkanDevice->mLogicalDevice, shaderModule, nullptr);
 	}
+    mShaderModules.clear();
+
 	vkDestroyImageView(mVulkanDevice->mLogicalDevice, depthStencil.view, nullptr);
 	vkDestroyImage(mVulkanDevice->mLogicalDevice, depthStencil.image, nullptr);
 	vkFreeMemory(mVulkanDevice->mLogicalDevice, depthStencil.mem, nullptr);
@@ -449,11 +457,10 @@ VulkanMain::~VulkanMain()
 
 	if (settings.validation)
 	{
-        VksDebugFreeDebugCallback(instance);
+		VksDebugFreeDebugCallback(instance);
 	}
 
 	vkDestroyInstance(instance, nullptr);
-
 }
 
 void VulkanMain::initVulkan()
@@ -684,7 +691,7 @@ void VulkanMain::handleAppCommand(android_app * app, int32_t cmd)
 			vulkanExample->initVulkan();
 			vulkanExample->initSwapchain();
 			vulkanExample->prepare();
-			assert(vulkanExample->prepared);
+			assert(vulkanExample->mPrepared);
 		}
 		else
 		{
@@ -702,13 +709,14 @@ void VulkanMain::handleAppCommand(android_app * app, int32_t cmd)
 	case APP_CMD_TERM_WINDOW:
 		// Window is hidden or closed, clean up resources
 		LOGD("APP_CMD_TERM_WINDOW");
-		vulkanExample->mSwapChain.cleanup();
+		vulkanExample->Destroy();
+//		vulkanExample->mSwapChain.cleanup();
 		break;
 	}
 }
 
 void VulkanMain::render(){
-	if (!prepared)
+	if (!mPrepared)
 		return;
 	draw();
 }
@@ -963,11 +971,11 @@ void VulkanMain::getEnabledFeatures()
 
 void VulkanMain::windowResize()
 {
-	if (!prepared)
+	if (!mPrepared)
 	{
 		return;
 	}
-	prepared = false;
+	mPrepared = false;
 
 	// Ensure all operations on the device have been finished before destroying resources
 	vkDeviceWaitIdle(mVulkanDevice->mLogicalDevice);
@@ -1010,7 +1018,7 @@ void VulkanMain::windowResize()
 	windowResized();
 	viewChanged();
 
-	prepared = true;
+	mPrepared = true;
 }
 
 void VulkanMain::windowResized()

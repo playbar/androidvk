@@ -105,7 +105,7 @@ protected:
 	std::vector<VkCommandBuffer> mDrawCmdBuffers;
 	uint32_t currentBuffer = 0;
 	VkDescriptorPool mDescriptorPool = VK_NULL_HANDLE;
-	std::vector<VkShaderModule> shaderModules;
+	std::vector<VkShaderModule> mShaderModules;
 	VkPipelineCache mPipelineCache;
 	VulkanSwapChain mSwapChain;
 
@@ -118,7 +118,7 @@ protected:
 	// Returns the base asset path (for shaders, models, textures) depending on the os
 	const std::string getAssetPath();
 public: 
-	bool prepared = false;
+	bool mPrepared = false;
 	uint32_t width = 1280;
 	uint32_t height = 720;
 
@@ -188,6 +188,8 @@ public:
 
 	// dtor
 	~VulkanMain();
+
+	void Destroy();
 
 	// Setup the vulkan instance, enable required extensions and connect to the physical device (GPU)
 	void initVulkan();
