@@ -72,6 +72,6 @@ public class JniActivity extends Activity {
 
     static
     {
-        System.loadLibrary("vksample");
+        System.loadLibrary("vkvulkan");
     }
 }
