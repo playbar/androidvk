@@ -6,7 +6,7 @@ android {
     compileSdkVersion  24
     buildToolsVersion '26.0.2'
     defaultConfig {
-        applicationId 'com.vk'
+        applicationId 'com.vk.vulkan'
         minSdkVersion 24
         targetSdkVersion 24
         renderscriptTargetApi 19

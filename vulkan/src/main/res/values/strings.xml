@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">vksample</string>
+    <string name="app_name">vkvulkan</string>
     <string name="picasso_app_name">RoundedPicassoView</string>
     <string name="action_settings">blog address</string>
     <string name="hello">Hello World, DraggableGridViewSampleActivity!</string>
