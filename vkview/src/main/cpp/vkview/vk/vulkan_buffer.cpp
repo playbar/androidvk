@@ -34,12 +34,12 @@ void HVkBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
 			.usage = usage,
 			.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
 	};
-	if (vkCreateBuffer(mVkDevice->logicalDevice, &bufferInfo, nullptr, &mBuffer) != VK_SUCCESS) {
+	if (vkCreateBuffer(mVkDevice->mLogicalDevice, &bufferInfo, nullptr, &mBuffer) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create buffer!");
 	}
 
 	VkMemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(mVkDevice->logicalDevice, mBuffer, &memRequirements);
+	vkGetBufferMemoryRequirements(mVkDevice->mLogicalDevice, mBuffer, &memRequirements);
 
     mAlignment = memRequirements.alignment;
 
@@ -52,13 +52,13 @@ void HVkBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
 			.memoryTypeIndex = mVkDevice->findMemoryType(memRequirements.memoryTypeBits, properties),
 	};
 
-	if (vkAllocateMemory(mVkDevice->logicalDevice, &allocInfo, nullptr, &mMemory) != VK_SUCCESS) {
+	if (vkAllocateMemory(mVkDevice->mLogicalDevice, &allocInfo, nullptr, &mMemory) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate buffer memory!");
 	}
 
-	vkBindBufferMemory(mVkDevice->logicalDevice, mBuffer, mMemory, 0);
+	vkBindBufferMemory(mVkDevice->mLogicalDevice, mBuffer, mMemory, 0);
 //	void* mapped_ptr = nullptr;
-//	vkMapMemory(mVkDevice->logicalDevice, mMemory, 0, mSize, 0, &mapped_ptr);
+//	vkMapMemory(mVkDevice->mLogicalDevice, mMemory, 0, mSize, 0, &mapped_ptr);
 //	mpData = (unsigned char*)mapped_ptr;
 	return;
 }
@@ -66,7 +66,7 @@ void HVkBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
 VkResult HVkBuffer::map(VkDeviceSize size, VkDeviceSize offset)
 {
 	void* mapped_ptr = nullptr;
-	VkResult re = vkMapMemory(mVkDevice->logicalDevice, mMemory, offset, size, 0, &mapped_ptr);
+	VkResult re = vkMapMemory(mVkDevice->mLogicalDevice, mMemory, offset, size, 0, &mapped_ptr);
 	mpData = (unsigned char*)mapped_ptr;
 	return re;
 
@@ -81,7 +81,7 @@ void HVkBuffer::copyTo(void* data, VkDeviceSize size)
 void HVkBuffer::updateData(void* data, uint32_t length)
 {
 	void* mapped_ptr = nullptr;
-	vkMapMemory(mVkDevice->logicalDevice, mMemory, 0, mSize, 0, &mapped_ptr);
+	vkMapMemory(mVkDevice->mLogicalDevice, mMemory, 0, mSize, 0, &mapped_ptr);
 	mpData = (unsigned char*)mapped_ptr;
 
 	if( mOffset + length >= mSize )
@@ -92,7 +92,7 @@ void HVkBuffer::updateData(void* data, uint32_t length)
 
 	if (mpData)
 	{
-		vkUnmapMemory(mVkDevice->logicalDevice, mMemory);
+		vkUnmapMemory(mVkDevice->mLogicalDevice, mMemory);
 		mpData = nullptr;
 	}
 }
@@ -101,7 +101,7 @@ void HVkBuffer::unmap()
 {
 	if (mpData)
 	{
-		vkUnmapMemory(mVkDevice->logicalDevice, mMemory);
+		vkUnmapMemory(mVkDevice->mLogicalDevice, mMemory);
         mpData = nullptr;
 	}
 }
@@ -116,7 +116,7 @@ void HVkBuffer::copyBuffer(HVkBuffer &srcBuffer)
 	};
 
 	VkCommandBuffer commandBuffer;
-	vkAllocateCommandBuffers(mVkDevice->logicalDevice, &allocInfo, &commandBuffer);
+	vkAllocateCommandBuffers(mVkDevice->mLogicalDevice, &allocInfo, &commandBuffer);
 
 	VkCommandBufferBeginInfo beginInfo = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -139,14 +139,14 @@ void HVkBuffer::copyBuffer(HVkBuffer &srcBuffer)
 	vkQueueSubmit(mVkDevice->graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(mVkDevice->graphicsQueue);
 
-	vkFreeCommandBuffers(mVkDevice->logicalDevice, mVkDevice->mCommandPool, 1, &commandBuffer);
+	vkFreeCommandBuffers(mVkDevice->mLogicalDevice, mVkDevice->mCommandPool, 1, &commandBuffer);
 	return;
 }
 
 
 VkResult HVkBuffer::bind(VkDeviceSize offset)
 {
-	return vkBindBufferMemory(mVkDevice->logicalDevice, mBuffer, mMemory, offset);
+	return vkBindBufferMemory(mVkDevice->mLogicalDevice, mBuffer, mMemory, offset);
 }
 
 void HVkBuffer::setupDescriptor(VkDeviceSize size, VkDeviceSize offset)
@@ -178,7 +178,7 @@ VkResult HVkBuffer::flush(VkDeviceSize size)
 	mappedRange.memory = mMemory;
 	mappedRange.offset = mOffset;
 	mappedRange.size = size;
-	VkResult re = vkFlushMappedMemoryRanges(mVkDevice->logicalDevice, 1, &mappedRange);
+	VkResult re = vkFlushMappedMemoryRanges(mVkDevice->mLogicalDevice, 1, &mappedRange);
 
 	mOffset += calc_align(size, mAlignment);
 
@@ -202,7 +202,7 @@ VkResult HVkBuffer::invalidate(VkDeviceSize size, VkDeviceSize offset)
 	mappedRange.memory = mMemory;
 	mappedRange.offset = offset;
 	mappedRange.size = size;
-	return vkInvalidateMappedMemoryRanges(mVkDevice->logicalDevice, 1, &mappedRange);
+	return vkInvalidateMappedMemoryRanges(mVkDevice->mLogicalDevice, 1, &mappedRange);
 }
 
 
@@ -210,18 +210,18 @@ void HVkBuffer::destroy()
 {
 	if (mpData)
 	{
-		vkUnmapMemory(mVkDevice->logicalDevice, mMemory);
+		vkUnmapMemory(mVkDevice->mLogicalDevice, mMemory);
 		mpData = nullptr;
 	}
 
 	if (mBuffer)
 	{
-		vkDestroyBuffer(mVkDevice->logicalDevice, mBuffer, nullptr);
+		vkDestroyBuffer(mVkDevice->mLogicalDevice, mBuffer, nullptr);
 		mBuffer = NULL;
 	}
 	if (mMemory)
 	{
-		vkFreeMemory(mVkDevice->logicalDevice, mMemory, nullptr);
+		vkFreeMemory(mVkDevice->mLogicalDevice, mMemory, nullptr);
 		mMemory = NULL;
 	}
 }

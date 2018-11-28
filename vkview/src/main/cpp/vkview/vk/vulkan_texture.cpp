@@ -42,23 +42,23 @@ void HVkTexture::createImage(uint32_t width, uint32_t height, VkFormat format,
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateImage(mVkDevice->logicalDevice, &imageInfo, nullptr, &mTextureImage) != VK_SUCCESS) {
+    if (vkCreateImage(mVkDevice->mLogicalDevice, &imageInfo, nullptr, &mTextureImage) != VK_SUCCESS) {
         throw std::runtime_error("failed to create image!");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(mVkDevice->logicalDevice, mTextureImage, &memRequirements);
+    vkGetImageMemoryRequirements(mVkDevice->mLogicalDevice, mTextureImage, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = mVkDevice->findMemoryType(memRequirements.memoryTypeBits, properties);
 
-    if (vkAllocateMemory(mVkDevice->logicalDevice, &allocInfo, nullptr, &mTextureImageMemory) != VK_SUCCESS) {
+    if (vkAllocateMemory(mVkDevice->mLogicalDevice, &allocInfo, nullptr, &mTextureImageMemory) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate image memory!");
     }
 
-    vkBindImageMemory(mVkDevice->logicalDevice, mTextureImage, mTextureImageMemory, 0);
+    vkBindImageMemory(mVkDevice->mLogicalDevice, mTextureImage, mTextureImageMemory, 0);
     return;
 }
 
@@ -247,7 +247,7 @@ void HVkTexture::createTextureImageView()
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = 1;
 
-    if (vkCreateImageView(mVkDevice->logicalDevice, &viewInfo, nullptr, &mTextureImageView) != VK_SUCCESS)
+    if (vkCreateImageView(mVkDevice->mLogicalDevice, &viewInfo, nullptr, &mTextureImageView) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create texture image view!");
     }
@@ -270,7 +270,7 @@ void HVkTexture::createTextureSampler()
     samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-    if (vkCreateSampler(mVkDevice->logicalDevice, &samplerInfo, nullptr, &mTextureSampler) != VK_SUCCESS)
+    if (vkCreateSampler(mVkDevice->mLogicalDevice, &samplerInfo, nullptr, &mTextureSampler) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create texture sampler!");
     }
@@ -280,15 +280,15 @@ void HVkTexture::createTextureSampler()
 void HVkTexture::destroyImage()
 {
     if(mTextureImage != NULL ) {
-        vkDestroyImage(mVkDevice->logicalDevice, mTextureImage, nullptr);
+        vkDestroyImage(mVkDevice->mLogicalDevice, mTextureImage, nullptr);
         mTextureImage = NULL;
     }
     if( mTextureImageView != NULL ) {
-        vkDestroyImageView(mVkDevice->logicalDevice, mTextureImageView, nullptr);
+        vkDestroyImageView(mVkDevice->mLogicalDevice, mTextureImageView, nullptr);
         mTextureImageView = NULL;
     }
     if( mTextureImageMemory != NULL ) {
-        vkFreeMemory(mVkDevice->logicalDevice, mTextureImageMemory, nullptr);
+        vkFreeMemory(mVkDevice->mLogicalDevice, mTextureImageMemory, nullptr);
         mTextureImageMemory = NULL;
     }
 }
@@ -297,7 +297,7 @@ void HVkTexture::destroySampler()
 {
     if(mTextureSampler != NULL )
     {
-        vkDestroySampler(mVkDevice->logicalDevice, mTextureSampler, NULL );
+        vkDestroySampler(mVkDevice->mLogicalDevice, mTextureSampler, NULL );
         mTextureSampler = NULL;
     }
 }

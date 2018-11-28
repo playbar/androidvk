@@ -146,11 +146,11 @@ VulkanDevice::~VulkanDevice()
 
 void VulkanDevice::destroy()
 {
-    vkDestroyCommandPool(logicalDevice, mCommandPool, nullptr);
-    vkDestroyDevice(logicalDevice, nullptr);
-    DestroyDebugReportCallbackEXT(instance, callback, nullptr);
-    vkDestroySurfaceKHR(instance, surface, nullptr);
-    vkDestroyInstance(instance, nullptr);
+    vkDestroyCommandPool(mLogicalDevice, mCommandPool, nullptr);
+    vkDestroyDevice(mLogicalDevice, nullptr);
+    DestroyDebugReportCallbackEXT(mInstance, callback, nullptr);
+    vkDestroySurfaceKHR(mInstance, surface, nullptr);
+    vkDestroyInstance(mInstance, nullptr);
 }
 
 void VulkanDevice::createInstance()
@@ -182,7 +182,7 @@ void VulkanDevice::createInstance()
         createInfo.enabledLayerCount = 0;
     }
 
-    if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
+    if (vkCreateInstance(&createInfo, nullptr, &mInstance) != VK_SUCCESS) {
         throw std::runtime_error("create instance fail!");
     }
 }
@@ -200,14 +200,14 @@ void VulkanDevice::setUpDebugCallback()
                        | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
     createInfo.pfnCallback = debugCallback;
 
-    if (CreateDebugReportCallbackEXT(instance, &createInfo, nullptr, &callback) != VK_SUCCESS) {
+    if (CreateDebugReportCallbackEXT(mInstance, &createInfo, nullptr, &callback) != VK_SUCCESS) {
         throw std::runtime_error("failed to set up debug callback!");
     }
 }
 
 void VulkanDevice::pickPhysicalDevice() {
     uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+    vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
 
     LOGI("device count: %d", deviceCount);
 
@@ -216,7 +216,7 @@ void VulkanDevice::pickPhysicalDevice() {
     }
 
     std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+    vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
 
     for (const auto &device : devices) {
         if (isDeviceSuitable(device)) {
@@ -266,11 +266,11 @@ void VulkanDevice::createLogicalDevice()
         createInfo.enabledLayerCount = 0;
     }
 
-    if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &logicalDevice) != VK_SUCCESS) {
+    if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &mLogicalDevice) != VK_SUCCESS) {
         throw std::runtime_error("failed to create logical device!");
     }
-    vkGetDeviceQueue(logicalDevice, indices.graphicsFamily, 0, &graphicsQueue);
-    vkGetDeviceQueue(logicalDevice, indices.presentFamily, 0, &presentQueue);
+    vkGetDeviceQueue(mLogicalDevice, indices.graphicsFamily, 0, &graphicsQueue);
+    vkGetDeviceQueue(mLogicalDevice, indices.presentFamily, 0, &presentQueue);
 }
 
 void VulkanDevice::createSurface(ANativeWindow *window)
@@ -279,7 +279,7 @@ void VulkanDevice::createSurface(ANativeWindow *window)
     createInfo.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
     createInfo.window = window;
 
-    if (vkCreateAndroidSurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
+    if (vkCreateAndroidSurfaceKHR(mInstance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
         throw std::runtime_error("failed to create window surface!");
     }
     return;
@@ -401,7 +401,7 @@ void VulkanDevice::createCommandPool()
     poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily;
     poolInfo.flags = 0; // Optional
 
-    if (vkCreateCommandPool(logicalDevice, &poolInfo, nullptr, &mCommandPool) != VK_SUCCESS)
+    if (vkCreateCommandPool(mLogicalDevice, &poolInfo, nullptr, &mCommandPool) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create command pool!");
     }
@@ -410,7 +410,7 @@ void VulkanDevice::createCommandPool()
 
 void VulkanDevice::resetCommandPool()
 {
-    vkResetCommandPool(logicalDevice, mCommandPool, 0);
+    vkResetCommandPool(mLogicalDevice, mCommandPool, 0);
 }
 
 
@@ -423,7 +423,7 @@ VkCommandBuffer VulkanDevice::beginSingleTimeCommands()
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(logicalDevice, &allocInfo, &commandBuffer);
+    vkAllocateCommandBuffers(mLogicalDevice, &allocInfo, &commandBuffer);
 
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -446,5 +446,5 @@ void VulkanDevice::endSingleTimeCommands(VkCommandBuffer commandBuffer)
     vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(graphicsQueue);
 
-    vkFreeCommandBuffers(logicalDevice, mCommandPool, 1, &commandBuffer);
+    vkFreeCommandBuffers(mLogicalDevice, mCommandPool, 1, &commandBuffer);
 }

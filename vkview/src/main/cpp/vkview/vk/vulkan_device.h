@@ -52,9 +52,9 @@ public:
 public:
     VkPhysicalDeviceProperties m_device_properties = {};
     VkDebugReportCallbackEXT callback;
-    VkInstance instance;
+    VkInstance mInstance;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    VkDevice logicalDevice;
+    VkDevice mLogicalDevice;
     VkSurfaceKHR surface;
     VkCommandPool mCommandPool;
 
