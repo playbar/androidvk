@@ -57,13 +57,13 @@ VksModelCreateInfo::VksModelCreateInfo(float scale, float uvscale, float center)
 /** @brief Release all Vulkan resources of this model */
 void HVKModel::destroy()
 {
-	assert(device);
-	vkDestroyBuffer(device, vertices.buffer, nullptr);
-	vkFreeMemory(device, vertices.memory, nullptr);
+	assert(mLogicalDevice);
+	vkDestroyBuffer(mLogicalDevice, vertices.buffer, nullptr);
+	vkFreeMemory(mLogicalDevice, vertices.memory, nullptr);
 	if (indices.buffer != VK_NULL_HANDLE)
 	{
-		vkDestroyBuffer(device, indices.buffer, nullptr);
-		vkFreeMemory(device, indices.memory, nullptr);
+		vkDestroyBuffer(mLogicalDevice, indices.buffer, nullptr);
+		vkFreeMemory(mLogicalDevice, indices.memory, nullptr);
 	}
 }
 
@@ -78,9 +78,9 @@ void HVKModel::destroy()
 * @param (Optional) flags ASSIMP model loading flags
 */
 bool HVKModel::loadFromFile(const std::string& filename, VksVertexLayout layout, VksModelCreateInfo *createInfo,
-							VulkanDevice *device, VkQueue copyQueue, const int flags)
+							VulkanDevice *pDevice, VkQueue copyQueue, const int flags)
 {
-	this->device = device->mLogicalDevice;
+	this->mLogicalDevice = pDevice->mLogicalDevice;
 
 	Assimp::Importer Importer;
 	const aiScene* pScene;
@@ -237,7 +237,7 @@ bool HVKModel::loadFromFile(const std::string& filename, VksVertexLayout layout,
 		HVKBuffer vertexStaging, indexStaging;
 
 		// Vertex buffer
-		VK_CHECK_RESULT(device->createBuffer(
+		VK_CHECK_RESULT(pDevice->createBuffer(
 				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 				&vertexStaging,
@@ -245,7 +245,7 @@ bool HVKModel::loadFromFile(const std::string& filename, VksVertexLayout layout,
 				vertexBuffer.data()));
 
 		// Index buffer
-		VK_CHECK_RESULT(device->createBuffer(
+		VK_CHECK_RESULT(pDevice->createBuffer(
 				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 				&indexStaging,
@@ -254,21 +254,21 @@ bool HVKModel::loadFromFile(const std::string& filename, VksVertexLayout layout,
 
 		// Create device local target buffers
 		// Vertex buffer
-		VK_CHECK_RESULT(device->createBuffer(
+		VK_CHECK_RESULT(pDevice->createBuffer(
 				VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 				&vertices,
 				vBufferSize));
 
 		// Index buffer
-		VK_CHECK_RESULT(device->createBuffer(
+		VK_CHECK_RESULT(pDevice->createBuffer(
 				VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 				&indices,
 				iBufferSize));
 
 		// Copy from staging buffers
-		VkCommandBuffer copyCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+		VkCommandBuffer copyCmd = pDevice->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
 		VkBufferCopy copyRegion{};
 
@@ -278,13 +278,13 @@ bool HVKModel::loadFromFile(const std::string& filename, VksVertexLayout layout,
 		copyRegion.size = indices.size;
 		vkCmdCopyBuffer(copyCmd, indexStaging.buffer, indices.buffer, 1, &copyRegion);
 
-		device->flushCommandBuffer(copyCmd, copyQueue);
+		pDevice->flushCommandBuffer(copyCmd, copyQueue);
 
 		// Destroy staging resources
-		vkDestroyBuffer(device->mLogicalDevice, vertexStaging.buffer, nullptr);
-		vkFreeMemory(device->mLogicalDevice, vertexStaging.memory, nullptr);
-		vkDestroyBuffer(device->mLogicalDevice, indexStaging.buffer, nullptr);
-		vkFreeMemory(device->mLogicalDevice, indexStaging.memory, nullptr);
+		vkDestroyBuffer(pDevice->mLogicalDevice, vertexStaging.buffer, nullptr);
+		vkFreeMemory(pDevice->mLogicalDevice, vertexStaging.memory, nullptr);
+		vkDestroyBuffer(pDevice->mLogicalDevice, indexStaging.buffer, nullptr);
+		vkFreeMemory(pDevice->mLogicalDevice, indexStaging.memory, nullptr);
 
 		return true;
 	}

@@ -68,7 +68,7 @@ struct VksModelCreateInfo
 };
 
 struct HVKModel {
-    VkDevice device = nullptr;
+    VkDevice mLogicalDevice = nullptr;
     HVKBuffer vertices;
     HVKBuffer indices;
     uint32_t indexCount = 0;
@@ -106,7 +106,7 @@ struct HVKModel {
     * @param (Optional) flags ASSIMP model loading flags
     */
     bool loadFromFile(const std::string& filename, VksVertexLayout layout, VksModelCreateInfo *createInfo,
-                      VulkanDevice *device, VkQueue copyQueue, const int flags = defaultFlags);
+                      VulkanDevice *pDevice, VkQueue copyQueue, const int flags = defaultFlags);
 
     /**
     * Loads a 3D model from a file into Vulkan buffers

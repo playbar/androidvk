@@ -52,7 +52,7 @@ VkResult VulkanMain::createInstance(bool enableValidation)
 		instanceCreateInfo.enabledLayerCount = gVksDebugValidationLayerCount;
 		instanceCreateInfo.ppEnabledLayerNames = gVksDebugValidationLayerNames;
 	}
-	return vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
+	return vkCreateInstance(&instanceCreateInfo, nullptr, &mInstance);
 }
 
 std::string VulkanMain::getWindowTitle()
@@ -457,10 +457,9 @@ void VulkanMain::Destroy()
 
 	if (settings.validation)
 	{
-		VksDebugFreeDebugCallback(instance);
+		VksDebugFreeDebugCallback(mInstance);
 	}
-
-	vkDestroyInstance(instance, nullptr);
+	vkDestroyInstance(mInstance, nullptr);
 }
 
 void VulkanMain::initVulkan()
@@ -474,7 +473,7 @@ void VulkanMain::initVulkan()
 		VksExitFatal("Could not create Vulkan instance : \n" + VksErrorString(err), "Fatal error");
 	}
 
-	loadVulkanFunctions(instance);
+	loadVulkanFunctions(mInstance);
 
 	// If requested, we enable the default validation layers for debugging
 	if (settings.validation)
@@ -483,17 +482,17 @@ void VulkanMain::initVulkan()
 		// For validating (debugging) an appplication the error and warning bits should suffice
 		VkDebugReportFlagsEXT debugReportFlags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
 		// Additional flags include performance info, loader and layer debug messages, etc.
-        VksDebugSetupDebugging(instance, debugReportFlags, VK_NULL_HANDLE);
+        VksDebugSetupDebugging(mInstance, debugReportFlags, VK_NULL_HANDLE);
 	}
 
 	// Physical device
 	uint32_t gpuCount = 0;
 	// Get number of available physical devices
-	VK_CHECK_RESULT(vkEnumeratePhysicalDevices(instance, &gpuCount, nullptr));
+	VK_CHECK_RESULT(vkEnumeratePhysicalDevices(mInstance, &gpuCount, nullptr));
 	assert(gpuCount > 0);
 	// Enumerate devices
 	std::vector<VkPhysicalDevice> physicalDevices(gpuCount);
-	err = vkEnumeratePhysicalDevices(instance, &gpuCount, physicalDevices.data());
+	err = vkEnumeratePhysicalDevices(mInstance, &gpuCount, physicalDevices.data());
 	if (err)
 	{
 		VksExitFatal("Could not enumerate physical devices : \n" + VksErrorString(err), "Fatal error");
@@ -505,12 +504,12 @@ void VulkanMain::initVulkan()
 	// Defaults to the first device unless specified by command line
 	uint32_t selectedDevice = 0;
 
-	physicalDevice = physicalDevices[selectedDevice];
+	mPhysicalDevice = physicalDevices[selectedDevice];
 
 	// Store properties (including limits), features and memory properties of the phyiscal device (so that examples can check against them)
-	vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
-	vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
-	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &deviceMemoryProperties);
+	vkGetPhysicalDeviceProperties(mPhysicalDevice, &deviceProperties);
+	vkGetPhysicalDeviceFeatures(mPhysicalDevice, &deviceFeatures);
+	vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &deviceMemoryProperties);
 
 	// Derived examples can override this to set actual features (based on above readings) to enable for logical device creation
 	getEnabledFeatures();
@@ -518,7 +517,7 @@ void VulkanMain::initVulkan()
 	// Vulkan device creation
 	// This is handled by a separate class that gets a logical device representation
 	// and encapsulates functions related to a device
-	mVulkanDevice = new VulkanDevice(physicalDevice);
+	mVulkanDevice = new VulkanDevice(mPhysicalDevice);
 	VkResult res = mVulkanDevice->createLogicalDevice(enabledFeatures, enabledExtensions);
 	if (res != VK_SUCCESS) {
 		VksExitFatal("Could not create Vulkan device: \n" + VksErrorString(res), "Fatal error");
@@ -529,10 +528,10 @@ void VulkanMain::initVulkan()
 	vkGetDeviceQueue(mVulkanDevice->mLogicalDevice, mVulkanDevice->queueFamilyIndices.graphics, 0, &queue);
 
 	// Find a suitable depth format
-	VkBool32 validDepthFormat = VksGetSupportedDepthFormat(physicalDevice, &depthFormat);
+	VkBool32 validDepthFormat = VksGetSupportedDepthFormat(mPhysicalDevice, &depthFormat);
 	assert(validDepthFormat);
 
-	mSwapChain.connect(instance, physicalDevice, mVulkanDevice->mLogicalDevice);
+	mSwapChain.connect(mInstance, mPhysicalDevice, mVulkanDevice->mLogicalDevice);
 
 	// Create synchronization objects
 	VkSemaphoreCreateInfo semaphoreCreateInfo = InitSemaphoreCreateInfo();

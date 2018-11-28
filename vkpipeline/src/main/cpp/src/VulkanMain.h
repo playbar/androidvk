@@ -86,8 +86,8 @@ protected:
 	float frameTimer = 1.0f;
 	uint32_t frameCounter = 0;
 	uint32_t lastFPS = 0;
-	VkInstance instance;
-	VkPhysicalDevice physicalDevice;
+	VkInstance mInstance;
+	VkPhysicalDevice mPhysicalDevice;
 	VkPhysicalDeviceProperties deviceProperties;
 	VkPhysicalDeviceFeatures deviceFeatures;
 	VkPhysicalDeviceMemoryProperties deviceMemoryProperties;
