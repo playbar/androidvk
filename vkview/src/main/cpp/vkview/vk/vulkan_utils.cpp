@@ -286,7 +286,7 @@ void VulkanUtils::OnDrawFrame()
 
     drawFrame();
     QueuePresent();
-    vkQueueWaitIdle(mVKDevice.presentQueue);
+    vkQueueWaitIdle(mVKDevice.mPresentQueue);
 
 
 //    mVertexBuffer.destroy();
@@ -327,7 +327,7 @@ void VulkanUtils::cleanUp() {
 
 void VulkanUtils::createSwapchain()
 {
-    SwapchainSupportDetails swapchainSupport = mVKDevice.querySwapchainSupport(mVKDevice.physicalDevice);
+    SwapchainSupportDetails swapchainSupport = mVKDevice.querySwapchainSupport(mVKDevice.mPhysicalDevice);
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapchainSupport.formats);
     VkPresentModeKHR presentMode = chooseSwapPresentMode(swapchainSupport.presentModes);
     VkExtent2D extent = chooseSwapExtent(swapchainSupport.capabilities);
@@ -341,7 +341,7 @@ void VulkanUtils::createSwapchain()
 
     VkSwapchainCreateInfoKHR createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = mVKDevice.surface;
+    createInfo.surface = mVKDevice.mSurface;
     createInfo.minImageCount = imageCount;
     createInfo.imageFormat = surfaceFormat.format;
     createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -349,7 +349,7 @@ void VulkanUtils::createSwapchain()
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    QueueFamilyIndices indices = mVKDevice.findQueueFamilies(mVKDevice.physicalDevice);
+    QueueFamilyIndices indices = mVKDevice.findQueueFamilies(mVKDevice.mPhysicalDevice);
     if (indices.graphicsFamily != indices.presentFamily) {
         uint32_t queueFamilyIndices[] = {
                 (uint32_t) indices.graphicsFamily, (uint32_t) indices.presentFamily
@@ -1704,7 +1704,7 @@ void VulkanUtils::drawFrame() {
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    if (vkQueueSubmit(mVKDevice.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+    if (vkQueueSubmit(mVKDevice.mGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
         throw std::runtime_error("failed to submit draw command buffer!");
     }
 
@@ -1725,7 +1725,7 @@ void VulkanUtils::QueuePresent()
 
     presentInfo.pImageIndices = &mImageIndex;
 
-    VkResult result = vkQueuePresentKHR(mVKDevice.presentQueue, &presentInfo);
+    VkResult result = vkQueuePresentKHR(mVKDevice.mPresentQueue, &presentInfo);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         recreateSwapchain();
@@ -1733,7 +1733,7 @@ void VulkanUtils::QueuePresent()
         throw std::runtime_error("failed to present swap chain image!");
     }
 
-//    vkQueueWaitIdle(mVKDevice.presentQueue);
+//    vkQueueWaitIdle(mVKDevice.mPresentQueue);
 }
 
 

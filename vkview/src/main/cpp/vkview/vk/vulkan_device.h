@@ -53,13 +53,13 @@ public:
     VkPhysicalDeviceProperties m_device_properties = {};
     VkDebugReportCallbackEXT callback;
     VkInstance mInstance;
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;
     VkDevice mLogicalDevice;
-    VkSurfaceKHR surface;
+    VkSurfaceKHR mSurface;
     VkCommandPool mCommandPool;
 
-    VkQueue graphicsQueue;
-    VkQueue presentQueue;
+    VkQueue mGraphicsQueue;
+    VkQueue mPresentQueue;
 
 };
 

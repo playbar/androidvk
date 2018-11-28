@@ -136,8 +136,8 @@ void HVkBuffer::copyBuffer(HVkBuffer &srcBuffer)
 			.commandBufferCount = 1,
 			.pCommandBuffers = &commandBuffer,
 	};
-	vkQueueSubmit(mVkDevice->graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-	vkQueueWaitIdle(mVkDevice->graphicsQueue);
+	vkQueueSubmit(mVkDevice->mGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(mVkDevice->mGraphicsQueue);
 
 	vkFreeCommandBuffers(mVkDevice->mLogicalDevice, mVkDevice->mCommandPool, 1, &commandBuffer);
 	return;

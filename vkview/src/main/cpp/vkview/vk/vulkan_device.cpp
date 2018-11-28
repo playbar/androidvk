@@ -149,7 +149,7 @@ void VulkanDevice::destroy()
     vkDestroyCommandPool(mLogicalDevice, mCommandPool, nullptr);
     vkDestroyDevice(mLogicalDevice, nullptr);
     DestroyDebugReportCallbackEXT(mInstance, callback, nullptr);
-    vkDestroySurfaceKHR(mInstance, surface, nullptr);
+    vkDestroySurfaceKHR(mInstance, mSurface, nullptr);
     vkDestroyInstance(mInstance, nullptr);
 }
 
@@ -220,20 +220,20 @@ void VulkanDevice::pickPhysicalDevice() {
 
     for (const auto &device : devices) {
         if (isDeviceSuitable(device)) {
-            physicalDevice = device;
+            mPhysicalDevice = device;
             break;
         }
     }
 
-    if (physicalDevice == VK_NULL_HANDLE) {
+    if (mPhysicalDevice == VK_NULL_HANDLE) {
         throw std::runtime_error("failed to find a suitable GPU!");
     }
 }
 
 void VulkanDevice::createLogicalDevice()
 {
-    vkGetPhysicalDeviceProperties(physicalDevice, &m_device_properties);
-    QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+    vkGetPhysicalDeviceProperties(mPhysicalDevice, &m_device_properties);
+    QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<int> uniqueQueueFamilies = {indices.graphicsFamily, indices.presentFamily};
@@ -266,11 +266,11 @@ void VulkanDevice::createLogicalDevice()
         createInfo.enabledLayerCount = 0;
     }
 
-    if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &mLogicalDevice) != VK_SUCCESS) {
+    if (vkCreateDevice(mPhysicalDevice, &createInfo, nullptr, &mLogicalDevice) != VK_SUCCESS) {
         throw std::runtime_error("failed to create logical device!");
     }
-    vkGetDeviceQueue(mLogicalDevice, indices.graphicsFamily, 0, &graphicsQueue);
-    vkGetDeviceQueue(mLogicalDevice, indices.presentFamily, 0, &presentQueue);
+    vkGetDeviceQueue(mLogicalDevice, indices.graphicsFamily, 0, &mGraphicsQueue);
+    vkGetDeviceQueue(mLogicalDevice, indices.presentFamily, 0, &mPresentQueue);
 }
 
 void VulkanDevice::createSurface(ANativeWindow *window)
@@ -279,7 +279,7 @@ void VulkanDevice::createSurface(ANativeWindow *window)
     createInfo.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
     createInfo.window = window;
 
-    if (vkCreateAndroidSurfaceKHR(mInstance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
+    if (vkCreateAndroidSurfaceKHR(mInstance, &createInfo, nullptr, &mSurface) != VK_SUCCESS) {
         throw std::runtime_error("failed to create window surface!");
     }
     return;
@@ -323,21 +323,21 @@ SwapchainSupportDetails VulkanDevice::querySwapchainSupport(VkPhysicalDevice dev
 {
     SwapchainSupportDetails details;
 
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, mSurface, &details.capabilities);
 
     uint32_t formatCount = 0;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &formatCount, nullptr);
     if (formatCount > 0) {
         details.formats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount,
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &formatCount,
                                              details.formats.data());
     }
 
     uint32_t presentModeCount = 0;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, mSurface, &presentModeCount, nullptr);
     if (presentModeCount > 0) {
         details.presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount,
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, mSurface, &presentModeCount,
                                                   details.presentModes.data());
     }
 
@@ -362,7 +362,7 @@ QueueFamilyIndices VulkanDevice::findQueueFamilies(VkPhysicalDevice device)
         }
 
         VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, mSurface, &presentSupport);
         if (queueFamily.queueCount > 0 && presentSupport) {
             indices.presentFamily = i;
         }
@@ -380,7 +380,7 @@ QueueFamilyIndices VulkanDevice::findQueueFamilies(VkPhysicalDevice device)
 uint32_t VulkanDevice::findMemoryType( uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
     VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+    vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &memProperties);
 
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
         if ((typeFilter & (1 << i))
@@ -394,7 +394,7 @@ uint32_t VulkanDevice::findMemoryType( uint32_t typeFilter, VkMemoryPropertyFlag
 
 void VulkanDevice::createCommandPool()
 {
-    QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
+    QueueFamilyIndices queueFamilyIndices = findQueueFamilies(mPhysicalDevice);
 
     VkCommandPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -443,8 +443,8 @@ void VulkanDevice::endSingleTimeCommands(VkCommandBuffer commandBuffer)
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(graphicsQueue);
+    vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(mGraphicsQueue);
 
     vkFreeCommandBuffers(mLogicalDevice, mCommandPool, 1, &commandBuffer);
 }
