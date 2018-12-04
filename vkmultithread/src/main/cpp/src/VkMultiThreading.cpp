@@ -6,7 +6,7 @@
 * This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
 */
 
-#include "vulkanexamplebase.h"
+#include "VkMultiThreading.h"
 
 std::vector<const char*> VulkanExampleBase::args;
 
@@ -194,6 +194,18 @@ void VulkanExampleBase::prepare()
 			);
 		updateTextOverlay();
 	}
+
+	// Create a fence for synchronization
+	VkFenceCreateInfo fenceCreateInfo = vks::initializers::fenceCreateInfo(VK_FLAGS_NONE);
+	vkCreateFence(device, &fenceCreateInfo, NULL, &renderFence);
+	loadMeshes();
+	setupVertexDescriptions();
+	setupPipelineLayout();
+	preparePipelines();
+	prepareMultiThreadedRenderer();
+	updateMatrices();
+	prepared = true;
+
 }
 
 VkPipelineShaderStageCreateInfo VulkanExampleBase::loadShader(std::string fileName, VkShaderStageFlagBits stage)
@@ -216,62 +228,7 @@ void VulkanExampleBase::renderLoop()
 {
 	destWidth = width;
 	destHeight = height;
-#if defined(_WIN32)
-	MSG msg;
-	while (TRUE)
-	{
-		auto tStart = std::chrono::high_resolution_clock::now();
-		if (viewUpdated)
-		{
-			viewUpdated = false;
-			viewChanged();
-		}
 
-		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-
-		if (msg.message == WM_QUIT)
-		{
-			break;
-		}
-
-		render();
-		frameCounter++;
-		auto tEnd = std::chrono::high_resolution_clock::now();
-		auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
-		frameTimer = (float)tDiff / 1000.0f;
-		camera.update(frameTimer);
-		if (camera.moving())
-		{
-			viewUpdated = true;
-		}
-		// Convert to clamped timer value
-		if (!paused)
-		{
-			timer += timerSpeed * frameTimer;
-			if (timer > 1.0)
-			{
-				timer -= 1.0f;
-			}
-		}
-		fpsTimer += (float)tDiff;
-		if (fpsTimer > 1000.0f)
-		{
-			if (!enableTextOverlay)
-			{
-				std::string windowTitle = getWindowTitle();
-				SetWindowText(window, windowTitle.c_str());
-			}
-			lastFPS = static_cast<uint32_t>(1.0f / frameTimer);
-			updateTextOverlay();
-			fpsTimer = 0.0f;
-			frameCounter = 0;
-		}
-	}
-#elif defined(__ANDROID__)
 	while (1)
 	{
 		int ident;
@@ -386,144 +343,7 @@ void VulkanExampleBase::renderLoop()
 			}
 		}
 	}
-#elif defined(_DIRECT2DISPLAY)
-	while (!quit)
-	{
-		auto tStart = std::chrono::high_resolution_clock::now();
-		if (viewUpdated)
-		{
-			viewUpdated = false;
-			viewChanged();
-		}
-		render();
-		frameCounter++;
-		auto tEnd = std::chrono::high_resolution_clock::now();
-		auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
-		frameTimer = tDiff / 1000.0f;
-		camera.update(frameTimer);
-		if (camera.moving())
-		{
-			viewUpdated = true;
-		}
-		// Convert to clamped timer value
-		if (!paused)
-		{
-			timer += timerSpeed * frameTimer;
-			if (timer > 1.0)
-			{
-				timer -= 1.0f;
-			}
-		}
-		fpsTimer += (float)tDiff;
-		if (fpsTimer > 1000.0f)
-		{
-			lastFPS = frameCounter;
-			updateTextOverlay();
-			fpsTimer = 0.0f;
-			frameCounter = 0;
-		}
-	}
-#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-	while (!quit)
-	{
-		auto tStart = std::chrono::high_resolution_clock::now();
-		if (viewUpdated)
-		{
-			viewUpdated = false;
-			viewChanged();
-		}
 
-		while (wl_display_prepare_read(display) != 0)
-			wl_display_dispatch_pending(display);
-		wl_display_flush(display);
-		wl_display_read_events(display);
-		wl_display_dispatch_pending(display);
-
-		render();
-		frameCounter++;
-		auto tEnd = std::chrono::high_resolution_clock::now();
-		auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
-		frameTimer = tDiff / 1000.0f;
-		camera.update(frameTimer);
-		if (camera.moving())
-		{
-			viewUpdated = true;
-		}
-		// Convert to clamped timer value
-		if (!paused)
-		{
-			timer += timerSpeed * frameTimer;
-			if (timer > 1.0)
-			{
-				timer -= 1.0f;
-			}
-		}
-		fpsTimer += (float)tDiff;
-		if (fpsTimer > 1000.0f)
-		{
-			if (!enableTextOverlay)
-			{
-				std::string windowTitle = getWindowTitle();
-				wl_shell_surface_set_title(shell_surface, windowTitle.c_str());
-			}
-			lastFPS = frameCounter;
-			updateTextOverlay();
-			fpsTimer = 0.0f;
-			frameCounter = 0;
-		}
-	}
-#elif defined(__linux__)
-	xcb_flush(connection);
-	while (!quit)
-	{
-		auto tStart = std::chrono::high_resolution_clock::now();
-		if (viewUpdated)
-		{
-			viewUpdated = false;
-			viewChanged();
-		}
-		xcb_generic_event_t *event;
-		while ((event = xcb_poll_for_event(connection)))
-		{
-			handleEvent(event);
-			free(event);
-		}
-		render();
-		frameCounter++;
-		auto tEnd = std::chrono::high_resolution_clock::now();
-		auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
-		frameTimer = tDiff / 1000.0f;
-		camera.update(frameTimer);
-		if (camera.moving())
-		{
-			viewUpdated = true;
-		}
-		// Convert to clamped timer value
-		if (!paused)
-		{
-			timer += timerSpeed * frameTimer;
-			if (timer > 1.0)
-			{
-				timer -= 1.0f;
-			}
-		}
-		fpsTimer += (float)tDiff;
-		if (fpsTimer > 1000.0f)
-		{
-			if (!enableTextOverlay)
-			{
-				std::string windowTitle = getWindowTitle();
-				xcb_change_property(connection, XCB_PROP_MODE_REPLACE,
-					window, XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8,
-					windowTitle.size(), windowTitle.c_str());
-			}
-			lastFPS = frameCounter;
-			updateTextOverlay();
-			fpsTimer = 0.0f;
-			frameCounter = 0;
-		}
-	}
-#endif
 
     LOGE("Fun:%s, Line:%d", __FUNCTION__, __LINE__ );
 
@@ -558,6 +378,7 @@ void VulkanExampleBase::updateTextOverlay()
 void VulkanExampleBase::getOverlayText(VulkanTextOverlay *textOverlay)
 {
 	// Can be overriden in derived class
+    textOverlay->addText("Using " + std::to_string(numThreads) + " threads", 5.0f, 85.0f, VulkanTextOverlay::alignLeft);
 }
 
 void VulkanExampleBase::prepareFrame()
@@ -607,76 +428,57 @@ void VulkanExampleBase::submitFrame()
 
 VulkanExampleBase::VulkanExampleBase(bool enableValidation)
 {
-#if !defined(__ANDROID__)
-	// Check for a valid asset path
-	struct stat info;
-	if (stat(getAssetPath().c_str(), &info) != 0)
-	{
-#if defined(_WIN32)
-		std::string msg = "Could not locate asset path in \"" + getAssetPath() + "\" !";
-		MessageBox(NULL, msg.c_str(), "Fatal error", MB_OK | MB_ICONERROR);
-#else
-		std::cerr << "Error: Could not find asset path in " << getAssetPath() << std::endl;
-#endif
-		exit(-1);
-	}
-#endif
+	settings.validation = false;
+	settings.vsync = true;
+	settings.fullscreen = true;
 
-	settings.validation = enableValidation;
-
-	// Parse command line arguments
-	for (size_t i = 0; i < args.size(); i++)
-	{
-		if (args[i] == std::string("-validation"))
-		{
-			settings.validation = true;
-		}
-		if (args[i] == std::string("-vsync"))
-		{
-			settings.vsync = true;
-		}
-		if (args[i] == std::string("-fullscreen"))
-		{
-			settings.fullscreen = true;
-		}
-		if ((args[i] == std::string("-w")) || (args[i] == std::string("-width")))
-		{
-			char* endptr;
-			uint32_t w = strtol(args[i + 1], &endptr, 10);
-			if (endptr != args[i + 1]) { width = w; };
-		}
-		if ((args[i] == std::string("-h")) || (args[i] == std::string("-height")))
-		{
-			char* endptr;
-			uint32_t h = strtol(args[i + 1], &endptr, 10);
-			if (endptr != args[i + 1]) { height = h; };
-		}
-	}
-	
-#if defined(__ANDROID__)
 	// Vulkan library is loaded dynamically on Android
 	bool libLoaded = loadVulkanLibrary();
 	assert(libLoaded);
-#elif defined(_DIRECT2DISPLAY)
 
-#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-	initWaylandConnection();
-#elif defined(__linux__)
-	initxcbConnection();
-#endif
+	zoom = -32.5f;
+	zoomSpeed = 2.5f;
+	rotationSpeed = 0.5f;
+	rotation = { 0.0f, 37.5f, 0.0f };
+	enableTextOverlay = true;
+	title = "Vulkan Example - Multi threaded rendering";
+	// Get number of max. concurrrent threads
+	numThreads = std::thread::hardware_concurrency();
+	assert(numThreads > 0);
+	LOGD("numThreads = %d", numThreads);
 
-#if defined(_WIN32)
-	// Enable console if validation is active
-	// Debug message callback will output to it
-	if (this->settings.validation)
-	{
-		setupConsole("Vulkan validation output");
-	}
-#endif
+	srand(time(NULL));
+
+	threadPool.setThreadCount(numThreads);
+
+	numObjectsPerThread = 512 / numThreads;
+
+
 }
 
 VulkanExampleBase::~VulkanExampleBase()
 {
+	// Clean up used Vulkan resources
+	// Note : Inherited destructor cleans up resources stored in base class
+	vkDestroyPipeline(device, pipelines.phong, nullptr);
+	vkDestroyPipeline(device, pipelines.starsphere, nullptr);
+
+	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+
+	vkFreeCommandBuffers(device, cmdPool, 1, &primaryCommandBuffer);
+	vkFreeCommandBuffers(device, cmdPool, 1, &secondaryCommandBuffer);
+
+	models.ufo.destroy();
+	models.skysphere.destroy();
+
+	for (auto& thread : threadData)
+	{
+		vkFreeCommandBuffers(device, thread.commandPool, thread.commandBuffer.size(), thread.commandBuffer.data());
+		vkDestroyCommandPool(device, thread.commandPool, nullptr);
+	}
+
+	vkDestroyFence(device, renderFence, nullptr);
+
 	// Clean up Vulkan resources
 	swapChain.cleanup();
 	if (descriptorPool != VK_NULL_HANDLE)
@@ -1854,7 +1656,7 @@ void VulkanExampleBase::handleEvent(const xcb_generic_event_t *event)
 
 void VulkanExampleBase::viewChanged()
 {
-	// Can be overrdiden in derived class
+    updateMatrices();
 }
 
 void VulkanExampleBase::keyPressed(uint32_t keyCode)
@@ -2101,4 +1903,18 @@ void VulkanExampleBase::initSwapchain()
 void VulkanExampleBase::setupSwapChain()
 {
 	swapChain.create(&width, &height, settings.vsync);
+}
+
+
+VulkanExampleBase *vulkanExample;
+void android_main(android_app* state)
+{
+	app_dummy();
+	vulkanExample = new VulkanExampleBase(false);
+	state->userData = vulkanExample;
+	state->onAppCmd = VulkanExampleBase::handleAppCommand;
+	state->onInputEvent = VulkanExampleBase::handleAppInput;
+	androidApp = state;
+	vulkanExample->renderLoop();
+	delete(vulkanExample);
 }

@@ -33,8 +33,7 @@ add_library(vkvulkan SHARED
             src/VulkanModel.cpp
             src/VulkanTexture.cpp
             src/VulkanTools.cpp
-            src/multithreading.cpp
-            src/vulkanexamplebase.cpp
+            src/VkMultiThreading.cpp
             )
 
 
