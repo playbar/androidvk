@@ -64,7 +64,7 @@
 
 #define VERTEX_BUFFER_BIND_ID 0
 
-class VulkanExampleBase
+class VkMultiThreading
 {
 private:	
 	// fps timer (one second interval)
@@ -252,10 +252,10 @@ public:
 #endif
 
 	// Default ctor
-	VulkanExampleBase(bool enableValidation);
+	VkMultiThreading(bool enableValidation);
 
 	// dtor
-	~VulkanExampleBase();
+	~VkMultiThreading();
 
 	// Setup the vulkan instance, enable required extensions and connect to the physical device (GPU)
 	void initVulkan();
@@ -896,7 +896,7 @@ public:
 
 	void draw()
 	{
-		VulkanExampleBase::prepareFrame();
+		VkMultiThreading::prepareFrame();
 
 		updateCommandBuffers(frameBuffers[currentBuffer]);
 
@@ -916,7 +916,7 @@ public:
 		LOGE("multithread, Fun:%s, Line:%d", __FUNCTION__, __LINE__);
 		vkResetFences(device, 1, &renderFence);
 
-		VulkanExampleBase::submitFrame();
+		VkMultiThreading::submitFrame();
 	}
 
 	virtual void render()
