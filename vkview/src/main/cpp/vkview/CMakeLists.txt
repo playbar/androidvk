@@ -13,6 +13,7 @@ add_library(vkutils SHARED
            vk/vulkan_buffer.cpp
            vk/vulkan_texture.cpp
            vk/vulkan_device.cpp
+           vk/vulkan_global.cpp
            vk/vulkan_wrapper.cpp
            vk/vulkan_utils_jni.cpp
             )
