@@ -16,7 +16,7 @@
 #include "string"
 #include "vulkan_utils.h"
 #include "shaderc/shaderc.hpp"
-#include "vulkan_test.h"
+#include "vulkan_global.h"
 
 
 const char* IMAGE_PATH = "sample_tex.png";
