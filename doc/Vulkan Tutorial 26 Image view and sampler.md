@@ -47,7 +47,7 @@ if (vkCreateImageView(device, &viewInfo, nullptr, &textureImageView) != VK_SUCCE
 }
 因为很多逻辑都是从createImageViews复制过来的，所以可以抽象一个新的函数createImageView封装该部分逻辑。
 
-
+<pre>
 VkImageView createImageView(VkImage image, VkFormat format) {
     VkImageViewCreateInfo viewInfo = {};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -67,6 +67,7 @@ VkImageView createImageView(VkImage image, VkFormat format) {
 
     return imageView;
 }
+</pre>
 
 createTextureImageView函数可以简化为：
 

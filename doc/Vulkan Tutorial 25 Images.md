@@ -204,6 +204,7 @@ vkBindImageMemory(device, textureImage, textureImageMemory, 0);
 这个函数已经变得比较庞大臃肿了，而且需要在后面的章节中创建更多的图像，所以我们应该将图像创建抽象成一个createImage函数，
 就像之前为buffers缓冲区做的事情一样。创建函数并将图像对象的创建和内存分配移动过来：
 
+<pre>
 void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, 
             VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
     VkImageCreateInfo imageInfo = {};
@@ -239,6 +240,7 @@ void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling
 
     vkBindImageMemory(device, image, imageMemory, 0);
 }
+</pre>
 
 这里使用了width, height, format, tiling mode, usage和memory properties参数，因为这些参数根据教程中创建的图像而不同。
 

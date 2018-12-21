@@ -44,6 +44,7 @@ VkSemaphore imageAvailableSemaphore;
 VkSemaphore renderFinishedSemaphore;
 为了创建信号量semaphores，我们将要新增本系列教程最后一个函数: createSemaphores:
 
+<pre>
 void initVulkan() {
     createInstance();
     setupDebugCallback();
@@ -65,21 +66,27 @@ void initVulkan() {
 void createSemaphores() {
 
 }
+</pre>
 
 
 创建信号量对象需要填充VkSemaphoreCreateInfo结构体，但是在当前版本的API中，实际上不需要填充任何字段，除了sType:
 
+<pre>
 void createSemaphores() {
     VkSemaphoreCreateInfo semaphoreInfo = {};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 }
+</pre>
+
 Vulkan API未来版本或者扩展中或许会为flags和pNext参数增加功能选项。创建信号量对象的过程很熟悉了，在这里使用vkCreateSemaphore:
 
+<pre>
 if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
     vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS) {
 
     throw std::runtime_error("failed to create semaphores!");
 }
+</pre>
 
 在程序结束时，当所有命令完成并不需要同步时，应该清除信号量:
 
@@ -150,9 +157,9 @@ if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) 
 
 子通道依赖关系可以通过VkSubpassDependency结构体指定，在createRenderPass函数中添加:
 
-VkSubpassDependency dependency = {};
-dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-dependency.dstSubpass = 0;
+VkSubpassDependency dependency = {}; 
+dependency.srcSubpass = VK_SUBPASS_EXTERNAL; 
+dependency.dstSubpass = 0; 
 
 前两个参数指定依赖的关系和从属子通道的索引。特殊值VK_SUBPASS_EXTERNAL是指在渲染通道之前或者之后的隐式子通道，
 取决于它是否在srcSubpass或者dstSubPass中指定。索引0指定我们的子通道，这是第一个也是唯一的。
@@ -212,6 +219,7 @@ vkQueuePresentKHR函数提交请求呈现交换链中的图像。我们在下一
 
 为了解决这个问题，我们应该在退出mainLoop销毁窗体前等待逻辑设备的操作完成:
 
+<pre>
 void mainLoop() {
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -220,6 +228,7 @@ void mainLoop() {
 
     vkDeviceWaitIdle(device);
 }
+</pre>
 
 也可以使用vkQueueWaitIdle等待特定命令队列中的操作完成。这些功能可以作为一个非常基本的方式来执行同步。这个时候窗体关闭后该问题不会出现。
 
@@ -229,6 +238,7 @@ void mainLoop() {
 
 我们可以在开始绘制下一帧之前明确的等待presentation完成:
 
+<pre>
 void drawFrame() {
     ...
 
@@ -236,9 +246,11 @@ void drawFrame() {
 
     vkQueueWaitIdle(presentQueue);
 }
+</pre>
 
 在很多应用程序的的状态也会在每一帧更新。为此更高效的绘制一阵的方式如下：
 
+<pre>
 void drawFrame() {
     updateAppState();
     
@@ -250,6 +262,7 @@ void drawFrame() {
 
     vkQueuePresentKHR(presentQueue, &presentInfo);
 }
+</pre>
 
 该方法允许我们更新应用程序的状态，比如运行游戏的AI协同程序，而前一帧被渲染。这样，始终保持CPU和GPU处于工作状态。
 

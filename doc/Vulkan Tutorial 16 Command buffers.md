@@ -10,6 +10,7 @@
 VkCommandPool commandPool;
 创建新的函数createCommandPool并在initVulkan函数创建完framebuffers后调用。
 
+<pre>
 void initVulkan() {
     createInstance();
     setupDebugCallback();
@@ -29,15 +30,18 @@ void initVulkan() {
 void createCommandPool() {
 
 }
+</pre>
 
 命令对象池创建仅仅需要两个参数:
 
+<pre>
 QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
 
 VkCommandPoolCreateInfo poolInfo = {};
 poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily;
 poolInfo.flags = 0; // Optional
+</pre>
 
 命令缓冲区通过将其提交到其中一个设备队列上来执行，如我们检索的graphics和presentation队列。
 每个命令对象池只能分配在单一类型的队列上提交的命令缓冲区，换句话说要分配的命令需要与队列类型一致。
