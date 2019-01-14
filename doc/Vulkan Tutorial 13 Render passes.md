@@ -6,6 +6,7 @@
 所有的这些信息都被封装在一个叫做 render pass 的对象中，我们新添加一个createRenderPass函数。
 在initVulkan函数中确保createGraphicsPipeline调用之前，调用它。
 
+<pre>
 void initVulkan() {
     createInstance();
     setupDebugCallback();
@@ -23,15 +24,19 @@ void initVulkan() {
 void createRenderPass() {
 
 }
+</pre>
 
 ## VAttachment description
 在我们的例子中，我们将只有一个颜色缓冲区附件，它由交换链中的一个图像所表示。
 
+<pre>
 void createRenderPass() {
     VkAttachmentDescription colorAttachment = {};
     colorAttachment.format = swapChainImageFormat;
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 }
+</pre>
+
 format是颜色附件的格式，它应该与交换链中图像的格式相匹配，同时我们不会做任何多重采样的工作，所以采样器设置为1。
 
 colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;

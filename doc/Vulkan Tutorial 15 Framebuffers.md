@@ -17,7 +17,7 @@ std::vector<VkFramebuffer> swapChainFramebuffers;
 
 我们在新的函数createFramebuffers中为数组创建对象集合，这个函数在initVulkan创建完管线后调用:
 
-
+<pre>
 void initVulkan() {
     createInstance();
     setupDebugCallback();
@@ -36,16 +36,19 @@ void initVulkan() {
 void createFramebuffers() {
 
 }
-
+</pre>
 
 动态调整用于保存framebuffers的容器大小:
 
+<pre>
 void createFramebuffers() {
     swapChainFramebuffers.resize(swapChainImageViews.size());
 }
+</pre>
+
 我们接下来迭代左右的图像视图并通过它们创建对应的framebuffers:
 
-
+<pre>
 for (size_t i = 0; i < swapChainImageViews.size(); i++) {
     VkImageView attachments[] = {
         swapChainImageViews[i]
@@ -64,6 +67,7 @@ for (size_t i = 0; i < swapChainImageViews.size(); i++) {
         throw std::runtime_error("failed to create framebuffer!");
     }
 }
+</pre>
 
 如你所见，创建framebuffers是非常直接的。首先需要指定framebuffer需要兼容的renderPass。
 我们只能使用与其兼容的渲染通道的帧缓冲区，这大体上意味着它们使用相同的附件数量和类型。
@@ -74,6 +78,7 @@ width和height参数是容易理解的，layer是指定图像数组中的层数�
 
 我们在图像视图和渲染通道渲染完毕之后，删除对应的帧缓冲区:
 
+<pre>
 void cleanup() {
     for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
         vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
@@ -81,6 +86,7 @@ void cleanup() {
 
     ...
 }
+</pre>
 
 我们已经达到了一个里程碑，我们拥有渲染需要的所有对象。在下一章中，我们将编写第一个实际绘制的命令。
 
