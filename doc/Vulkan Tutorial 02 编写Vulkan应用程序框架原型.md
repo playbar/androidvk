@@ -4,7 +4,7 @@
 在上一节中，我们创建了一个正确配置、可运行的的Vulkan应用程序，并使用测试代码进行了测试。
 本节中我们从头开始，使用如下代码构建一个基于GLFW的Vulkan应用程序原型框架的雏形。
 
-<table>
+<pre>
 #include <vulkan/vulkan.h>
 #include <iostream>
 #include <stdexcept>
@@ -44,7 +44,7 @@ int main() {
 
     return EXIT_SUCCESS;
 }
-</table>
+</pre>
 
 首先从LunarG SDK中添加Vulkan头文件，它提供了购机爱你Vulkan应用程序需要的函数、结构体、和枚举。
 我们包含stdexcept和iostream头文件用于抛出异常信息，而functional头文件用于资源管理部分支持lambda表达式。
@@ -76,16 +76,17 @@ Vulkan对象可以直接使用vkCreateXXX系函数创建，也可以通过具有
 如果我们开发一些不需要基于屏幕显示的程序，那么纯粹的Vulkan本身可以完美的支持开发。
 但是如果创建一些让人兴奋的可视化的内容，我们就需要引入窗体系统GLFW，并将#include <vulkan/vulkan.h> 进行相应的替换。
 
-</table>
+<pre>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-</table>
+</pre>
 
 在新版本的GLFW中已经提供了Vulkan相关的支持，详细的使用建议参阅官方资料。
 
 通过替换，将会使用GLFW对Vulkan的支持，并自动加载Vulkan的头文件。在run函数中添加一个initWindow函数调用，
 并确保在其他函数调用前优先调用。我们将会通过该函数完成GLFW的窗体初始化工作。
 
+<pre>
 void run() {
     initWindow();
     initVulkan();
@@ -97,6 +98,7 @@ private:
     void initWindow() {
 
     }
+</pre>
 
 initWindow中的第一个调用是glfwInit(),它会初始化GLFW库。因为最初GLFW是为OpenGL创建上下文，
 所以在这里我们需要告诉它不要调用OpenGL相关的初始化操作。
@@ -112,13 +114,18 @@ window = glfwCreateWindow(800, 600, "Vulkan", nullptr, nullptr);
 
 使用常量代替硬编码宽度和高度，因为我们在后续的内容中会引用该数值多次。在HelloTriangleApplication类定义之上添加以下几行:
 
+<pre>
 const int WIDTH = 800;
 const int HEIGHT = 600;
-并替换窗体创建的代码语句为:
+</pre>
+
+并替换窗体创建的代码语句为: 
 
 window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+
 你现在应该有一个如下所示的initWindow函数:
 
+<pre>
 void initWindow() {
     glfwInit();
 
@@ -127,24 +134,32 @@ void initWindow() {
 
     window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
 }
+</pre>
 
 保持程序运行，直到发生错误或者窗体关闭，我们需要向mainLoop函数添加事件循环，如下所示:
 
+<pre>
 void mainLoop() {
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
     }
 }
+</pre>
+
 这段代码应该很容易看懂。它循环并检查GLFW事件，直到按下X按钮，或者关闭窗体。该循环结构稍后会调用渲染函数。
 
 一旦窗体关闭，我们需要通过cleanup函数清理资源、结束GLFW本身。
 
+<pre>
 void cleanup() {
     glfwDestroyWindow(window);
 
     glfwTerminate();
 }
+</pre>
+
 运行程序，我们应该会看到一个名为Vulkan的白色窗体，直到关闭窗体终止应用程序。
 
 ok，到现在我们已经完成了一个Vulkan程序的骨架原型，在下一小节我们会创建第一个Vulkan Object!
 
+[代码](src/02.cpp)。

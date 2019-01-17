@@ -54,27 +54,32 @@ poolInfo.flags = 0; // Optional
 
 我们仅仅在程序开始的时候记录命令缓冲区，并在主循环体main loop中多次执行，因此我们不会使用这些标志。
 
+<pre>
 if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
     throw std::runtime_error("failed to create command pool!");
 }
+</pre>
 
 通过vkCreateCommandPool函数完成command pool创建工作。它不需要任何特殊的参数设置。
 命令将被整个程序的生命周期使用以完成屏幕的绘制工作，所以对象池应该被在最后销毁:
 
+<pre>
 void cleanup() {
     vkDestroyCommandPool(device, commandPool, nullptr);
 
     ...
 }
+</pre>
 
 ## Command buffer allocation
 现在我们开始分配命令缓冲区并通过它们记录绘制指令。因为其中一个绘图命令需要正确绑定VkFrameBuffer，
 我们实际上需要为每一个交换链中的图像记录一个命令缓冲区。最后创建一个VkCommandBuffer对象列表作为成员变量。
 命令缓冲区会在common pool销毁的时候自动释放系统资源，所以我们不需要明确编写cleanup逻辑。
 
-std::vector<VkCommandBuffer> commandBuffers;
+std::vector<VkCommandBuffer> commandBuffers;  
 现在开始使用一个createCommandBuffers函数来分配和记录每一个交换链图像将要应用的命令。
 
+<pre>
 void initVulkan() {
     createInstance();
     setupDebugCallback();
@@ -95,12 +100,13 @@ void initVulkan() {
 void createCommandBuffers() {
     commandBuffers.resize(swapChainFramebuffers.size());
 }
+</pre>
 
 
 命令缓冲区通过vkAllocateCommandBuffers函数分配，它需要VkCommandBufferAllocateInfo结构体作为参数，
 用以指定command pool和缓冲区将会分配的大小:
 
-
+<pre>
 VkCommandBufferAllocateInfo allocInfo = {};
 allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 allocInfo.commandPool = commandPool;
@@ -110,8 +116,9 @@ allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
 if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
     throw std::runtime_error("failed to allocate command buffers!");
 }
+</pre>
 
-level参数指定分配的命令缓冲区的主从关系。
+level参数指定分配的命令缓冲区的主从关系。 
 
 * VK_COMMAND_BUFFER_LEVEL_PRIMARY: 可以提交到队列执行，但不能从其他的命令缓冲区调用。
 * VK_COMMAND_BUFFER_LEVEL_SECONDARY: 无法直接提交，但是可以从主命令缓冲区调用。
@@ -122,7 +129,7 @@ level参数指定分配的命令缓冲区的主从关系。
 通过vkBeginCommandBuffer来开启命令缓冲区的记录功能，该函数需要传递VkCommandBufferBeginInfo结构体作为参数，
 用以指定命令缓冲区在使用过程中的一些具体信息。
 
-
+<pre>
 for (size_t i = 0; i < commandBuffers.size(); i++) {
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -131,7 +138,7 @@ for (size_t i = 0; i < commandBuffers.size(); i++) {
 
     vkBeginCommandBuffer(commandBuffers[i], &beginInfo);
 }
-
+</pre>
 
 flags标志位参数用于指定如何使用命令缓冲区。可选的参数类型如下:
 
@@ -148,19 +155,25 @@ flags标志位参数用于指定如何使用命令缓冲区。可选的参数类
 
 绘制开始于调用vkCmdBeginRenderPass开启渲染通道。render pass使用VkRenderPassBeginInfo结构体填充配置信息作为调用时使用的参数。
 
+<pre>
 VkRenderPassBeginInfo renderPassInfo = {};
 renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 renderPassInfo.renderPass = renderPass;
 renderPassInfo.framebuffer = swapChainFramebuffers[i];
+</pre>
+
 结构体第一个参数传递为绑定到对应附件的渲染通道本身。我们为每一个交换链的图像创建帧缓冲区，并指定为颜色附件。
 
-renderPassInfo.renderArea.offset = {0, 0};
-renderPassInfo.renderArea.extent = swapChainExtent;
+renderPassInfo.renderArea.offset = {0, 0};  
+renderPassInfo.renderArea.extent = swapChainExtent;  
 后两个参数定义了渲染区域的大小。渲染区域定义着色器加载和存储将要发生的位置。区域外的像素将具有未定的值。为了最佳的性能它的尺寸应该与附件匹配。
 
+<pre>
 VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
 renderPassInfo.clearValueCount = 1;
 renderPassInfo.pClearValues = &clearColor;
+</pre>
+
 最后两个参数定义了用于 VK_ATTACHMENT_LOAD_OP_CLEAR 的清除值，我们将其用作颜色附件的加载操作。
 为了简化操作，我们定义了clear color为100%黑色。
 
@@ -177,11 +190,11 @@ vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INL
 ## Basic drawing commands
  现在我们绑定图形管线:
 
-vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);  
 第二个参数指定具体管线类型，graphics or compute pipeline。我们告诉Vulkan在图形管线中每一个操作
 如何执行及哪个附件将会在片段着色器中使用，所以剩下的就是告诉它绘制三角形。
 
-vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);  
 实际的vkCmdDraw函数有点与字面意思不一致，它是如此简单，仅因为我们提前指定所有渲染相关的信息。它有如下的参数需要指定，除了命令缓冲区:
 
 * vertexCount: 即使我们没有顶点缓冲区，但是我们仍然有3个定点需要绘制。
@@ -193,11 +206,16 @@ vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
 
 render pass执行完绘制，可以结束渲染作业: 
 
-vkCmdEndRenderPass(commandBuffers[i]);
+vkCmdEndRenderPass(commandBuffers[i]);  
 并停止记录命令缓冲区的工作:
 
+<pre>
 if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
     throw std::runtime_error("failed to record command buffer!");
 }
+</pre>
+
 在下一章节我们会尝试在main loop中编写代码，用于从交换链中获取图像，执行命令缓冲区的命令，再将渲染后的图像返还给交换链。
 
+
+[代码](src/16.cpp)。

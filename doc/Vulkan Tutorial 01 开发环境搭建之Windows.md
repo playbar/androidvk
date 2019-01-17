@@ -46,7 +46,7 @@ GLM仅包含一个头文件，所以只需要下载最新版本，同上文GLFW�
 在此可删除掉 或替换为下文的测试代码。
 新建测试C++文件，并添加如下测试代码。
 
-<table>
+<pre>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #define GLM_FORCE_RADIANS
@@ -80,7 +80,7 @@ int main() {
 
     return 0;
 }
-</table>
+</pre>
 
 会遇到编译错误GLFW，现在添加具体的库引用如图。
 
@@ -90,4 +90,5 @@ int main() {
 
 
 
-工程代码请在 Github checkout。
+[代码](src/01.cpp)。
+

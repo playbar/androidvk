@@ -227,10 +227,13 @@ void setupDebugCallback() {
 
 现在我们填充有关回调的结构体详细信息:
 
+<pre>
 VkDebugReportCallbackCreateInfoEXT createInfo = {};
 createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
 createInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
 createInfo.pfnCallback = debugCallback;
+</pre>
+
 标志位允许过滤掉你不希望的消息。pfnCallback字段描述了回调函数的指针。在这里可以有选择的传递一个pUserData指针，
 最为回调的自定义数据结构使用，比如可以传递HelloTriangleApplication类的指针。
 
@@ -238,7 +241,7 @@ createInfo.pfnCallback = debugCallback;
 不幸的是，因为这个功能是一个扩展功能，它不会被自动加载。所以必须使用vkGetInstanceProcAddr查找函数地址。
 我们将在后台创建代理函数。在HelloTriangleApplication类定义之上添加它。
 
-</pre>
+<pre>
 VkResult CreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback) {
     auto func = (PFN_vkCreateDebugReportCallbackEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
     if (func != nullptr) {
@@ -251,9 +254,12 @@ VkResult CreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCa
 
 如果函数无法加载，则vkGetInstanceProcAddr函数返回nullptr。如果非nullptr，就可以调用此函数来创建扩展对象:
 
+<pre>
 if (CreateDebugReportCallbackEXT(instance, &createInfo, nullptr, &callback) != VK_SUCCESS) {
     throw std::runtime_error("failed to set up debug callback!");
 }
+</pre>
+
 倒数第二个参数仍然是分配器回调指针，我们仍然设置为nullptr。debug回调与Vulkan instance和layers相对应，
 所以需要明确指定第一个参数。现在运行程序，关闭窗口，你会在命令行看到提示信息:
 
@@ -292,3 +298,5 @@ Validation layers的行为可以有更多的设置，不仅仅是VkDebugReportCa
 要为自己的应用程序配置layers，请将文件赋值到项目的Debug和Release目录，然后按照说明设置需要的功能特性。除此之外，本教程将使用默认的设置。
 
 现在是时候进入系统的Vulkan devices小节了。
+
+[代码](src/04.cpp)。

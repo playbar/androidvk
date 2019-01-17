@@ -11,9 +11,9 @@
 
  
 
-最后，在类成员中创建另一个std::vector用于保存framebuffers:
+最后，在类成员中创建另一个std::vector用于保存framebuffers: 
 
-std::vector<VkFramebuffer> swapChainFramebuffers;
+std::vector<VkFramebuffer> swapChainFramebuffers; 
 
 我们在新的函数createFramebuffers中为数组创建对象集合，这个函数在initVulkan创建完管线后调用:
 
@@ -90,3 +90,4 @@ void cleanup() {
 
 我们已经达到了一个里程碑，我们拥有渲染需要的所有对象。在下一章中，我们将编写第一个实际绘制的命令。
 
+[代码](src/15.cpp)。

@@ -23,12 +23,15 @@
  
 首先声明需要的设备扩展清单，与之前开启validation layers的列表是相似的。
 
+<pre>
 const std::vector<const char*> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
+</pre>
+
 接下来，创建一个从isDeviceSuitable调用的新函数checkDeviceExtensionSupport作为额外的检查逻辑:
 
-
+<pre>
 bool isDeviceSuitable(VkPhysicalDevice device) {
     QueueFamilyIndices indices = findQueueFamilies(device);
 
@@ -40,10 +43,11 @@ bool isDeviceSuitable(VkPhysicalDevice device) {
 bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
     return true;
 }
+</pre>
 
 修改函数体以便于枚举设备所有集合，并检测是否所有需要的扩展在其中。
 
-
+<pre>
 bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
     uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
@@ -59,6 +63,8 @@ bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
 
     return requiredExtensions.empty();
 }
+</pre>
+
 
 选择一组字符串来表示未经确认过的扩展名。这样做可以比较容易的进行增删及遍历的次序。当然也可以像CheckValidationLayerSupport函数那样做嵌套的循环。
 性能的差异在这里是不关紧要的。现在运行代码验证图形卡是否能够顺利创建一个交换链。需要注意的是前一个章节中验证过的presentation队列有效性，
@@ -66,8 +72,10 @@ bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
 
 启用扩展需要对逻辑设备的创建结构体做一些小的改动:
 
+<pre>
 createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+</pre>
 
 ## Querying details of swap chain support
 如果仅仅是为了测试交换链的有效性是远远不够的，因为它还不能很好的与窗体surface兼容。
@@ -80,18 +88,24 @@ createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
 与findQueueFamilies类似，我们使用结构体一次性的传递详细的信息。三类属性封装在如下结构体中：
 
+<pre>
 struct SwapChainSupportDetails {
     VkSurfaceCapabilitiesKHR capabilities;
     std::vector<VkSurfaceFormatKHR> formats;
     std::vector<VkPresentModeKHR> presentModes;
 };
+</pre>
+
 现在创建新的函数querySwapChainSupport填充该结构体。
 
+<pre>
 SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) {
     SwapChainSupportDetails details;
 
     return details;
 }
+</pre>
+
 本小节涉及如何查询包含此信息的结构体，这些结构体的含义及包含的数据将在下一节讨论。
 
 我们现在开始基本的surface功能设置部分。这些属性可以通过简单的函数调用查询，并返回到单个VkSurfaceCapabilitiesKHR结构体中。
@@ -101,7 +115,7 @@ vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities
 
 下一步查询支持的surface格式。因为获取到的是一个结构体列表，具体应用形式如下:
 
-
+<pre>
 uint32_t formatCount;
 vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
 
@@ -109,9 +123,11 @@ if (formatCount != 0) {
     details.formats.resize(formatCount);
     vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
 }
+</pre>
 
 确保集合对于所有有效的格式可扩充。最后查询支持的presentation模式，同样的方式，使用vkGetPhysicalDeviceSurfacePresentModesKHR:
 
+<pre>
 uint32_t presentModeCount;
 vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
 
@@ -119,15 +135,19 @@ if (presentModeCount != 0) {
     details.presentModes.resize(presentModeCount);
     vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
 }
+</pre>
 
 现在结构体的相关细节介绍完毕，让我们扩充isDeviceSuitable函数，从而利用该函数验证交换链足够的支持。
 在本章节中交换链的支持是足够的，因为对于给定的窗体surface，它至少支持一个图像格式，一个presentaion模式。
 
+<pre>
 bool swapChainAdequate = false;
 if (extensionsSupported) {
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
     swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 }
+</pre>
+
 比较重要的是尝试查询交换链的支持是在验证完扩展有效性之后进行。函数的最后一行代码修改为:
 
 return indices.isComplete() && extensionsSupported && swapChainAdequate;
@@ -146,9 +166,11 @@ return indices.isComplete() && extensionsSupported && swapChainAdequate;
 Surface format
 这个函数用来设置surface格式。我们传递formats作为函数的参数，类型为SwapChainSupportDetails。
 
+<pre>
 VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
 
 }
+</pre>
 
 每个VkSurfaceFormatKHR结构都包含一个format和一个colorSpace成员。format成员变量指定色彩通道和类型。
 比如，VK_FORMAT_B8G8R8A8_UNORM代表了我们使用B,G,R和alpha次序的通道，且每一个通道为无符号8bit整数，每个像素总计32bits。
@@ -161,19 +183,25 @@ colorSpace成员描述SRGB颜色空间是否通过VK_COLOR_SPACE_SRGB_NONLINEAR_
 最理想的情况是surface没有设置任何偏向性的格式，这个时候Vulkan会通过仅返回一个VkSurfaceFormatKHR结构表示，
 且该结构的format成员设置为VK_FORMAT_UNDEFINED。
 
+<pre>
 if (availableFormats.size() == 1 && availableFormats[0].format == VK_FORMAT_UNDEFINED) {
     return {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
 }
+</pre>
 
 如果不能自由的设置格式，那么我们可以通过遍历列表设置具有偏向性的组合:
 
+<pre>
 for (const auto& availableFormat : availableFormats) {
     if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
         return availableFormat;
     }
 }
+</pre>
+
 如果以上两种方式都失效了，这个时候我们可以通过“优良”进行打分排序，但是大多数情况下会选择第一个格式作为理想的选择。
 
+<pre>
 VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
     if (availableFormats.size() == 1 && availableFormats[0].format == VK_FORMAT_UNDEFINED) {
         return {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
@@ -187,6 +215,7 @@ VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>
 
     return availableFormats[0];
 }
+</pre>
 
 ## Presentation mode
 
@@ -202,13 +231,16 @@ VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>
     
  逻辑上看仅仅VR_PRESENT_MODE_FIFO_KHR模式保证可用性，所以我们再次增加一个函数查找最佳的模式:
 
+<pre>
 VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> availablePresentModes) {
     return VK_PRESENT_MODE_FIFO_KHR;
 }
+</pre>
 
 我个人认为三级缓冲是一个非常好的策略。它允许我们避免撕裂，同时仍然保持相对低的延迟，通过渲染尽可能新的图像，直到接受垂直同步信号。
 所以我们看一下列表，它是否可用:
 
+<pre>
 VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> availablePresentModes) {
     for (const auto& availablePresentMode : availablePresentModes) {
         if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
@@ -218,11 +250,13 @@ VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> avail
 
     return VK_PRESENT_MODE_FIFO_KHR;
 }
+</pre>
 
 遗憾的是，一些驱动程序目前并不支持VK_PRESENT_MODE_FIFO_KHR,除此之外如果VK_PRESENT_MODE_MAILBOX_KHR也不可用，
 我们更倾向使用VK_PRESENT_MODE_IMMEDIATE_KHR: 
 
 
+<pre>
 VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> availablePresentModes) {
     VkPresentModeKHR bestMode = VK_PRESENT_MODE_FIFO_KHR;
 
@@ -236,20 +270,25 @@ VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> avail
 
     return bestMode;
 }
+</pre>
 
 ## Swap extent
 
 还剩下一个属性，为此我们添加一个函数:
 
+<pre>
 VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
 
 }
+</pre>
+
 交换范围是指交换链图像的分辨率，它几乎总是等于我们绘制窗体的分辨率。分辨率的范围被定义在VkSurfaceCapabilitiesKHR结构体中。
 Vulkan告诉我们通过设置currentExtent成员的width和height来匹配窗体的分辨率。然而，一些窗体管理器允许不同的设置，
 意味着将currentExtent的width和height设置为特殊的数值表示:uint32_t的最大值。
 在这种情况下，我们参考窗体minImageExtent和maxImageExtent选择最匹配的分辨率。
 
 
+<pre>
 VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
     if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
         return capabilities.currentExtent;
@@ -262,6 +301,7 @@ VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
         return actualExtent;
     }
 }
+</pre>
 
 max和min函数用于将WIDTH和HEIGHT收敛在实际支持的minimum和maximum范围中。在这里确认包含<algorithm>头文件。
 
@@ -272,6 +312,7 @@ max和min函数用于将WIDTH和HEIGHT收敛在实际支持的minimum和maximum�
 
 创建一个函数createSwapChain，在initVulkan函数中，该函数会在创建逻辑设备之后调用。
 
+<pre>
 void initVulkan() {
     createInstance();
     setupDebugCallback();
@@ -288,35 +329,44 @@ void createSwapChain() {
     VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
     VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
 }
+</pre>
+
 
 实际上还有一些小事情需要确定，但是比较简单，所以没有单独创建函数。第一个是交换链中的图像数量，可以理解为队列的长度。
 它指定运行时图像的最小数量，我们将尝试大于1的图像数量，以实现三重缓冲。
 
+<pre>
 uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
 if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
     imageCount = swapChainSupport.capabilities.maxImageCount;
 }
+</pre>
 对于maxImageCount数值为0代表除了内存之外没有限制，这就是为什么我们需要检查。
 
 
 与Vulkan其他对象的创建过程一样，创建交换链也需要填充大量的结构体:
 
+<pre>
 VkSwapchainCreateInfoKHR createInfo = {};
 createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 createInfo.surface = surface;
+</pre>
 在指定交换链绑定到具体的surface之后，需要指定交换链图像有关的详细信息:
 
+<pre>
 createInfo.minImageCount = imageCount;
 createInfo.imageFormat = surfaceFormat.format;
 createInfo.imageColorSpace = surfaceFormat.colorSpace;
 createInfo.imageExtent = extent;
 createInfo.imageArrayLayers = 1;
 createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+</pre>
+
 imageArrayLayers指定每个图像组成的层数。除非我们开发3D应用程序，否则始终为1。imageUsage位字段指定在交换链中对图像进行的具体操作。
                 在本小节中，我们将直接对它们进行渲染，这意味着它们作为颜色附件。也可以首先将图像渲染为单独的图像，进行后处理操作。
                 在这种情况下可以使用像VK_IMAGE_USAGE_TRANSFER_DST_BIT这样的值，并使用内存操作将渲染的图像传输到交换链图像队列。
 
-
+<pre>
 QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 uint32_t queueFamilyIndices[] = {(uint32_t) indices.graphicsFamily, (uint32_t) indices.presentFamily};
 
@@ -329,6 +379,7 @@ if (indices.graphicsFamily != indices.presentFamily) {
     createInfo.queueFamilyIndexCount = 0; // Optional
     createInfo.pQueueFamilyIndices = nullptr; // Optional
 }
+</pre>
 
 接下来，我们需要指定如何处理跨多个队列簇的交换链图像。如果graphics队列簇与presentation队列簇不同，会出现如下情形。
 我们将从graphics队列中绘制交换链的图像，然后在另一个presentation队列中提交他们。多队列处理图像有两种方法:
@@ -364,15 +415,21 @@ createInfo.oldSwapchain = VK_NULL_HANDLE;
 VkSwapchainKHR swapChain;
 创建交换链只需要简单的调用函数:vkCreateSwapchainKHR:
 
+<pre>
 if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
     throw std::runtime_error("failed to create swap chain!");
 }
+</pre>
+
 参数是逻辑设备，交换链创建的信息，可选择的分配器和一个存储交换后的句柄指针。它也需要在设备被清理前，进行销毁操作，通过调用vkDestroySwapchainKHR。
 
+<pre>
 void cleanup() {
     vkDestroySwapchainKHR(device, swapChain, nullptr);
     ...
 }
+</pre>
+
 现在运行程序确保交换链创建成功！
 
 尝试移除createInfo.imageExtent = extent;并在validation layers开启的条件下，validation layers会立刻捕获到有帮助的异常信息:
@@ -396,6 +453,7 @@ vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
 
 最后，存储交换链格式和范围到成员变量中。我们会在后续章节使用。
 
+<pre>
 
 VkSwapchainKHR swapChain;
 std::vector<VkImage> swapChainImages;
@@ -406,6 +464,10 @@ VkExtent2D swapChainExtent;
 
 swapChainImageFormat = surfaceFormat.format;
 swapChainExtent = extent;
+</pre>
 
 
 现在我们已经设置了一些图像，这些图像可以被绘制，并呈现到窗体。下一章节我们开始讨论如何为图像设置渲染目标，并了解实际的图像管线 和 绘制命令。
+
+[代码](src/08.cpp)
+

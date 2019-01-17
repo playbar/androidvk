@@ -44,7 +44,7 @@ createInfo.pApplicationInfo = &appInfo;
 前几个参数比较简单。接下来的两个指定需要的全局扩展，Vulakn对于平台特性是零API支持的(至少暂时这样)，
 这意味着需要一个扩展才能与不同平台的窗体系统进行交互。GLFW有一个方便的内置函数，返回它有关的扩展信息，我们可以传递给struct:
 
-<pre><code>
+<pre>
 unsigned int glfwExtensionCount = 0;  
 const char** glfwExtensions;  
 
@@ -52,7 +52,7 @@ glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
 createInfo.enabledExtensionCount = glfwExtensionCount;  
 createInfo.ppEnabledExtensionNames = glfwExtensions; 
- </code></pre>
+</pre>
 
 结构体的最后两个成员确定需要开启的全局的validation layers。我们将会在下一节中深入探讨这部分内容，在这一节设置为空。
 
@@ -123,4 +123,6 @@ vkDestroyInstance函数的参数很简单。像之前小节提到的，Vulkan中
 我们通过将nullptr设置忽略。后续小节中创建的所有Vulkan相关资源，集中在cleanup函数中进行清理，且确保在销毁instance之前销毁。
 
 在进行更复杂的内容之前，是时候了解validation layers了。
+ 
+[代码](src/03.cpp)。
   

@@ -228,3 +228,5 @@ bool isDeviceSuitable(VkPhysicalDevice device) {
 </pre>
 
 很好，我们已经找到了我们需要的物理设备，在下一个小节我们会讨论逻辑设备。
+
+[代码](src/05.cpp)。

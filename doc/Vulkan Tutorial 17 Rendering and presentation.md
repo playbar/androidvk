@@ -3,7 +3,7 @@
 ## Setup
 这一章节会把之前的所有内容进行整合。我们将会编写drawFrame函数，通过主循环main loop将三角形绘制到屏幕。在mainLoop函数调用:
 
-复制代码
+<pre>
 void mainLoop() {
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -16,6 +16,7 @@ void mainLoop() {
 void drawFrame() {
 
 }
+</pre>
 
 ## Synchronization
 
@@ -90,19 +91,23 @@ if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore)
 
 在程序结束时，当所有命令完成并不需要同步时，应该清除信号量:
 
+<pre>
 void cleanup() {
     vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
     vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
 }
+</pre>
 
 ## Acquiring an image from the swap chain
 就像之前说到的，drawFrame函数需要做的第一件事情就是从交换链中获取图像。
 回想一下交换链是一个扩展功能，所以我们必须使用具有vk*KHR命名约定的函数:
 
+<pre>
 void drawFrame() {
     uint32_t imageIndex;
     vkAcquireNextImageKHR(device, swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 }
+</pre>
 
 vkAcquireNextImageKHR函数前两个参数是我们希望获取到图像的逻辑设备和交换链。
 第三个参数指定获取有效图像的操作timeout，单位纳秒。我们使用64位无符号最大值禁止timeout。
@@ -116,32 +121,40 @@ vkAcquireNextImageKHR函数前两个参数是我们希望获取到图像的逻�
 ## Submitting the command buffer
 队列提交和同步通过VkSubmitInfo结构体进行参数配置。
 
-VkSubmitInfo submitInfo = {};
-submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+<pre>
+VkSubmitInfo submitInfo = {};  
+submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;  
 
 VkSemaphore waitSemaphores[] = {imageAvailableSemaphore};
 VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 submitInfo.waitSemaphoreCount = 1;
 submitInfo.pWaitSemaphores = waitSemaphores;
 submitInfo.pWaitDstStageMask = waitStages;
+</pre>
 
 前三个参数指定在执行开始之前要等待的哪个信号量及要等待的通道的哪个阶段。
 为了向图像写入颜色，我们会等待图像状态变为available，所我们指定写入颜色附件的图形管线阶段。
 理论上这意味着，具体的顶点着色器开始执行，而图像不可用。waitStages数组对应pWaitSemaphores中具有相同索引的信号量。
 
-submitInfo.commandBufferCount = 1;
-submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
+submitInfo.commandBufferCount = 1;  
+submitInfo.pCommandBuffers = &commandBuffers[imageIndex];  
 
 接下来的两个参数指定哪个命令缓冲区被实际提交执行。如初期提到的，我们应该提交命令缓冲区，它将我们刚获取的交换链图像做为颜色附件进行绑定。
 
+<pre>
 VkSemaphore signalSemaphores[] = {renderFinishedSemaphore};
 submitInfo.signalSemaphoreCount = 1;
 submitInfo.pSignalSemaphores = signalSemaphores;
+</pre>
+
 signalSemaphoreCount和pSignalSemaphores参数指定了当命令缓冲区执行结束向哪些信号量发出信号。根据我们的需要使用renderFinishedSemaphore。
 
+<pre>
 if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
     throw std::runtime_error("failed to submit draw command buffer!");
 }
+</pre>
+
 使用vkQueueSubmit函数向图像队列提交命令缓冲区。当开销负载比较大的时候，处于效率考虑，函数可以持有VkSubmitInfo结构体数组。最后一个参数引用了一个可选的栅栏，当命令缓冲区执行完毕时候它会被发送信号。我们使用信号量进行同步，所以我们需要传递VK_NULL_HANDLE。
 
 ## Subpass dependencies
@@ -154,52 +167,59 @@ if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) 
 或者我们让渲染通道等待VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT阶段。
 我觉得使用第二个选项，因为可以比较全面的了解subpass依赖关系及其工作方式。
 
-
 子通道依赖关系可以通过VkSubpassDependency结构体指定，在createRenderPass函数中添加:
 
+<pre>
 VkSubpassDependency dependency = {}; 
 dependency.srcSubpass = VK_SUBPASS_EXTERNAL; 
 dependency.dstSubpass = 0; 
+</pre>
 
 前两个参数指定依赖的关系和从属子通道的索引。特殊值VK_SUBPASS_EXTERNAL是指在渲染通道之前或者之后的隐式子通道，
 取决于它是否在srcSubpass或者dstSubPass中指定。索引0指定我们的子通道，这是第一个也是唯一的。
 dstSubpass必须始终高于srcSubPass以防止依赖关系出现循环。
 
-dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-dependency.srcAccessMask = 0;
+dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;  
+dependency.srcAccessMask = 0;  
 
  接下来的两个参数字段指定要等待的操作和这些操作发生的阶段。在我们可以访问对象之前，我们需要等待交换链完成对应图像的读取操作。
  这可以通过等待颜色附件输出的阶段来实现。
 
-dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;  
+dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;  
 在颜色附件阶段的操作及涉及颜色附件的读取和写入的操作应该等待。这些设置将阻止转换发生，直到实际需要(并允许):当我们需要写入颜色时候。
 
-renderPassInfo.dependencyCount = 1;
-renderPassInfo.pDependencies = &dependency;
+renderPassInfo.dependencyCount = 1;  
+renderPassInfo.pDependencies = &dependency;  
 VkRenderPassCreateInfo结构体有两个字段指定依赖的数组。
 
 ## Presentation
 绘制帧最后一个步骤是将结果提交到交换链，使其最终显示在屏幕上。Presentation通过VkPresentInfoKHR结构体配置，具体位置在drawFrame函数最后。
 
+<pre>
 VkPresentInfoKHR presentInfo = {};
 presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
 presentInfo.waitSemaphoreCount = 1;
 presentInfo.pWaitSemaphores = signalSemaphores;
+</pre>
+
 前两个参数指定在进行presentation之前要等待的信号量，就像VkSubmitInfo一样。
 
+<pre>
 VkSwapchainKHR swapChains[] = {swapChain};
 presentInfo.swapchainCount = 1;
 presentInfo.pSwapchains = swapChains;
 presentInfo.pImageIndices = &imageIndex;
+</pre>
+
 接下来的两个参数指定用于提交图像的交换链和每个交换链图像索引。大多数情况下仅一个。
 
-presentInfo.pResults = nullptr; // Optional
+presentInfo.pResults = nullptr; // Optional  
 最后一个可选参数pResults，它允许指定一组VkResult值，以便在presentation成功时检查每个独立的交换链。
 如果只使用单个交换链，则不需要，因为可以简单的使用当前函数的返回值。
 
-vkQueuePresentKHR(presentQueue, &presentInfo);
+vkQueuePresentKHR(presentQueue, &presentInfo);  
 vkQueuePresentKHR函数提交请求呈现交换链中的图像。我们在下一个章节为vkAcquireNextImageKHR和vkQueuePresentKHR可以添加错误处理。
 因为它们失败并不一定意味着程序应该终止，与我们迄今为止看到的功能不同。
 
@@ -273,3 +293,4 @@ void drawFrame() {
 
 在下一章节中，我们将细化Vulkan程序中的一些细节，使其表现更稳定。
 
+[代码](src/17.cpp)。

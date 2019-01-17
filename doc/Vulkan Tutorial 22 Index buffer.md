@@ -16,23 +16,30 @@
 ##  Index buffer creation
 在本章节中，为了绘制如上图所示的矩形，我们需要修改顶点数据并添加索引数据。修改后的顶点数据分别代表矩形四个角：
 
+<pre>
 const std::vector<Vertex> vertices = {
     {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
     {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
     {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
     {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
 };
+</pre>
+
 左上角是红色，右上角是绿色，右下角是蓝色，左下角是白色。我们添加一个新的索引数组indices代表索引缓冲区的数据内容。
 它应该匹配途中的索引来绘制右上角的三角形和左下角的三角形。
 
+<pre>
 const std::vector<uint16_t> indices = {
     0, 1, 2, 2, 3, 0
 };
+</pre>
+
 根据vertices中的条目个数，我们可以使用uint16_t或uint32_t作为索引缓冲区类型。现在我们可以使用uint16_t，
 因为我们使用的独立顶点数量小于65535。
 
 如顶点数据，为了使GPU可以访问到它们，需要将索引数据上传到缓冲区VkBuffer。定义两个类成员保存索引缓冲区的资源：
 
+<pre>
 VkBuffer vertexBuffer;
 VkDeviceMemory vertexBufferMemory;
 VkBuffer indexBuffer;
@@ -65,6 +72,7 @@ void createIndexBuffer() {
     vkDestroyBuffer(device, stagingBuffer, nullptr);
     vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
+</pre>
 
 仅有的两个差异。bufferSize现在等于索引数量乘以索引类型的大小，该类型或者是uint16_t，或者是uint32_t。
 indexBuffer的用法需改用 VK_BUFFER_USAGE_INDEX_BUFFER_BIT 代替 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT。
@@ -72,6 +80,7 @@ indexBuffer的用法需改用 VK_BUFFER_USAGE_INDEX_BUFFER_BIT 代替 VK_BUFFER_
 
 索引缓冲区在程序退出的时候需要清理，与顶点缓冲区类似：
 
+<pre>
 void cleanup() {
     cleanupSwapChain();
 
@@ -83,6 +92,7 @@ void cleanup() {
 
     ...
 }
+</pre>
 
 
 ## Using an index buffer
@@ -90,8 +100,8 @@ void cleanup() {
 区别是现在仅使用一个索引缓冲区。不幸的是，不可能对每个顶点属性使用不同的索引，
 所以即使只有一个属性不同，我们仍然必须完全复制顶点数据。
 
-vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);  
+vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);  
 
 索引缓冲区使用vkCmdBindIndexBuffer绑定，它持有索引缓冲区作为参数，还需要偏移量和索引数据的类型。
 如前所述，可能的类型是VK_INDEX_TYPE_UINT16和VK_INDEX_TYPE_UINT32。
@@ -99,7 +109,7 @@ vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 仅仅绑定索引缓冲区不会发生任何改变，我们还需要告知Vulkan在使用索引缓冲区后，对应的绘制命令的变化。
 移除vkCmdDraw函数，并用vkCmdDrawIndexed替换：
 
-vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);  
 该函数的调用与vkCmdDraw非常类似。前两个参数指定索引的数量和几何instance数量。我们没有使用instancing，所以指定1。
 索引数表示被传递到顶点缓冲区中的顶点数量。下一个参数指定索引缓冲区的偏移量，使用1将会导致图形卡在第二个索引处开始读取。
 倒数第二个参数指定索引缓冲区中添加的索引的偏移。最后一个参数指定instancing偏移量，我们没有使用该特性。
@@ -115,4 +125,6 @@ vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0,
 并在诸如vkCmdBindVertexBuffers之类的命令中使用偏移量。优点在于，在这种情况下，数据会更加充分的利用缓存，
 因为它们排列在一块区域。甚至在同一个渲染操作中可以复用来自相同内存块的多个资源块，只要刷新数据即可。
 该技巧称为称为aliasing，一些Vulkan函数有明确的标志指定这样做的意图。
+
+[代码](src/22.cpp)。
 
