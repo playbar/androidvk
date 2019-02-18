@@ -299,6 +299,10 @@ void VulkanUtils::OnDrawFrame()
 
 void VulkanUtils::start()
 {
+    if(GIsSupportVK() )
+    {
+        LOGE("support vk");
+    }
     if (!InitVulkan()) {
         throw std::runtime_error("InitVulkan fail!");
     }
@@ -550,6 +554,8 @@ void VulkanUtils::createMVPDescriptorSetLayout()
 
 }
 
+#pragma mark - createPipeline
+
 void VulkanUtils::createGraphicsPipelineTest()
 {
     const char *srcVSInfo = "9000000000000000100000006d00000001000000706f736974696f6e000000000000000000000000000000260000001e0000000001000000080000006700000001000000746578436f6f7264000000000000000000000000000000260000001e00000000000000004000000000000000020000004d56500000000000000000000000000000000000000000200000001d00000000";
@@ -621,7 +627,8 @@ void VulkanUtils::createGraphicsPipelineTest()
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-            .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
+//            .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
+            .topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
             .primitiveRestartEnable = VK_FALSE,
     };
 
@@ -915,7 +922,8 @@ void VulkanUtils::createMVPPipeline() {
 
     VkPipelineInputAssemblyStateCreateInfo mInputAssembly= {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-            .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
+//            .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
+            .topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
             .primitiveRestartEnable = VK_TRUE,
     };
 
@@ -1245,6 +1253,8 @@ void VulkanUtils::createCommandBuffers() {
 
 
 }
+
+#pragma mark - drawBuffer
 
 void VulkanUtils::drawCommandBuffers()
 {
@@ -1619,6 +1629,8 @@ void VulkanUtils::updateUniformBufferMVP()
     return;
 }
 
+#pragma mark - drawFrame
+
 void VulkanUtils::AcquireNextImage()
 {
     VkResult result = vkAcquireNextImageKHR(mVKDevice.mLogicalDevice, swapchain, std::numeric_limits<uint64_t>::max(),
@@ -1697,13 +1709,16 @@ void VulkanUtils::drawFrame() {
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore waitSemaphores[] = {mImageAvailableSemaphore};
+
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStages;
+
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &mCommandBuffers[mImageIndex];
+
+    VkSemaphore waitSemaphores[] = {mImageAvailableSemaphore};
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
 
     VkSemaphore signalSemaphores[] = {mRenderFinishedSemaphore};
     submitInfo.signalSemaphoreCount = 1;
@@ -1741,6 +1756,7 @@ void VulkanUtils::QueuePresent()
 //    vkQueueWaitIdle(mVKDevice.mPresentQueue);
 }
 
+#pragma mark - swapchain
 
 void VulkanUtils::recreateSwapchain() {
     LOGI("recreateSwapchain");

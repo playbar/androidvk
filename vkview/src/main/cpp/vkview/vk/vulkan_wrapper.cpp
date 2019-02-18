@@ -14,12 +14,33 @@
  * limitations under the License.
  */
 // This file is generated.
+
+#include <sys/system_properties.h>
+#include <bits/strcasecmp.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "vulkan_wrapper.h"
 #include <dlfcn.h>
+
+
+bool GIsSupportVK()
+{
+    char manufacturer[PROP_VALUE_MAX] = {0};
+    char sdkver[PROP_VALUE_MAX] = {0};
+    __system_property_get("ro.product.manufacturer", manufacturer);
+    __system_property_get("ro.build.version.sdk", sdkver);
+    if ( strcasecmp(sdkver, "24") >= 0) {
+        void *libvulkan = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
+        if (libvulkan == NULL)
+            return false;
+        else
+            return true;
+    }
+    return false;
+}
 
 int InitVulkan(void) {
     void *libvulkan = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
