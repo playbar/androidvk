@@ -813,8 +813,8 @@ void VulkanUtils::createDescriptorSetLayout() {
             .pBindings = bindings.data(),
     };
 
-    if (vkCreateDescriptorSetLayout(mVKDevice.mLogicalDevice, &layoutInfo, nullptr, &mDescriptorSetLayout)
-        != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(mVKDevice.mLogicalDevice, &layoutInfo, nullptr, &mDescriptorSetLayout) != VK_SUCCESS)
+    {
         throw std::runtime_error("failed to create descriptor set layout!");
     }
 
@@ -976,15 +976,10 @@ void VulkanUtils::createDescriptorPool() {
         throw std::runtime_error("failed to create descriptor pool!");
     }
     /////
-    int size = mSwapchainImages.size();
-    for( int i = 0; i < size; ++i )
+
+    if (vkCreateDescriptorPool(mVKDevice.mLogicalDevice, &poolInfo, nullptr, &mDescriptorPools) != VK_SUCCESS)
     {
-        VkDescriptorPool despool;
-        if (vkCreateDescriptorPool(mVKDevice.mLogicalDevice, &poolInfo, nullptr, &despool) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create descriptor pool!");
-        }
-        mDescriptorPools.push_back(despool);
+        throw std::runtime_error("failed to create descriptor pool!");
     }
 }
 
@@ -1087,11 +1082,12 @@ VkDescriptorSet VulkanUtils::createDescriptorSet() {
 
     VkDescriptorSet descriptorSet;
 
+    VkDescriptorSetLayout layouts[] = {mDescriptorSetLayout};
     VkDescriptorSetAllocateInfo allocInfo = {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            .descriptorPool = mDescriptorPools[mImageIndex],
+            .descriptorPool = mDescriptorPools,
             .descriptorSetCount = 1,
-            .pSetLayouts = &mDescriptorSetLayout,
+            .pSetLayouts = layouts,
     };
     if (vkAllocateDescriptorSets(mVKDevice.mLogicalDevice, &allocInfo, &descriptorSet) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor set!");
@@ -1163,7 +1159,7 @@ VkDescriptorSet VulkanUtils::createMVPDescriptorSet() {
 
     VkDescriptorSetAllocateInfo allocInfo = {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            .descriptorPool = mDescriptorPools[mImageIndex],
+            .descriptorPool = mDescriptorPools,
             .descriptorSetCount = 1,
             .pSetLayouts = &mMVPDescriptorSetLayout,
     };
@@ -1444,7 +1440,7 @@ void VulkanUtils::AcquireNextImage()
 
     vkCmdBeginRenderPass(mCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    vkResetDescriptorPool(mVKDevice.mLogicalDevice, mDescriptorPools[i], 0);
+    vkResetDescriptorPool(mVKDevice.mLogicalDevice, mDescriptorPools, 0);
 
 }
 

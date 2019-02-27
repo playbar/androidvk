@@ -122,8 +122,8 @@ public:
     std::vector<VkImageView> mSwapchainImageViews;
     std::vector<VkFramebuffer> mFramebuffers;
     std::vector<VkCommandBuffer> mCommandBuffers;
-    std::vector<VkDescriptorPool >mDescriptorPools;
 
+    VkDescriptorPool mDescriptorPools;
 
     std::vector<HVkBuffer*> mVertexBuffers;
     std::vector<HVkBuffer*> mIndexBuffers;
