@@ -10,7 +10,7 @@
 #include <glm/glm.hpp>
 #include <vulkan_wrapper.h>
 
-#define VERTEXT_BUFFER_ID 1
+#define VERTEXT_BUFFER_ID 0
 
 struct QueueFamilyIndices {
     int graphicsFamily = -1;
