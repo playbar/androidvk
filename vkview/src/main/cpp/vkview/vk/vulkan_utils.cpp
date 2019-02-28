@@ -774,110 +774,6 @@ void VulkanUtils::createMVPPipeline() {
     vkDestroyShaderModule(mVKDevice.mLogicalDevice, fragmentShaderModule, nullptr);
 }
 
-
-void VulkanUtils::createDescriptorSetLayout() {
-
-    VkDescriptorSetLayoutBinding uboLayoutBinding = {
-            .binding = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .pImmutableSamplers = nullptr,
-    };
-
-    VkDescriptorSetLayoutBinding uboLayoutProjBinding = {
-            .binding = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .pImmutableSamplers = nullptr,
-    };
-
-    VkDescriptorSetLayoutBinding samplerLayoutBinding = {
-            .binding = 10,
-            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .pImmutableSamplers = nullptr,
-    };
-
-    std::array<VkDescriptorSetLayoutBinding, 3> bindings = {
-            uboLayoutBinding,
-            uboLayoutProjBinding,
-            samplerLayoutBinding
-    };
-
-    VkDescriptorSetLayoutCreateInfo layoutInfo = {
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-            .bindingCount = static_cast<uint32_t>(bindings.size()),
-            .pBindings = bindings.data(),
-    };
-
-    if (vkCreateDescriptorSetLayout(mVKDevice.mLogicalDevice, &layoutInfo, nullptr, &mDescriptorSetLayout) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create descriptor set layout!");
-    }
-
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-            .setLayoutCount = 1,
-            .pSetLayouts = &mDescriptorSetLayout,
-    };
-    if (vkCreatePipelineLayout(mVKDevice.mLogicalDevice, &pipelineLayoutInfo, nullptr, &mPipelineLayout)
-        != VK_SUCCESS) {
-        throw std::runtime_error("failed to create pipeline layout!");
-    }
-
-}
-
-
-void VulkanUtils::createMVPDescriptorSetLayout()
-{
-
-    VkDescriptorSetLayoutBinding uboLayoutProjBinding = {
-            .binding = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .pImmutableSamplers = nullptr,
-    };
-
-    VkDescriptorSetLayoutBinding samplerLayoutBinding = {
-            .binding = 10,
-            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .pImmutableSamplers = nullptr,
-    };
-
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {
-            uboLayoutProjBinding,
-            samplerLayoutBinding
-    };
-
-    VkDescriptorSetLayoutCreateInfo layoutInfo = {
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-            .bindingCount = static_cast<uint32_t>(bindings.size()),
-            .pBindings = bindings.data(),
-    };
-
-    if (vkCreateDescriptorSetLayout(mVKDevice.mLogicalDevice, &layoutInfo, nullptr, &mMVPDescriptorSetLayout)
-        != VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor set layout!");
-    }
-
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-            .setLayoutCount = 1,
-            .pSetLayouts = &mMVPDescriptorSetLayout,
-    };
-    if (vkCreatePipelineLayout(mVKDevice.mLogicalDevice, &pipelineLayoutInfo, nullptr, &mMVPPipelineLayout)
-        != VK_SUCCESS) {
-        throw std::runtime_error("failed to create pipeline layout!");
-    }
-
-}
-
 void VulkanUtils::createCacheBuffers()
 {
     int size = mSwapchainImageViews.size();
@@ -970,7 +866,7 @@ void VulkanUtils::createDescriptorPool() {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
             .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
             .pPoolSizes = poolSizes.data(),
-            .maxSets = 1,
+            .maxSets = 10000,
     };
     if (vkCreateDescriptorPool(mVKDevice.mLogicalDevice, &poolInfo, nullptr, &mDescriptorPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
@@ -1078,18 +974,76 @@ void VulkanUtils::bindDescriptorSetTexture1(HVkTexture &texImg)
 #pragma mark - descriptor
 
 
+void VulkanUtils::createDescriptorSetLayout() {
+
+    VkDescriptorSetLayoutBinding uboLayoutBinding = {
+            .binding = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = 2,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .pImmutableSamplers = nullptr,
+    };
+
+    VkDescriptorSetLayoutBinding uboLayoutProjBinding = {
+            .binding = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+            .descriptorCount = 2,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .pImmutableSamplers = nullptr,
+    };
+
+    VkDescriptorSetLayoutBinding samplerLayoutBinding = {
+            .binding = 10,
+            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .pImmutableSamplers = nullptr,
+    };
+
+    std::array<VkDescriptorSetLayoutBinding, 3> bindings = {
+            uboLayoutBinding,
+            uboLayoutProjBinding,
+            samplerLayoutBinding
+    };
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .bindingCount = static_cast<uint32_t>(bindings.size()),
+            .pBindings = bindings.data(),
+    };
+
+    if (vkCreateDescriptorSetLayout(mVKDevice.mLogicalDevice, &layoutInfo, nullptr, &mDescriptorSetLayout) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    }
+
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+            .setLayoutCount = 1,
+            .pSetLayouts = &mDescriptorSetLayout,
+    };
+    if (vkCreatePipelineLayout(mVKDevice.mLogicalDevice, &pipelineLayoutInfo, nullptr, &mPipelineLayout)
+        != VK_SUCCESS) {
+        throw std::runtime_error("failed to create pipeline layout!");
+    }
+
+}
+
+
 VkDescriptorSet VulkanUtils::createDescriptorSet() {
 
     VkDescriptorSet descriptorSet;
 
     VkDescriptorSetLayout layouts[] = {mDescriptorSetLayout};
-    VkDescriptorSetAllocateInfo allocInfo = {
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            .descriptorPool = mDescriptorPools,
-            .descriptorSetCount = 1,
-            .pSetLayouts = layouts,
-    };
-    if (vkAllocateDescriptorSets(mVKDevice.mLogicalDevice, &allocInfo, &descriptorSet) != VK_SUCCESS) {
+    VkDescriptorSetAllocateInfo allocInfo;
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.pNext = NULL;
+    allocInfo.descriptorPool = mDescriptorPools;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = layouts;
+
+    VkResult re = vkAllocateDescriptorSets(mVKDevice.mLogicalDevice, &allocInfo, &descriptorSet);
+    if ( re!= VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor set!");
     }
 
@@ -1153,17 +1107,67 @@ VkDescriptorSet VulkanUtils::createDescriptorSet() {
 }
 
 
+void VulkanUtils::createMVPDescriptorSetLayout()
+{
+
+    VkDescriptorSetLayoutBinding uboLayoutProjBinding = {
+            .binding = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .pImmutableSamplers = nullptr,
+    };
+
+    VkDescriptorSetLayoutBinding samplerLayoutBinding = {
+            .binding = 10,
+            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .pImmutableSamplers = nullptr,
+    };
+
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {
+            uboLayoutProjBinding,
+            samplerLayoutBinding
+    };
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .bindingCount = static_cast<uint32_t>(bindings.size()),
+            .pBindings = bindings.data(),
+    };
+
+    if (vkCreateDescriptorSetLayout(mVKDevice.mLogicalDevice, &layoutInfo, nullptr, &mMVPDescriptorSetLayout)
+        != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    }
+
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+            .setLayoutCount = 1,
+            .pSetLayouts = &mMVPDescriptorSetLayout,
+    };
+    if (vkCreatePipelineLayout(mVKDevice.mLogicalDevice, &pipelineLayoutInfo, nullptr, &mMVPPipelineLayout)
+        != VK_SUCCESS) {
+        throw std::runtime_error("failed to create pipeline layout!");
+    }
+
+}
+
+
 VkDescriptorSet VulkanUtils::createMVPDescriptorSet() {
 
     VkDescriptorSet descriptorSet;
 
-    VkDescriptorSetAllocateInfo allocInfo = {
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            .descriptorPool = mDescriptorPools,
-            .descriptorSetCount = 1,
-            .pSetLayouts = &mMVPDescriptorSetLayout,
-    };
-    if (vkAllocateDescriptorSets(mVKDevice.mLogicalDevice, &allocInfo, &descriptorSet) != VK_SUCCESS) {
+    VkDescriptorSetAllocateInfo allocInfo;
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.pNext = NULL;
+    allocInfo.descriptorPool = mDescriptorPools;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &mMVPDescriptorSetLayout;
+
+    VkResult re = vkAllocateDescriptorSets(mVKDevice.mLogicalDevice, &allocInfo, &descriptorSet);
+    if (re != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor set!");
     }
 
