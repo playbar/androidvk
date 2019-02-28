@@ -102,9 +102,9 @@ struct ShaderInfo{
 
 
 
-const char *getVulkanResultString(VkResult result)
+const char *getVulkanResultString(VkResult resultno)
 {
-    switch(result)
+    switch(resultno)
     {
         case VK_SUCCESS:
             return "VK_SUCCESS";
@@ -159,10 +159,13 @@ const char *getVulkanResultString(VkResult result)
         case VK_ERROR_INVALID_SHADER_NV:
             return "VK_ERROR_INVALID_SHADER_NV";
         case VK_RESULT_MAX_ENUM:
+            return "VK_RESULT_MAX_ENUM";
         case VK_RESULT_RANGE_SIZE:
-            break;
+            return "VK_RESULT_RANGE_SIZE";
+        default:
+            return "VK_<Unknown>";
     }
-    if(result < 0)
+    if(resultno < 0)
         return "VK_ERROR_<Unknown>";
     return "VK_<Unknown>";
 }
@@ -1019,7 +1022,7 @@ void VulkanUtils::bindDescriptorSetTexture1(HVkTexture &texImg)
 
 void VulkanUtils::createDescriptorPool() {
     std::array<VkDescriptorPoolSize, 2> poolSizes = {};
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSizes[0].descriptorCount = 1000;
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     poolSizes[1].descriptorCount = 1000;
@@ -1053,7 +1056,7 @@ void VulkanUtils::createDescriptorSetLayout() {
 
     VkDescriptorSetLayoutBinding uboLayoutProjBinding = {
             .binding = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
             .descriptorCount = 1,
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
             .pImmutableSamplers = nullptr,
@@ -1110,7 +1113,7 @@ VkDescriptorSet VulkanUtils::createDescriptorSet() {
     allocInfo.pSetLayouts = layouts;
 
     VkResult re = vkAllocateDescriptorSets(mVKDevice.mLogicalDevice, &allocInfo, &descriptorSet);
-    auto errname = getVulkanResultString(re);
+    const char *errname = getVulkanResultString(re);
     if ( re!= VK_SUCCESS) {
         LOGE("error:%s", errname);
         throw std::runtime_error("failed to allocate descriptor set!");
@@ -1181,7 +1184,7 @@ void VulkanUtils::createMVPDescriptorSetLayout()
 
     VkDescriptorSetLayoutBinding uboLayoutProjBinding = {
             .binding = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
             .descriptorCount = 1,
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
             .pImmutableSamplers = nullptr,
@@ -1304,8 +1307,8 @@ void VulkanUtils::OnDrawFrame()
         updateUniformBufferMVP();
         drawCommandBuffersMVP();
 
-//        updateUniformBuffer();
-//        drawCommandBuffers();
+        updateUniformBuffer();
+        drawCommandBuffers();
     }
 
 //    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
