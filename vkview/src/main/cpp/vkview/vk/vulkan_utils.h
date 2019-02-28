@@ -113,8 +113,8 @@ public:
 
     VkSwapchainKHR swapchain;
     VkRenderPass mRenderPass;
-    VkDescriptorPool mDescriptorPool;
 
+    VkDescriptorPool mDescriptorPools;
 
     VkFormat swapchainImageFormat;
     VkExtent2D swapchainExtent;
@@ -123,7 +123,7 @@ public:
     std::vector<VkFramebuffer> mFramebuffers;
     std::vector<VkCommandBuffer> mCommandBuffers;
 
-    VkDescriptorPool mDescriptorPools;
+
 
     std::vector<HVkBuffer*> mVertexBuffers;
     std::vector<HVkBuffer*> mIndexBuffers;

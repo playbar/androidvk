@@ -101,6 +101,73 @@ struct ShaderInfo{
 };
 
 
+
+const char *getVulkanResultString(VkResult result)
+{
+    switch(result)
+    {
+        case VK_SUCCESS:
+            return "VK_SUCCESS";
+        case VK_NOT_READY:
+            return "VK_NOT_READY";
+        case VK_TIMEOUT:
+            return "VK_TIMEOUT";
+        case VK_EVENT_SET:
+            return "VK_EVENT_SET";
+        case VK_EVENT_RESET:
+            return "VK_EVENT_RESET";
+        case VK_INCOMPLETE:
+            return "VK_INCOMPLETE";
+        case VK_ERROR_OUT_OF_HOST_MEMORY:
+            return "VK_ERROR_OUT_OF_HOST_MEMORY";
+        case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+            return "VK_ERROR_OUT_OF_DEVICE_MEMORY";
+        case VK_ERROR_INITIALIZATION_FAILED:
+            return "VK_ERROR_INITIALIZATION_FAILED";
+        case VK_ERROR_DEVICE_LOST:
+            return "VK_ERROR_DEVICE_LOST";
+        case VK_ERROR_MEMORY_MAP_FAILED:
+            return "VK_ERROR_MEMORY_MAP_FAILED";
+        case VK_ERROR_LAYER_NOT_PRESENT:
+            return "VK_ERROR_LAYER_NOT_PRESENT";
+        case VK_ERROR_EXTENSION_NOT_PRESENT:
+            return "VK_ERROR_EXTENSION_NOT_PRESENT";
+        case VK_ERROR_FEATURE_NOT_PRESENT:
+            return "VK_ERROR_FEATURE_NOT_PRESENT";
+        case VK_ERROR_INCOMPATIBLE_DRIVER:
+            return "VK_ERROR_INCOMPATIBLE_DRIVER";
+        case VK_ERROR_TOO_MANY_OBJECTS:
+            return "VK_ERROR_TOO_MANY_OBJECTS";
+        case VK_ERROR_FORMAT_NOT_SUPPORTED:
+            return "VK_ERROR_FORMAT_NOT_SUPPORTED";
+        case VK_ERROR_FRAGMENTED_POOL:
+            return "VK_ERROR_FRAGMENTED_POOL";
+        case VK_ERROR_SURFACE_LOST_KHR:
+            return "VK_ERROR_SURFACE_LOST_KHR";
+        case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR:
+            return "VK_ERROR_NATIVE_WINDOW_IN_USE_KHR";
+        case VK_SUBOPTIMAL_KHR:
+            return "VK_SUBOPTIMAL_KHR";
+        case VK_ERROR_OUT_OF_DATE_KHR:
+            return "VK_ERROR_OUT_OF_DATE_KHR";
+        case VK_ERROR_INCOMPATIBLE_DISPLAY_KHR:
+            return "VK_ERROR_INCOMPATIBLE_DISPLAY_KHR";
+        case VK_ERROR_VALIDATION_FAILED_EXT:
+            return "VK_ERROR_VALIDATION_FAILED_EXT";
+        case VK_ERROR_OUT_OF_POOL_MEMORY_KHR:
+            return "VK_ERROR_OUT_OF_POOL_MEMORY_KHR";
+        case VK_ERROR_INVALID_SHADER_NV:
+            return "VK_ERROR_INVALID_SHADER_NV";
+        case VK_RESULT_MAX_ENUM:
+        case VK_RESULT_RANGE_SIZE:
+            break;
+    }
+    if(result < 0)
+        return "VK_ERROR_<Unknown>";
+    return "VK_<Unknown>";
+}
+
+
 shaderc_shader_kind MapShadercType(VkShaderStageFlagBits vkShader) {
     for (auto shader : shader_map_table) {
         if (shader.vkshader_type == vkShader) {
@@ -295,7 +362,7 @@ void VulkanUtils::start()
 void VulkanUtils::cleanUp() {
     cleanupSwapchain();
 
-    vkDestroyDescriptorPool(mVKDevice.mLogicalDevice, mDescriptorPool, nullptr);
+    vkDestroyDescriptorPool(mVKDevice.mLogicalDevice, mDescriptorPools, nullptr);
     vkDestroyDescriptorSetLayout(mVKDevice.mLogicalDevice, mDescriptorSetLayout, nullptr);
 
 //    mUniformBuffer.destroy();
@@ -855,29 +922,6 @@ void VulkanUtils::createCacheBuffers()
 //
 //}
 
-void VulkanUtils::createDescriptorPool() {
-    std::array<VkDescriptorPoolSize, 2> poolSizes = {};
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    poolSizes[0].descriptorCount = 100;
-    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = 100;
-
-    VkDescriptorPoolCreateInfo poolInfo = {
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-            .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
-            .pPoolSizes = poolSizes.data(),
-            .maxSets = 10000,
-    };
-    if (vkCreateDescriptorPool(mVKDevice.mLogicalDevice, &poolInfo, nullptr, &mDescriptorPool) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor pool!");
-    }
-    /////
-
-    if (vkCreateDescriptorPool(mVKDevice.mLogicalDevice, &poolInfo, nullptr, &mDescriptorPools) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create descriptor pool!");
-    }
-}
 
 void VulkanUtils::bindDescriptorSet()
 {
@@ -973,13 +1017,36 @@ void VulkanUtils::bindDescriptorSetTexture1(HVkTexture &texImg)
 
 #pragma mark - descriptor
 
+void VulkanUtils::createDescriptorPool() {
+    std::array<VkDescriptorPoolSize, 2> poolSizes = {};
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    poolSizes[0].descriptorCount = 1000;
+    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[1].descriptorCount = 1000;
+
+    VkDescriptorPoolCreateInfo poolInfo = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+            .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
+            .pPoolSizes = poolSizes.data(),
+            .maxSets = 10000,
+    };
+//    if (vkCreateDescriptorPool(mVKDevice.mLogicalDevice, &poolInfo, nullptr, &mDescriptorPool) != VK_SUCCESS) {
+//        throw std::runtime_error("failed to create descriptor pool!");
+//    }
+    /////
+
+    if (vkCreateDescriptorPool(mVKDevice.mLogicalDevice, &poolInfo, nullptr, &mDescriptorPools) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create descriptor pool!");
+    }
+}
 
 void VulkanUtils::createDescriptorSetLayout() {
 
     VkDescriptorSetLayoutBinding uboLayoutBinding = {
             .binding = 0,
             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .descriptorCount = 2,
+            .descriptorCount = 1,
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
             .pImmutableSamplers = nullptr,
     };
@@ -987,7 +1054,7 @@ void VulkanUtils::createDescriptorSetLayout() {
     VkDescriptorSetLayoutBinding uboLayoutProjBinding = {
             .binding = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-            .descriptorCount = 2,
+            .descriptorCount = 1,
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
             .pImmutableSamplers = nullptr,
     };
@@ -1043,7 +1110,9 @@ VkDescriptorSet VulkanUtils::createDescriptorSet() {
     allocInfo.pSetLayouts = layouts;
 
     VkResult re = vkAllocateDescriptorSets(mVKDevice.mLogicalDevice, &allocInfo, &descriptorSet);
+    auto errname = getVulkanResultString(re);
     if ( re!= VK_SUCCESS) {
+        LOGE("error:%s", errname);
         throw std::runtime_error("failed to allocate descriptor set!");
     }
 
@@ -1055,16 +1124,16 @@ VkDescriptorSet VulkanUtils::createDescriptorSet() {
     bufferInfo.offset = offsetUni;
     bufferInfo.range = sizeof(UniformBufferMVP);
 
-    std::array<VkWriteDescriptorSet, 3> desSets = {};
-//    VkWriteDescriptorSet desSet;
-    desSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    desSets[0].dstSet = descriptorSet;
-    desSets[0].dstBinding = 1;
-    desSets[0].dstArrayElement = 0;
-    desSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    desSets[0].descriptorCount = 1;
-    desSets[0].pBufferInfo = &bufferInfo;
-//    vkUpdateDescriptorSets(mVKDevice.mLogicalDevice, 1, &desSet, 0, nullptr);
+//    std::array<VkWriteDescriptorSet, 3> desSets = {};
+    VkWriteDescriptorSet desSet;
+    desSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    desSet.dstSet = descriptorSet;
+    desSet.dstBinding = 1;
+    desSet.dstArrayElement = 0;
+    desSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    desSet.descriptorCount = 1;
+    desSet.pBufferInfo = &bufferInfo;
+    vkUpdateDescriptorSets(mVKDevice.mLogicalDevice, 1, &desSet, 0, nullptr);
 
     //////////////
 
@@ -1074,14 +1143,14 @@ VkDescriptorSet VulkanUtils::createDescriptorSet() {
     bufferInfo1.offset = offsetUni;
     bufferInfo1.range = sizeof(UniformBufferMV);
 
-    desSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    desSets[1].dstSet = descriptorSet;
-    desSets[1].dstBinding = 0;
-    desSets[1].dstArrayElement = 0;
-    desSets[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    desSets[1].descriptorCount = 1;
-    desSets[1].pBufferInfo = &bufferInfo1;
-//    vkUpdateDescriptorSets(mVKDevice.mLogicalDevice, 1, &desSet, 0, nullptr);
+    desSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    desSet.dstSet = descriptorSet;
+    desSet.dstBinding = 0;
+    desSet.dstArrayElement = 0;
+    desSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    desSet.descriptorCount = 1;
+    desSet.pBufferInfo = &bufferInfo1;
+    vkUpdateDescriptorSets(mVKDevice.mLogicalDevice, 1, &desSet, 0, nullptr);
 
     /////////////
 
@@ -1092,15 +1161,15 @@ VkDescriptorSet VulkanUtils::createDescriptorSet() {
             .sampler = mTexImage.mTextureSampler,
     };
 
-    desSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    desSets[2].dstSet = descriptorSet;
-    desSets[2].dstBinding = 10;
-    desSets[2].dstArrayElement = 0;
-    desSets[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    desSets[2].descriptorCount = 1;
-    desSets[2].pImageInfo = &imageInfo;
-//    vkUpdateDescriptorSets(mVKDevice.mLogicalDevice, 1, &desSet, 0, nullptr);
-    vkUpdateDescriptorSets(mVKDevice.mLogicalDevice, static_cast<uint32_t>(desSets.size()), desSets.data(), 0, nullptr);
+    desSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    desSet.dstSet = descriptorSet;
+    desSet.dstBinding = 10;
+    desSet.dstArrayElement = 0;
+    desSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    desSet.descriptorCount = 1;
+    desSet.pImageInfo = &imageInfo;
+    vkUpdateDescriptorSets(mVKDevice.mLogicalDevice, 1, &desSet, 0, nullptr);
+//    vkUpdateDescriptorSets(mVKDevice.mLogicalDevice, static_cast<uint32_t>(desSets.size()), desSets.data(), 0, nullptr);
 
     return descriptorSet;
 
@@ -1235,8 +1304,8 @@ void VulkanUtils::OnDrawFrame()
         updateUniformBufferMVP();
         drawCommandBuffersMVP();
 
-        updateUniformBuffer();
-        drawCommandBuffers();
+//        updateUniformBuffer();
+//        drawCommandBuffers();
     }
 
 //    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
