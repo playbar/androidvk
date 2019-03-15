@@ -172,7 +172,7 @@ protected:
 	// List of available frame buffers (same as number of swap chain images)
 	std::vector<VkFramebuffer> mFrameBuffers;
 	// Active frame buffer index
-	uint32_t currentBuffer = 0;
+	uint32_t miCurrentBuffer = 0;
 	// Descriptor set pool
 	VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
 	// List of shader modules created (stored for cleanup)
