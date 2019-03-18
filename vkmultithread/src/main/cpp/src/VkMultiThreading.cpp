@@ -22,7 +22,7 @@ VkMultiThreading::VkMultiThreading(bool enableValidation)
 	zoomSpeed = 2.5f;
 	rotationSpeed = 0.5f;
 	rotation = { 0.0f, 37.5f, 0.0f };
-	enableTextOverlay = true;
+	mEnableTextOverlay = true;
 	title = "Multi threaded rendering";
 	// Get number of max. concurrrent threads
 	numThreads = std::thread::hardware_concurrency();
@@ -31,9 +31,9 @@ VkMultiThreading::VkMultiThreading(bool enableValidation)
 
 	srand(time(NULL));
 
-	threadPool.setThreadCount(numThreads);
+	mThreadPool.setThreadCount(numThreads);
 
-	numObjectsPerThread = 1024 / numThreads;
+	numObjectsPerThread = 512 / numThreads;
 
 
 }
@@ -47,8 +47,8 @@ VkMultiThreading::~VkMultiThreading()
 
 	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 
-	vkFreeCommandBuffers(device, cmdPool, 1, &primaryCommandBuffer);
-	vkFreeCommandBuffers(device, cmdPool, 1, &secondaryCommandBuffer);
+	vkFreeCommandBuffers(device, mCmdPool, 1, &mPrimaryCommandBuffer);
+	vkFreeCommandBuffers(device, mCmdPool, 1, &mSecondaryCommandBuffer);
 
 	models.ufo.destroy();
 	models.skysphere.destroy();
@@ -84,13 +84,13 @@ VkMultiThreading::~VkMultiThreading()
 
 	vkDestroyPipelineCache(device, pipelineCache, nullptr);
 
-	vkDestroyCommandPool(device, cmdPool, nullptr);
+	vkDestroyCommandPool(device, mCmdPool, nullptr);
 
 	vkDestroySemaphore(device, semaphores.presentComplete, nullptr);
 	vkDestroySemaphore(device, semaphores.renderComplete, nullptr);
 	vkDestroySemaphore(device, semaphores.textOverlayComplete, nullptr);
 
-	if (enableTextOverlay)
+	if (mEnableTextOverlay)
 	{
 		delete textOverlay;
 	}
@@ -157,7 +157,7 @@ std::string VkMultiThreading::getWindowTitle()
 	std::string device(deviceProperties.deviceName);
 	std::string windowTitle;
 	windowTitle = title + " - " + device;
-	if (!enableTextOverlay)
+	if (!mEnableTextOverlay)
 	{
 		windowTitle += " - " ;
 		windowTitle += frameCounter;
@@ -194,7 +194,7 @@ void VkMultiThreading::createCommandBuffers()
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
 		vks::initializers::commandBufferAllocateInfo(
-			cmdPool,
+			mCmdPool,
 			VK_COMMAND_BUFFER_LEVEL_PRIMARY,
 			static_cast<uint32_t>(drawCmdBuffers.size()));
 
@@ -203,7 +203,7 @@ void VkMultiThreading::createCommandBuffers()
 
 void VkMultiThreading::destroyCommandBuffers()
 {
-	vkFreeCommandBuffers(device, cmdPool, static_cast<uint32_t>(drawCmdBuffers.size()), drawCmdBuffers.data());
+	vkFreeCommandBuffers(device, mCmdPool, static_cast<uint32_t>(drawCmdBuffers.size()), drawCmdBuffers.data());
 }
 
 VkCommandBuffer VkMultiThreading::createCommandBuffer(VkCommandBufferLevel level, bool begin)
@@ -212,7 +212,7 @@ VkCommandBuffer VkMultiThreading::createCommandBuffer(VkCommandBufferLevel level
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
 		vks::initializers::commandBufferAllocateInfo(
-			cmdPool,
+			mCmdPool,
 			level,
 			1);
 
@@ -247,7 +247,7 @@ void VkMultiThreading::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue
 
 	if (free)
 	{
-		vkFreeCommandBuffers(device, cmdPool, 1, &commandBuffer);
+		vkFreeCommandBuffers(device, mCmdPool, 1, &commandBuffer);
 	}
 }
 
@@ -272,7 +272,7 @@ void VkMultiThreading::prepare()
 	createPipelineCache();
 	setupFrameBuffer();
 
-	if (enableTextOverlay)
+	if (mEnableTextOverlay)
 	{
 		// Load the text rendering shaders
 		std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
@@ -280,7 +280,7 @@ void VkMultiThreading::prepare()
 		shaderStages.push_back(loadShader(getAssetPath() + "shaders/base/textoverlay.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT));
 		textOverlay = new VulkanTextOverlay(
 			vulkanDevice,
-			queue,
+			mVkQueue,
 			frameBuffers,
 			swapChain.colorFormat,
 			depthFormat,
@@ -445,7 +445,7 @@ void VkMultiThreading::renderLoop()
 
 void VkMultiThreading::updateTextOverlay()
 {
-	if (!enableTextOverlay)
+	if (!mEnableTextOverlay)
 		return;
 
 	textOverlay->beginTextUpdate();
@@ -476,7 +476,7 @@ void VkMultiThreading::getOverlayText(VulkanTextOverlay *textOverlay)
 
 void VkMultiThreading::submitFrame()
 {
-	bool submitTextOverlay = enableTextOverlay && textOverlay->visible;
+	bool submitTextOverlay = mEnableTextOverlay && textOverlay->visible;
 
 	if (submitTextOverlay)
 	{
@@ -495,7 +495,7 @@ void VkMultiThreading::submitFrame()
 		// Submit current text overlay command buffer
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &textOverlay->cmdBuffers[currentBuffer];
-		VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE));
+		VK_CHECK_RESULT(vkQueueSubmit(mVkQueue, 1, &submitInfo, VK_NULL_HANDLE));
 
 		// Reset stage mask
 		submitInfo.pWaitDstStageMask = &submitPipelineStages;
@@ -508,7 +508,7 @@ void VkMultiThreading::submitFrame()
 		submitInfo.pSignalSemaphores = &semaphores.renderComplete;
 	}
 
-	VK_CHECK_RESULT(swapChain.queuePresent(queue, currentBuffer, submitTextOverlay ? semaphores.textOverlayComplete : semaphores.renderComplete));
+	VK_CHECK_RESULT(swapChain.queuePresent(mVkQueue, currentBuffer, submitTextOverlay ? semaphores.textOverlayComplete : semaphores.renderComplete));
 
 //	VK_CHECK_RESULT(vkQueueWaitIdle(queue));
 }
@@ -576,7 +576,7 @@ void VkMultiThreading::initVulkan()
 	device = vulkanDevice->logicalDevice;
 
 	// Get a graphics queue from the device
-	vkGetDeviceQueue(device, vulkanDevice->queueFamilyIndices.graphics, 0, &queue);
+	vkGetDeviceQueue(device, vulkanDevice->queueFamilyIndices.graphics, 0, &mVkQueue);
 
 	// Find a suitable depth format
 	VkBool32 validDepthFormat = vks::tools::getSupportedDepthFormat(physicalDevice, &depthFormat);
@@ -793,7 +793,7 @@ void VkMultiThreading::createCommandPool()
 	cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	cmdPoolInfo.queueFamilyIndex = swapChain.queueNodeIndex;
 	cmdPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	VK_CHECK_RESULT(vkCreateCommandPool(device, &cmdPoolInfo, nullptr, &cmdPool));
+	VK_CHECK_RESULT(vkCreateCommandPool(device, &cmdPoolInfo, nullptr, &mCmdPool));
 }
 
 void VkMultiThreading::setupDepthStencil()
@@ -983,7 +983,7 @@ void VkMultiThreading::windowResize()
 
 	vkDeviceWaitIdle(device);
 
-	if (enableTextOverlay)
+	if (mEnableTextOverlay)
 	{
 		textOverlay->reallocateCommandBuffers();
 		updateTextOverlay();
@@ -1027,14 +1027,14 @@ void VkMultiThreading::prepareMultiThreadedRenderer()
 
     VkCommandBufferAllocateInfo cmdBufAllocateInfo =
             vks::initializers::commandBufferAllocateInfo(
-                    cmdPool,
+                    mCmdPool,
                     VK_COMMAND_BUFFER_LEVEL_PRIMARY,
                     1);
-    VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, &primaryCommandBuffer));
+    VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, &mPrimaryCommandBuffer));
 
     // Create a secondary command buffer for rendering the star sphere
     cmdBufAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
-    VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, &secondaryCommandBuffer));
+    VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, &mSecondaryCommandBuffer));
 
     threadData.resize(numThreads);
 
@@ -1160,15 +1160,15 @@ void VkMultiThreading::updateSecondaryCommandBuffer(VkCommandBufferInheritanceIn
     commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
     commandBufferBeginInfo.pInheritanceInfo = &inheritanceInfo;
 
-    VK_CHECK_RESULT(vkBeginCommandBuffer(secondaryCommandBuffer, &commandBufferBeginInfo));
+    VK_CHECK_RESULT(vkBeginCommandBuffer(mSecondaryCommandBuffer, &commandBufferBeginInfo));
 
     VkViewport viewport = vks::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
-    vkCmdSetViewport(secondaryCommandBuffer, 0, 1, &viewport);
+    vkCmdSetViewport(mSecondaryCommandBuffer, 0, 1, &viewport);
 
     VkRect2D scissor = vks::initializers::rect2D(width, height, 0, 0);
-    vkCmdSetScissor(secondaryCommandBuffer, 0, 1, &scissor);
+    vkCmdSetScissor(mSecondaryCommandBuffer, 0, 1, &scissor);
 
-    vkCmdBindPipeline(secondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.starsphere);
+    vkCmdBindPipeline(mSecondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.starsphere);
 
     glm::mat4 view = glm::mat4();
     view = glm::rotate(view, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -1178,7 +1178,7 @@ void VkMultiThreading::updateSecondaryCommandBuffer(VkCommandBufferInheritanceIn
     glm::mat4 mvp = matrices.projection * view;
 
     vkCmdPushConstants(
-            secondaryCommandBuffer,
+            mSecondaryCommandBuffer,
             pipelineLayout,
             VK_SHADER_STAGE_VERTEX_BIT,
             0,
@@ -1186,11 +1186,11 @@ void VkMultiThreading::updateSecondaryCommandBuffer(VkCommandBufferInheritanceIn
             &mvp);
 
     VkDeviceSize offsets[1] = { 0 };
-    vkCmdBindVertexBuffers(secondaryCommandBuffer, 0, 1, &models.skysphere.vertices.buffer, offsets);
-    vkCmdBindIndexBuffer(secondaryCommandBuffer, models.skysphere.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
-    vkCmdDrawIndexed(secondaryCommandBuffer, models.skysphere.indexCount, 1, 0, 0, 0);
+    vkCmdBindVertexBuffers(mSecondaryCommandBuffer, 0, 1, &models.skysphere.vertices.buffer, offsets);
+    vkCmdBindIndexBuffer(mSecondaryCommandBuffer, models.skysphere.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdDrawIndexed(mSecondaryCommandBuffer, models.skysphere.indexCount, 1, 0, 0, 0);
 
-    VK_CHECK_RESULT(vkEndCommandBuffer(secondaryCommandBuffer));
+    VK_CHECK_RESULT(vkEndCommandBuffer(mSecondaryCommandBuffer));
 }
 
 // Updates the secondary command buffers using a thread pool
@@ -1217,11 +1217,11 @@ void VkMultiThreading::updateCommandBuffers(VkFramebuffer frameBuffer)
 
     // Set target frame buffer
 
-    VK_CHECK_RESULT(vkBeginCommandBuffer(primaryCommandBuffer, &cmdBufInfo));
+    VK_CHECK_RESULT(vkBeginCommandBuffer(mPrimaryCommandBuffer, &cmdBufInfo));
 
     // The primary command buffer does not contain any rendering commands
     // These are stored (and retrieved) from the secondary command buffers
-    vkCmdBeginRenderPass(primaryCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    vkCmdBeginRenderPass(mPrimaryCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
     // Inheritance info for the secondary command buffers
     VkCommandBufferInheritanceInfo inheritanceInfo = vks::initializers::commandBufferInheritanceInfo();
@@ -1234,18 +1234,18 @@ void VkMultiThreading::updateCommandBuffers(VkFramebuffer frameBuffer)
 
     // Secondary command buffer with star background sphere
     updateSecondaryCommandBuffer(inheritanceInfo);
-    commandBuffers.push_back(secondaryCommandBuffer);
+    commandBuffers.push_back(mSecondaryCommandBuffer);
 
     // Add a job to the thread's queue for each object to be rendered
     for (uint32_t t = 0; t < numThreads; t++)
     {
         for (uint32_t i = 0; i < numObjectsPerThread; i++)
         {
-            threadPool.threads[t]->addJob([=] { threadRenderCode(t, i, inheritanceInfo); });
+            mThreadPool.threads[t]->addJob([=] { threadRenderCode(t, i, inheritanceInfo); });
         }
     }
 
-    threadPool.wait();
+    mThreadPool.wait();
 
     // Only submit if object is within the current view frustum
     for (uint32_t t = 0; t < numThreads; t++)
@@ -1260,17 +1260,17 @@ void VkMultiThreading::updateCommandBuffers(VkFramebuffer frameBuffer)
     }
 
     // Execute render commands from the secondary command buffer
-    vkCmdExecuteCommands(primaryCommandBuffer, commandBuffers.size(), commandBuffers.data());
+    vkCmdExecuteCommands(mPrimaryCommandBuffer, commandBuffers.size(), commandBuffers.data());
 
-    vkCmdEndRenderPass(primaryCommandBuffer);
+    vkCmdEndRenderPass(mPrimaryCommandBuffer);
 
-    VK_CHECK_RESULT(vkEndCommandBuffer(primaryCommandBuffer));
+    VK_CHECK_RESULT(vkEndCommandBuffer(mPrimaryCommandBuffer));
 }
 
 void VkMultiThreading::loadMeshes()
 {
-    models.ufo.loadFromFile(getAssetPath() + "models/retroufo_red.dae", vertexLayout, 0.12f, vulkanDevice, queue);
-    models.skysphere.loadFromFile(getAssetPath() + "models/sphere.obj", vertexLayout, 1.0f, vulkanDevice, queue);
+    models.ufo.loadFromFile(getAssetPath() + "models/retroufo_red.dae", vertexLayout, 0.12f, vulkanDevice, mVkQueue);
+    models.skysphere.loadFromFile(getAssetPath() + "models/sphere.obj", vertexLayout, 1.0f, vulkanDevice, mVkQueue);
     objectSphereDim = std::max(std::max(models.ufo.dim.size.x, models.ufo.dim.size.y), models.ufo.dim.size.z);
 }
 
@@ -1438,9 +1438,9 @@ void VkMultiThreading::draw()
     updateCommandBuffers(frameBuffers[currentBuffer]);
 
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &primaryCommandBuffer;
+    submitInfo.pCommandBuffers = &mPrimaryCommandBuffer;
 
-    VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, renderFence));
+    VK_CHECK_RESULT(vkQueueSubmit(mVkQueue, 1, &submitInfo, renderFence));
 
     LOGE("multithread, Fun:%s, Line:%d   ----", __FUNCTION__, __LINE__);
     // Wait for fence to signal that all command buffers are ready

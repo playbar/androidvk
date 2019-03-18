@@ -88,9 +88,9 @@ protected:
 	std::vector<const char*> enabledExtensions;
 	VkDevice device;
 	vks::VulkanDevice *vulkanDevice;
-	VkQueue queue;
+	VkQueue mVkQueue;
 	VkFormat depthFormat;
-	VkCommandPool cmdPool;
+	VkCommandPool mCmdPool;
 	VkPipelineStageFlags submitPipelineStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	VkSubmitInfo submitInfo;
 	std::vector<VkCommandBuffer> drawCmdBuffers;
@@ -137,7 +137,7 @@ public:
 	
 	bool paused = false;
 
-	bool enableTextOverlay = false;
+	bool mEnableTextOverlay = false;
 	VulkanTextOverlay *textOverlay;
 
 	// Use to adjust mouse rotation speed
@@ -269,8 +269,8 @@ public:
 
 	VkPipelineLayout pipelineLayout;
 
-	VkCommandBuffer primaryCommandBuffer;
-	VkCommandBuffer secondaryCommandBuffer;
+	VkCommandBuffer mPrimaryCommandBuffer;
+	VkCommandBuffer mSecondaryCommandBuffer;
 
 	// Number of animated objects to be renderer
 	// by using threads and secondary command buffers
@@ -310,7 +310,7 @@ public:
 	};
 	std::vector<ThreadData> threadData;
 
-	vks::ThreadPool threadPool;
+	vks::ThreadPool mThreadPool;
 
 	// Fence to wait for all command buffers to finish before
 	// presenting to the swap chain

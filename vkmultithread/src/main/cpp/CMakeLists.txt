@@ -34,6 +34,7 @@ add_library(vkvulkan SHARED
             src/VulkanTexture.cpp
             src/VulkanTools.cpp
             src/VkMultiThreading.cpp
+            src/VulkanTextOverlay.cpp
             )
 
 
