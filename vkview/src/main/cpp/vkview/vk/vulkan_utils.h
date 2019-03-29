@@ -86,12 +86,12 @@ public:
 
     void createDescriptorPool();
     VkDescriptorSet createDescriptorSet();
-    void updateUniformBuffer();
-    void drawCommandBuffers();
+    void updateUniformBufferRotate();
+    void drawCommandBuffersRotate();
 
     VkDescriptorSet createMVPDescriptorSet();
-    void updateUniformBufferMVP();
-    void drawCommandBuffersMVP();
+    void updateUniformBufferTranslate();
+    void drawCommandBuffersTranslate();
 
 public:
     void createSemaphores();

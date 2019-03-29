@@ -34,19 +34,19 @@ const int HEIGHT = 448;
 //        {{-0.5f, 0.5f}, {1.0f, 1.0f}}
 //};
 
-std::vector<Vertex> vertices = {
-        {{-540.0f, 865.0f}, {1.0f, 0.0f}},
-        {{-540.0f, 0.0},    {0.0f, 0.0f}},
-        {{0.0f,    0.0f},   {0.0f, 1.0f}},
-        {{0.0f,    865.0f}, {1.0f, 1.0f}}
+std::vector<Vertex> verticesRotate = {
+        {{-540.0f, 865.0f,  -1.0f}, {1.0f, 0.0f}},
+        {{-540.0f, 0.0,     -1.0f}, {0.0f, 0.0f}},
+        {{0.0f,    0.0f,    -1.0f}, {0.0f, 1.0f}},
+        {{0.0f,    865.0f,  -1.0f}, {1.0f, 1.0f}}
 };
 
 
 std::vector<Vertex> verticesMVP = {
-        {{0.0f,   0.0f},   {1.0f, 0.0f}},
-        {{0.0f,   -865.0}, {0.0f, 0.0f}},
-        {{540.0f, -865.0f},{0.0f, 1.0f}},
-        {{540.0f, 0.0f},   {1.0f, 1.0f}}
+        {{0.0f,   0.0f,     0.0f}, {1.0f, 0.0f}},
+        {{0.0f,   -865.0,   0.0f}, {0.0f, 0.0f}},
+        {{540.0f, -865.0f,  0.0f}, {0.0f, 1.0f}},
+        {{540.0f, 0.0f,     0.0f}, {1.0f, 1.0f}}
 
 };
 
@@ -678,6 +678,16 @@ void VulkanUtils::createPipeline() {
             .blendConstants[3] = 0.0f,
     };
 
+    VkPipelineDepthStencilStateCreateInfo depthStencilState = {};
+    depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencilState.depthTestEnable = true;
+    depthStencilState.depthWriteEnable = true;
+    depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencilState.depthBoundsTestEnable = VK_FALSE;
+    depthStencilState.stencilTestEnable = VK_FALSE;
+    depthStencilState.minDepthBounds = 0.0f;
+    depthStencilState.maxDepthBounds = 1.0f;
+
 
     VkGraphicsPipelineCreateInfo pipelineInfo = {
             .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -693,6 +703,7 @@ void VulkanUtils::createPipeline() {
             .renderPass = mRenderPass,
             .subpass = 0,
             .basePipelineHandle = VK_NULL_HANDLE,
+            .pDepthStencilState = &depthStencilState,
     };
 
     VkResult vkre = vkCreateGraphicsPipelines(mVKDevice.mLogicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
@@ -817,6 +828,16 @@ void VulkanUtils::createMVPPipeline() {
             .blendConstants[3] = 0.0f,
     };
 
+    VkPipelineDepthStencilStateCreateInfo depthStencilState = {};
+    depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencilState.depthTestEnable = true;
+    depthStencilState.depthWriteEnable = true;
+    depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencilState.depthBoundsTestEnable = VK_FALSE;
+    depthStencilState.stencilTestEnable = VK_FALSE;
+    depthStencilState.minDepthBounds = 0.0f;
+    depthStencilState.maxDepthBounds = 1.0f;
+
 
     VkGraphicsPipelineCreateInfo pipelineInfo = {
             .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -832,6 +853,7 @@ void VulkanUtils::createMVPPipeline() {
             .renderPass = mRenderPass,
             .subpass = 0,
             .basePipelineHandle = VK_NULL_HANDLE,
+            .pDepthStencilState = &depthStencilState,
     };
 
     VkResult vkre = vkCreateGraphicsPipelines(mVKDevice.mLogicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo,
@@ -1304,11 +1326,13 @@ void VulkanUtils::OnDrawFrame()
 
     for( int i = 0; i < 1; ++i )
     {
-        updateUniformBufferMVP();
-        drawCommandBuffersMVP();
 
-        updateUniformBuffer();
-        drawCommandBuffers();
+        updateUniformBufferTranslate();
+        drawCommandBuffersTranslate();
+
+        updateUniformBufferRotate();
+        drawCommandBuffersRotate();
+
     }
 
 //    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
@@ -1319,7 +1343,6 @@ void VulkanUtils::OnDrawFrame()
 
     drawFrame();
     QueuePresent();
-    vkQueueWaitIdle(mVKDevice.mPresentQueue);
 
     ShowFPS();
 
@@ -1327,7 +1350,7 @@ void VulkanUtils::OnDrawFrame()
 
 }
 
-void VulkanUtils::updateUniformBufferMVP()
+void VulkanUtils::updateUniformBufferTranslate()
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -1367,7 +1390,7 @@ void VulkanUtils::updateUniformBufferMVP()
 }
 
 
-void VulkanUtils::drawCommandBuffersMVP()
+void VulkanUtils::drawCommandBuffersTranslate()
 {
     static int step = 0;
     ++step;
@@ -1410,7 +1433,7 @@ void VulkanUtils::drawCommandBuffersMVP()
 }
 
 
-void VulkanUtils::updateUniformBuffer() {
+void VulkanUtils::updateUniformBufferRotate() {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
     auto currentTime = std::chrono::high_resolution_clock::now();
@@ -1448,7 +1471,7 @@ void VulkanUtils::updateUniformBuffer() {
 }
 
 
-void VulkanUtils::drawCommandBuffers()
+void VulkanUtils::drawCommandBuffersRotate()
 {
 
     size_t i = mImageIndex;
@@ -1456,11 +1479,11 @@ void VulkanUtils::drawCommandBuffers()
     uint32_t uniform_buffer_offset = 0;
     VkDescriptorSet descriptorSet = createDescriptorSet();
 
-    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+    VkDeviceSize bufferSize = sizeof(verticesRotate[0]) * verticesRotate.size();
 
     HVkBuffer *pbuffer = mVertexBuffers[mImageIndex];
     VkDeviceSize offset = pbuffer->mOffset;
-    pbuffer->updateData(vertices.data(), bufferSize );
+    pbuffer->updateData(verticesRotate.data(), bufferSize );
     pbuffer->flush(bufferSize);
 
     vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline);
@@ -1472,7 +1495,7 @@ void VulkanUtils::drawCommandBuffers()
     vkCmdBindDescriptorSets(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout,
                             0, 1, &descriptorSet, 0, &uniform_buffer_offset);
 
-    vkCmdDraw(mCommandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+    vkCmdDraw(mCommandBuffers[i], static_cast<uint32_t>(verticesRotate.size()), 1, 0, 0);
 
 }
 
@@ -1491,7 +1514,7 @@ void VulkanUtils::AcquireNextImage()
 
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     beginInfo.pInheritanceInfo = nullptr; // Optional
 
     VkRenderPassBeginInfo renderPassInfo = {};
@@ -1500,9 +1523,16 @@ void VulkanUtils::AcquireNextImage()
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = swapchainExtent;
 
-    VkClearValue clearColor = {1.0f, 0.0f, 0.0f, 1.0f};
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clearColor;
+//    VkClearValue clearColor = {1.0f, 0.0f, 0.0f, 1.0f};
+//    renderPassInfo.clearValueCount = 1;
+//    renderPassInfo.pClearValues = &clearColor;
+
+    std::array<VkClearValue, 2> clearValues = {};
+    clearValues[0].color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    clearValues[1].depthStencil = { 1.0f, 0 };
+
+    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassInfo.pClearValues = clearValues.data();
 
     size_t i = mImageIndex;
 
@@ -1510,13 +1540,15 @@ void VulkanUtils::AcquireNextImage()
     mUniformBuffers[mImageIndex]->reset();
     mVKDevice.resetCommandPool();
     vkResetCommandBuffer(mCommandBuffers[i], 0);
+    vkResetDescriptorPool(mVKDevice.mLogicalDevice, mDescriptorPools, 0);
+
     vkBeginCommandBuffer(mCommandBuffers[i], &beginInfo);
 
     renderPassInfo.framebuffer = mFramebuffers[i];
 
     vkCmdBeginRenderPass(mCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    vkResetDescriptorPool(mVKDevice.mLogicalDevice, mDescriptorPools, 0);
+
 
 }
 
@@ -1599,6 +1631,7 @@ void VulkanUtils::QueuePresent()
         throw std::runtime_error("failed to present swap chain image!");
     }
 
+    vkQueueWaitIdle(mVKDevice.mPresentQueue);
 //    vkQueueWaitIdle(mVKDevice.mPresentQueue);
 }
 
