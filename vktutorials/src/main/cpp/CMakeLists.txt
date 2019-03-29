@@ -8,13 +8,13 @@ add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
 #add_definitions(-DGLM_LANG_STL11_FORCED)
 
 
-#tutorial03
+#tutorial29
 add_library(tutorial03 SHARED
             android_native_app_glue.c
             jniactivity.c
             vulkan_wrapper.cpp
-            tutorial03/TutorialMain.cpp
-            tutorial03/TriangleApplication.cpp
+            tutorial29/TutorialMain.cpp
+            tutorial29/TriangleApplication.cpp
             )
 
 target_include_directories(tutorial03 PRIVATE

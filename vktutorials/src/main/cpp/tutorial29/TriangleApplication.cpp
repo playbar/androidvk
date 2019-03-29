@@ -1,6 +1,6 @@
 #include <limits>
 #include <assert.h>
-#include "DrawingTriangle.h"
+#include "TriangleApplication.h"
 #include "vector"
 #include "my_log.h"
 #include <iostream>
@@ -88,19 +88,19 @@ const std::vector<uint32_t> indices = {
 #endif
 
 
-DrawingTriangle::DrawingTriangle()
+TriangleApplication::TriangleApplication()
 {
     initialized_ = false;
     androidAppCtx = nullptr;
     LOGE("%s", __FUNCTION__ );
 }
-DrawingTriangle::~DrawingTriangle()
+TriangleApplication::~TriangleApplication()
 {
     LOGE("%s", __FUNCTION__ );
 }
 
 
-void DrawingTriangle::initVulkan(android_app* app)
+void TriangleApplication::initVulkan(android_app* app)
 {
     if( initialized_ )
         return;
@@ -135,7 +135,7 @@ void DrawingTriangle::initVulkan(android_app* app)
     createSemaphores();
     initialized_ = true;
 }
-void DrawingTriangle::deleteVulkan()
+void TriangleApplication::deleteVulkan()
 {
     vkDeviceWaitIdle(device);
     imageAvailableSemaphore.cleanup();
@@ -180,12 +180,12 @@ void DrawingTriangle::deleteVulkan()
     initialized_ = false;
 }
 
-bool DrawingTriangle::isVulkanReady()
+bool TriangleApplication::isVulkanReady()
 {
     return initialized_;
 }
 
-void DrawingTriangle::updateUniformBuffer()
+void TriangleApplication::updateUniformBuffer()
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -205,7 +205,7 @@ void DrawingTriangle::updateUniformBuffer()
     copyBuffer(uniformStagingBuffer, uniformBuffer, sizeof(ubo));
 }
 
-void DrawingTriangle::drawFrame()
+void TriangleApplication::drawFrame()
 {
     uint32_t imageIndex = 0;
     VkResult result = vkAcquireNextImageKHR(device, swapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
@@ -253,7 +253,7 @@ void DrawingTriangle::drawFrame()
 
 }
 
-void DrawingTriangle::recreateSwapChain()
+void TriangleApplication::recreateSwapChain()
 {
     vkDeviceWaitIdle(device);
 
@@ -266,7 +266,7 @@ void DrawingTriangle::recreateSwapChain()
     createCommandBuffers();
 }
 
-void DrawingTriangle::createInstance()
+void TriangleApplication::createInstance()
 {
     std::vector<const char *> instance_extensions;
     std::vector<const char *> device_extensions;
@@ -312,7 +312,7 @@ void DrawingTriangle::createInstance()
 
 }
 
-void DrawingTriangle::setupDebugCallback()
+void TriangleApplication::setupDebugCallback()
 {
     if( !enableValidationLayers)
         return;
@@ -326,7 +326,7 @@ void DrawingTriangle::setupDebugCallback()
     }
 }
 
-void DrawingTriangle::createSurface()
+void TriangleApplication::createSurface()
 {
     VkResult res = VK_SUCCESS;
     VkAndroidSurfaceCreateInfoKHR createInfo = {
@@ -342,7 +342,7 @@ void DrawingTriangle::createSurface()
     return;
 }
 
-bool DrawingTriangle::checkValidationLayerSupport()
+bool TriangleApplication::checkValidationLayerSupport()
 {
     uint32_t layerCount;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -365,7 +365,7 @@ bool DrawingTriangle::checkValidationLayerSupport()
     return true;
 }
 
-bool DrawingTriangle::checkDeviceExtensionSupport(VkPhysicalDevice device)
+bool TriangleApplication::checkDeviceExtensionSupport(VkPhysicalDevice device)
 {
     uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
@@ -380,7 +380,7 @@ bool DrawingTriangle::checkDeviceExtensionSupport(VkPhysicalDevice device)
     return requiredExtensions.empty();
 }
 
-void DrawingTriangle::pickPhysicalDevice()
+void TriangleApplication::pickPhysicalDevice()
 {
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -401,7 +401,7 @@ void DrawingTriangle::pickPhysicalDevice()
 }
 
 
-bool DrawingTriangle::isDeviceSuitable_1(VkPhysicalDevice device) {
+bool TriangleApplication::isDeviceSuitable_1(VkPhysicalDevice device) {
     VkPhysicalDeviceProperties deviceProperties;
     VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
@@ -411,7 +411,7 @@ bool DrawingTriangle::isDeviceSuitable_1(VkPhysicalDevice device) {
            deviceFeatures.geometryShader;
 }
 
-bool DrawingTriangle::isDeviceSuitable(VkPhysicalDevice device)
+bool TriangleApplication::isDeviceSuitable(VkPhysicalDevice device)
 {
     QueueFamilyIndices indices = findQueueFamilies(device);
 
@@ -426,7 +426,7 @@ bool DrawingTriangle::isDeviceSuitable(VkPhysicalDevice device)
     return indices.isComplete() && extensionsSupported && swapChainAdequate;
 }
 
-QueueFamilyIndices DrawingTriangle::findQueueFamilies(VkPhysicalDevice device)
+QueueFamilyIndices TriangleApplication::findQueueFamilies(VkPhysicalDevice device)
 {
     QueueFamilyIndices indices;
     uint32_t queueFamilyCount = 0;
@@ -453,7 +453,7 @@ QueueFamilyIndices DrawingTriangle::findQueueFamilies(VkPhysicalDevice device)
     return indices;
 }
 
-SwapChainSupportDetails DrawingTriangle::querySwapChainSupport(VkPhysicalDevice device)
+SwapChainSupportDetails TriangleApplication::querySwapChainSupport(VkPhysicalDevice device)
 {
     SwapChainSupportDetails details;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR( device, surface, &details.capabilities);
@@ -474,7 +474,7 @@ SwapChainSupportDetails DrawingTriangle::querySwapChainSupport(VkPhysicalDevice 
     return  details;
 }
 
-VkSurfaceFormatKHR DrawingTriangle::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats)
+VkSurfaceFormatKHR TriangleApplication::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats)
 {
     if( availableFormats.size() == 1 && availableFormats[0].format == VK_FORMAT_UNDEFINED ){
         return {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
@@ -490,7 +490,7 @@ VkSurfaceFormatKHR DrawingTriangle::chooseSwapSurfaceFormat(const std::vector<Vk
     return availableFormats[0];
 }
 
-VkPresentModeKHR DrawingTriangle::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>availablePresentModes)
+VkPresentModeKHR TriangleApplication::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>availablePresentModes)
 {
     VkPresentModeKHR bestMode = VK_PRESENT_MODE_FIFO_KHR;
     for( const auto &availablePresentMode : availablePresentModes){
@@ -503,7 +503,7 @@ VkPresentModeKHR DrawingTriangle::chooseSwapPresentMode(const std::vector<VkPres
     return bestMode;
 }
 
-VkExtent2D DrawingTriangle::chooseSwapExtent(const VkSurfaceCapabilitiesKHR & capabilities)
+VkExtent2D TriangleApplication::chooseSwapExtent(const VkSurfaceCapabilitiesKHR & capabilities)
 {
     if( capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()){
         return capabilities.currentExtent;
@@ -515,7 +515,7 @@ VkExtent2D DrawingTriangle::chooseSwapExtent(const VkSurfaceCapabilitiesKHR & ca
     }
 }
 
-void DrawingTriangle::createLogicalDevice()
+void TriangleApplication::createLogicalDevice()
 {
     QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
@@ -562,7 +562,7 @@ void DrawingTriangle::createLogicalDevice()
     return;
 }
 
-void DrawingTriangle::createSwapChain()
+void TriangleApplication::createSwapChain()
 {
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
 
@@ -627,7 +627,7 @@ void DrawingTriangle::createSwapChain()
     return;
 }
 
-void DrawingTriangle::createImageViews()
+void TriangleApplication::createImageViews()
 {
     swapChainImageViews.resize(swapChainImages.size(), VDeleter<VkImageView>{device, vkDestroyImageView});
 
@@ -657,7 +657,7 @@ void DrawingTriangle::createImageViews()
     return;
 }
 
-std::vector<char> DrawingTriangle::readFile(const char* filePath)
+std::vector<char> TriangleApplication::readFile(const char* filePath)
 {
     assert(androidAppCtx);
     AAsset* file = AAssetManager_open(androidAppCtx->activity->assetManager, filePath, AASSET_MODE_STREAMING);
@@ -669,7 +669,7 @@ std::vector<char> DrawingTriangle::readFile(const char* filePath)
     return buffer;
 }
 
-void DrawingTriangle::createShaderModule(const std::vector<char>& code, VDeleter<VkShaderModule>& shaderModule)
+void TriangleApplication::createShaderModule(const std::vector<char>& code, VDeleter<VkShaderModule>& shaderModule)
 {
     VkShaderModuleCreateInfo createInfo = {
             .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
@@ -682,7 +682,7 @@ void DrawingTriangle::createShaderModule(const std::vector<char>& code, VDeleter
     }
 }
 
-void DrawingTriangle::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
+void TriangleApplication::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
                   VDeleter<VkBuffer> &buffer, VDeleter<VkDeviceMemory> &bufferMemory)
 {
     VkBufferCreateInfo bufferInfo = {
@@ -714,7 +714,7 @@ void DrawingTriangle::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
     return;
 }
 
-void DrawingTriangle::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+void TriangleApplication::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 {
     VkCommandBufferAllocateInfo allocInfo = {
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -752,7 +752,7 @@ void DrawingTriangle::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDevic
 
 }
 
-void DrawingTriangle::createRenderPass()
+void TriangleApplication::createRenderPass()
 {
     VkAttachmentDescription colorAttachment = {
             .format = swapChainImageFormat,
@@ -818,7 +818,7 @@ void DrawingTriangle::createRenderPass()
 
 }
 
-void DrawingTriangle::createDescriptorSetLayout()
+void TriangleApplication::createDescriptorSetLayout()
 {
     VkDescriptorSetLayoutBinding uboLayoutBinding = {
             .binding = 0,
@@ -851,7 +851,7 @@ void DrawingTriangle::createDescriptorSetLayout()
 
 }
 
-void DrawingTriangle::createGraphicsPipeline()
+void TriangleApplication::createGraphicsPipeline()
 {
     auto vertShaderCode = readFile("shaders/shader_textures.vert.spv");
     auto fragShaderCode = readFile("shaders/shader_textures.frag.spv");
@@ -996,7 +996,7 @@ void DrawingTriangle::createGraphicsPipeline()
     return;
 }
 
-void DrawingTriangle::createFramebuffers()
+void TriangleApplication::createFramebuffers()
 {
     swapChainFramebuffers.resize(swapChainImageViews.size(), VDeleter<VkFramebuffer>{device, vkDestroyFramebuffer});
     for( size_t i = 0; i < swapChainImageViews.size(); ++i )
@@ -1024,7 +1024,7 @@ void DrawingTriangle::createFramebuffers()
     return;
 }
 
-void DrawingTriangle::createCommandPool()
+void TriangleApplication::createCommandPool()
 {
    QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
     VkCommandPoolCreateInfo poolInfo = {
@@ -1038,7 +1038,7 @@ void DrawingTriangle::createCommandPool()
     }
 }
 
-void DrawingTriangle::createDepthResources()
+void TriangleApplication::createDepthResources()
 {
     VkFormat depthFormat = findDepthFormat();
     createImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
@@ -1047,7 +1047,7 @@ void DrawingTriangle::createDepthResources()
     transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
-VkFormat DrawingTriangle::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+VkFormat TriangleApplication::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
 {
     for (VkFormat format : candidates) {
         VkFormatProperties props;
@@ -1063,7 +1063,7 @@ VkFormat DrawingTriangle::findSupportedFormat(const std::vector<VkFormat>& candi
     throw std::runtime_error("failed to find supported format!");
 }
 
-VkFormat DrawingTriangle::findDepthFormat() {
+VkFormat TriangleApplication::findDepthFormat() {
     return findSupportedFormat(
             {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
             VK_IMAGE_TILING_OPTIMAL,
@@ -1071,12 +1071,12 @@ VkFormat DrawingTriangle::findDepthFormat() {
     );
 }
 
-bool DrawingTriangle::hasStencilComponent(VkFormat format)
+bool TriangleApplication::hasStencilComponent(VkFormat format)
 {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-void DrawingTriangle::createTextureImage()
+void TriangleApplication::createTextureImage()
 {
     int texWidth, texHeight, texChannels;
     stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
@@ -1128,7 +1128,7 @@ void DrawingTriangle::createTextureImage()
 
 }
 
-void DrawingTriangle::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VDeleter<VkImage>& image, VDeleter<VkDeviceMemory>& imageMemory)
+void TriangleApplication::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VDeleter<VkImage>& image, VDeleter<VkDeviceMemory>& imageMemory)
 {
     VkImageCreateInfo imageInfo = {};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -1164,7 +1164,7 @@ void DrawingTriangle::createImage(uint32_t width, uint32_t height, VkFormat form
     vkBindImageMemory(device, image, imageMemory, 0);
 }
 
-void DrawingTriangle::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
+void TriangleApplication::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
@@ -1221,7 +1221,7 @@ void DrawingTriangle::transitionImageLayout(VkImage image, VkFormat format, VkIm
     endSingleTimeCommands(commandBuffer);
 }
 
-void DrawingTriangle::copyImage(VkImage srcImage, VkImage dstImage, uint32_t width, uint32_t height) {
+void TriangleApplication::copyImage(VkImage srcImage, VkImage dstImage, uint32_t width, uint32_t height) {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
     VkImageSubresourceLayers subResource = {};
@@ -1250,7 +1250,7 @@ void DrawingTriangle::copyImage(VkImage srcImage, VkImage dstImage, uint32_t wid
 }
 
 
-VkCommandBuffer DrawingTriangle::beginSingleTimeCommands() {
+VkCommandBuffer TriangleApplication::beginSingleTimeCommands() {
     VkCommandBufferAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -1269,7 +1269,7 @@ VkCommandBuffer DrawingTriangle::beginSingleTimeCommands() {
     return commandBuffer;
 }
 
-void DrawingTriangle::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
+void TriangleApplication::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo = {};
@@ -1283,12 +1283,12 @@ void DrawingTriangle::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
     vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 }
 
-void DrawingTriangle::createTextureImageView()
+void TriangleApplication::createTextureImageView()
 {
     createImageView(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, textureImageView );
 }
 
-void DrawingTriangle::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VDeleter<VkImageView> &imageView)
+void TriangleApplication::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VDeleter<VkImageView> &imageView)
 {
     VkImageViewCreateInfo viewInfo = {
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -1307,7 +1307,7 @@ void DrawingTriangle::createImageView(VkImage image, VkFormat format, VkImageAsp
     }
 }
 
-void DrawingTriangle::createTextureSampler()
+void TriangleApplication::createTextureSampler()
 {
     VkSamplerCreateInfo samplerInfo = {
             .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
@@ -1333,7 +1333,7 @@ void DrawingTriangle::createTextureSampler()
 }
 
 #ifdef SHOWMODEL
-void DrawingTriangle::loadModel()
+void TriangleApplication::loadModel()
 {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -1378,11 +1378,11 @@ void DrawingTriangle::loadModel()
     }
 }
 #else
-void DrawingTriangle::loadModel(){
+void TriangleApplication::loadModel(){
 }
 #endif
 
-void DrawingTriangle::createUniformBuffer()
+void TriangleApplication::createUniformBuffer()
 {
     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
     createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformStagingBuffer, uniformStagingBufferMemory);
@@ -1390,7 +1390,7 @@ void DrawingTriangle::createUniformBuffer()
 
 }
 
-void DrawingTriangle::createDescriptorPool()
+void TriangleApplication::createDescriptorPool()
 {
     std::array<VkDescriptorPoolSize, 2> poolSizes;
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1412,7 +1412,7 @@ void DrawingTriangle::createDescriptorPool()
 
 }
 
-void DrawingTriangle::createDescriptorSet()
+void TriangleApplication::createDescriptorSet()
 {
     VkDescriptorSetLayout layouts[] = {descriptorSetLayout};
     VkDescriptorSetAllocateInfo allocInfo = {
@@ -1458,7 +1458,7 @@ void DrawingTriangle::createDescriptorSet()
     vkUpdateDescriptorSets(device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 }
 
-void DrawingTriangle::createVertexBuffer()
+void TriangleApplication::createVertexBuffer()
 {
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
@@ -1476,7 +1476,7 @@ void DrawingTriangle::createVertexBuffer()
     return;
 }
 
-void DrawingTriangle::createIndexBuffer()
+void TriangleApplication::createIndexBuffer()
 {
     VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
@@ -1493,7 +1493,7 @@ void DrawingTriangle::createIndexBuffer()
     copyBuffer(stagingBuffer, indexBuffer, bufferSize);
 }
 
-void DrawingTriangle::createVertexBuffer_1()
+void TriangleApplication::createVertexBuffer_1()
 {
     VkBufferCreateInfo bufferInfo = {
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -1527,7 +1527,7 @@ void DrawingTriangle::createVertexBuffer_1()
     return;
 }
 
-uint32_t DrawingTriangle::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+uint32_t TriangleApplication::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
@@ -1541,7 +1541,7 @@ uint32_t DrawingTriangle::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFl
     return 0;
 }
 
-void DrawingTriangle::createCommandBuffers()
+void TriangleApplication::createCommandBuffers()
 {
     if( commandBuffers.size() > 0 ){
         vkFreeCommandBuffers(device, commandPool, commandBuffers.size(), commandBuffers.data());
@@ -1605,7 +1605,7 @@ void DrawingTriangle::createCommandBuffers()
     return;
 }
 
-void DrawingTriangle::createSemaphores()
+void TriangleApplication::createSemaphores()
 {
     VkSemaphoreCreateInfo semaphoreInfo = {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,

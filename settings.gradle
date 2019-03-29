@@ -5,7 +5,7 @@
 //include ':vkpipeline'
 //include ':vkradial'
 //include ':vktest'
-include ':vkdepth'
+include ':vktutorials'
 //include ':vulkan'
 //include ':assimp'
 //include ':HeartBeatThreading'

@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <map>
 #include <unordered_map>
+#include <errno.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -23,8 +24,8 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
-const std::string MODEL_PATH = "/sdcard/Android/data/com.vk/file/chalet.obj";
-const std::string TEXTURE_PATH = "/sdcard/Android/data/com.vk/files/chalet.jpg";
+const std::string MODEL_PATH =   "/sdcard/Android/data/com.vk.tutorials/files/chalet.obj";
+const std::string TEXTURE_PATH = "/sdcard/Android/data/com.vk.tutorials/files/chalet.jpg";
 
 const std::vector<const char*>validationLayers = {
         "VK_LAYER_LUNARG_standard_validation"

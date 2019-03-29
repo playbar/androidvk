@@ -94,7 +94,7 @@ void testProperties()
 }
 
 JNIEXPORT void JNICALL
-Java_com_vk_jnitest_JniActivity_nativeMsg(JNIEnv* env, jobject thiz)
+Java_com_vk_tutorials_JniActivity_nativeMsg(JNIEnv* env, jobject thiz)
 {
     int result = 0;
 //    system("pwd");
@@ -112,8 +112,7 @@ Java_com_vk_jnitest_JniActivity_nativeMsg(JNIEnv* env, jobject thiz)
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_vk_jnitest_JniActivity_stringFromJNI( JNIEnv* env,
-                                                  jobject thiz )
+Java_com_vk_tutorials_JniActivity_stringFromJNI( JNIEnv* env, jobject thiz )
 {
 
 //    testProperties();
@@ -165,7 +164,7 @@ Java_com_vk_jnitest_JniActivity_stringFromJNI( JNIEnv* env,
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_vk_jnitest_JniActivity_stringFromJNI_11(
+Java_com_vk_tutorials_JniActivity_stringFromJNI_11(
         JNIEnv* env, jobject thiz )
 {
     return (*env)->NewStringUTF(env, "stringFromJNI_11");
