@@ -24,8 +24,8 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
-const std::string MODEL_PATH =   "/sdcard/raw/chalet.obj";
-const std::string TEXTURE_PATH = "/sdcard/raw/chalet.jpg";
+const char* MODEL_PATH =   "triangle/chalet.obj";
+const char* TEXTURE_PATH = "triangle/texture.jpg";
 
 const std::vector<const char*>validationLayers = {
         "VK_LAYER_LUNARG_standard_validation"
@@ -1078,8 +1078,13 @@ bool DrawingTriangle::hasStencilComponent(VkFormat format)
 
 void DrawingTriangle::createTextureImage()
 {
+    AAsset* file = AAssetManager_open(mAndroidAppCtx->activity->assetManager, TEXTURE_PATH, AASSET_MODE_BUFFER);
+    size_t fileLength = AAsset_getLength(file);
+    stbi_uc* fileContent = new unsigned char[fileLength];
+    AAsset_read(file, fileContent, fileLength);
+
     int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc* pixels = stbi_load_from_memory(fileContent, fileLength, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 //    stbi_uc* pixels = stbi_load("/data/data/com.vk/log.txt", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     LOGW("fopen(%s) failed: %s", "log.txt", strerror(errno));
     VkDeviceSize imageSize = texWidth * texHeight * 4;
@@ -1117,6 +1122,7 @@ void DrawingTriangle::createTextureImage()
     vkUnmapMemory(device, stagingImageMemory);
 
     stbi_image_free(pixels);
+    delete []fileContent;
 
     createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
 

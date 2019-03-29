@@ -69,9 +69,10 @@ target_link_libraries(drawingt_riangle
 add_library(vktutorial SHARED
             android_native_app_glue.c
             jniactivity.c
+            vulkan_wrapper.cpp
             Tutorial.cpp
             TutorialVK.cpp
-            vulkan_wrapper.cpp)
+            )
 
 target_include_directories(vktutorial PRIVATE
                           ${CMAKE_CURRENT_SOURCE_DIR}
