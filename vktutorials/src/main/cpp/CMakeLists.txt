@@ -7,9 +7,37 @@ add_subdirectory(shaderc)
 add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
 #add_definitions(-DGLM_LANG_STL11_FORCED)
 
+#tutorial11
+add_library(tutorial11 SHARED
+            android_native_app_glue.c
+            jniactivity.c
+            vulkan_wrapper.cpp
+            tutorial11/TutorialMain.cpp
+            tutorial11/TriangleApplication.cpp
+            )
+
+target_include_directories(tutorial11 PRIVATE
+                          ${CMAKE_CURRENT_SOURCE_DIR}
+                          ${CMAKE_CURRENT_SOURCE_DIR}/data
+                          ${CMAKE_CURRENT_SOURCE_DIR}/stb
+                          ${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader
+                          ${CMAKE_CURRENT_SOURCE_DIR}/shaderc/include)
+
+target_link_libraries(tutorial11
+                      android
+                      log
+                      shaderc
+                      shaderc_util
+                      glslang
+                      SPIRV
+                      SPIRV-Tools
+                      SPIRV-Tools-opt
+                      OSDependent
+                      OGLCompiler)
+
 
 #tutorial29
-add_library(tutorial03 SHARED
+add_library(tutorial29 SHARED
             android_native_app_glue.c
             jniactivity.c
             vulkan_wrapper.cpp
@@ -17,14 +45,14 @@ add_library(tutorial03 SHARED
             tutorial29/TriangleApplication.cpp
             )
 
-target_include_directories(tutorial03 PRIVATE
+target_include_directories(tutorial29 PRIVATE
                           ${CMAKE_CURRENT_SOURCE_DIR}
                           ${CMAKE_CURRENT_SOURCE_DIR}/data
                           ${CMAKE_CURRENT_SOURCE_DIR}/stb
                           ${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader
                           ${CMAKE_CURRENT_SOURCE_DIR}/shaderc/include)
 
-target_link_libraries(tutorial03
+target_link_libraries(tutorial29
                       android
                       log
                       shaderc
@@ -65,30 +93,3 @@ target_link_libraries(drawingt_riangle
                       OGLCompiler)
 
 
-#vktutorial
-add_library(vktutorial SHARED
-            android_native_app_glue.c
-            jniactivity.c
-            vulkan_wrapper.cpp
-            Tutorial.cpp
-            TutorialVK.cpp
-            )
-
-target_include_directories(vktutorial PRIVATE
-                          ${CMAKE_CURRENT_SOURCE_DIR}
-                          ${CMAKE_CURRENT_SOURCE_DIR}/data
-                          ${CMAKE_CURRENT_SOURCE_DIR}/stb
-                          ${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader
-                          ${CMAKE_CURRENT_SOURCE_DIR}/shaderc/include)
-
-target_link_libraries(vktutorial
-                      android
-                      log
-                      shaderc
-                      shaderc_util
-                      glslang
-                      SPIRV
-                      SPIRV-Tools
-                      SPIRV-Tools-opt
-                      OSDependent
-                      OGLCompiler)
