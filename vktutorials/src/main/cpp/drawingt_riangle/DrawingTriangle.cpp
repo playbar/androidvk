@@ -24,8 +24,8 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
-const std::string MODEL_PATH =   "/sdcard/Android/data/com.vk.tutorials/files/chalet.obj";
-const std::string TEXTURE_PATH = "/sdcard/Android/data/com.vk.tutorials/files/chalet.jpg";
+const std::string MODEL_PATH =   "/sdcard/raw/chalet.obj";
+const std::string TEXTURE_PATH = "/sdcard/raw/chalet.jpg";
 
 const std::vector<const char*>validationLayers = {
         "VK_LAYER_LUNARG_standard_validation"
@@ -91,7 +91,7 @@ const std::vector<uint32_t> indices = {
 DrawingTriangle::DrawingTriangle()
 {
     initialized_ = false;
-    androidAppCtx = nullptr;
+    mAndroidAppCtx = nullptr;
     LOGE("%s", __FUNCTION__ );
 }
 DrawingTriangle::~DrawingTriangle()
@@ -104,7 +104,7 @@ void DrawingTriangle::initVulkan(android_app* app)
 {
     if( initialized_ )
         return;
-    androidAppCtx = app;
+    mAndroidAppCtx = app;
     if (!InitVulkan()) {
         LOGW("Vulkan is unavailable, install vulkan and re-start");
         return;
@@ -333,7 +333,7 @@ void DrawingTriangle::createSurface()
             .sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR,
             .pNext = nullptr,
             .flags = 0,
-            .window = androidAppCtx->window,
+            .window = mAndroidAppCtx->window,
     };
     res = vkCreateAndroidSurfaceKHR(instance, &createInfo, nullptr, surface.replace());
     if( res != VK_SUCCESS ){
@@ -659,8 +659,8 @@ void DrawingTriangle::createImageViews()
 
 std::vector<char> DrawingTriangle::readFile(const char* filePath)
 {
-    assert(androidAppCtx);
-    AAsset* file = AAssetManager_open(androidAppCtx->activity->assetManager, filePath, AASSET_MODE_STREAMING);
+    assert(mAndroidAppCtx);
+    AAsset* file = AAssetManager_open(mAndroidAppCtx->activity->assetManager, filePath, AASSET_MODE_STREAMING);
     size_t fileLength = AAsset_getLength(file);
     std::vector<char> buffer(fileLength);
     AAsset_seek(file, 0, SEEK_SET);
