@@ -7,23 +7,23 @@ add_subdirectory(shaderc)
 add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
 #add_definitions(-DGLM_LANG_STL11_FORCED)
 
-#tutorial11
-add_library(tutorial11 SHARED
+#tutorial28
+add_library(tutorial28 SHARED
             android_native_app_glue.c
             jniactivity.c
             vulkan_wrapper.cpp
-            tutorial11/TutorialMain.cpp
-            tutorial11/TriangleApplication.cpp
+            tutorial28/TutorialMain.cpp
+            tutorial28/DepthBuffering.cpp
             )
 
-target_include_directories(tutorial11 PRIVATE
+target_include_directories(tutorial28 PRIVATE
                           ${CMAKE_CURRENT_SOURCE_DIR}
                           ${CMAKE_CURRENT_SOURCE_DIR}/data
                           ${CMAKE_CURRENT_SOURCE_DIR}/stb
                           ${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader
                           ${CMAKE_CURRENT_SOURCE_DIR}/shaderc/include)
 
-target_link_libraries(tutorial11
+target_link_libraries(tutorial28
                       android
                       log
                       shaderc
