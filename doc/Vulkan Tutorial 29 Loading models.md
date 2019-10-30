@@ -32,37 +32,41 @@ Visual Studio
 
 添加两个新的配置变量到程序中，用于定义模型和贴图的路径：
 
+<pre>
 const int WIDTH = 800;
 const int HEIGHT = 600;
 
 const std::string MODEL_PATH = "models/chalet.obj";
 const std::string TEXTURE_PATH = "textures/chalet.jpg";
+</pre>
+
 并且更新 createTextureImage 使用该变量：
 
-stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);  
 
 ## Loading vertices and indices
 
 现在我们将要从模型文件中加载顶点和索引数据，所以应该移除全局的 vertices 和 indices 数组。将它们作为类成员替换为非常量容器：
 
-std::vector<Vertex> vertices;
-std::vector<uint32_t> indices;
-VkBuffer vertexBuffer;
-VkDeviceMemory vertexBufferMemory;
+std::vector<Vertex> vertices;  
+std::vector<uint32_t> indices;  
+VkBuffer vertexBuffer;  
+VkDeviceMemory vertexBufferMemory;  
 在这里应该修改索引数据类型 uint16_t 到 uint32_t 。因为将会有超过65535个或者更多的顶点。还需要更改 vkCmdBindIndexBuffer 参数：
 
 vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 tinyobjloader库与STB库一样。包括 tiny_obj_loader.h 文件，并确保在一个源文件中定义 TINYOBJLOADER_IMPLEMENTATION 
 以包含函数体，并避免链接错误：
 
-<table>
+<pre>
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
-</table>
+</pre>
 
 我们现在编写一个 loadModel 函数，该函数使用这个库来填充顶点 vertices 和索引 indices 容器，其中包含网格中的顶点数据。
 在创建顶点和索引缓冲区之前应该调用它：
 
+<pre>
 void initVulkan() {
     ...
     loadModel();
@@ -76,9 +80,11 @@ void initVulkan() {
 void loadModel() {
 
 }
+</pre>
 
 模型加载后被封装到库的数据结构中，通过调用 tinyobj::LoadObj 函数完成。
 
+<pre>
 void loadModel() {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -89,6 +95,7 @@ void loadModel() {
         throw std::runtime_error(err);
     }
 }
+</pre>
 
 OBJ文件由positions， normals， texture uvs 和 faces组成，其中每个顶点指向一个位置，通过索引指向 法线或者纹理坐标。
 这使得不仅可以重复使用整个顶点，还可以具有单独的属性。
@@ -98,7 +105,6 @@ attrib 容器持有所有的 positions， normals 和 texture uvs 在它的 attr
 每个顶点包含 positions，normals 和 texture uvs 对应的 indices。
 OBJ模型也可以定义每个面的材质和纹理，但是我们忽略它们。
 
- 
 
 err 字符串包含了加载文件过程中产生的错误和警告信息，比如缺少材质的定义。
 如果 LoadObj 函数返回 false，则加载才算真的失败。如上所述，OBJ 问及爱你中的面可以包含任意数量的顶点，
@@ -107,11 +113,14 @@ err 字符串包含了加载文件过程中产生的错误和警告信息，比�
 
 我们将组合所有的面到一个单独的模型中，所以遍历所有的形状：
 
+<pre>
 for (const auto& shape : shapes) {
 
 }
-三角测量功能已经确保每个面都有三个顶点，所以我们现在可以直接迭代顶点将它们直接存储到我们的 vertices 向量中：
+</pre>
 
+三角测量功能已经确保每个面都有三个顶点，所以我们现在可以直接迭代顶点将它们直接存储到我们的 vertices 向量中：
+<pre>
 for (const auto& shape : shapes) {
     for (const auto& index : shape.mesh.indices) {
         Vertex vertex = {};
@@ -120,10 +129,12 @@ for (const auto& shape : shapes) {
         indices.push_back(indices.size());
     }
 }
+</pre>
 
 为了简单起见，我们假设每个顶点现在是唯一的，因此简单的自动递增索引。 index 变量是 tinyobj::index_t 类型的，
 包含了 vertex_index, normal_index 和 texcoord_index 成员。我们需要使用这些索引从 attrib 数组中 查找实际的顶点属性：
 
+<pre>
 vertex.pos = {
     attrib.vertices[3 * index.vertex_index + 0],
     attrib.vertices[3 * index.vertex_index + 1],
@@ -136,6 +147,7 @@ vertex.texCoord = {
 };
 
 vertex.color = {1.0f, 1.0f, 1.0f};
+</pre>
 
 遗憾的是， attrib.vertices 数组是一个 float 数组，而不是glm::vec3，所以需要将索引乘以 3 。
 相似的，每个条目有两个纹理坐标分量。 0，1，2的偏移用于访问X，Y和Z分量，或者在纹理坐标的情况下访问U和V分量。
@@ -148,10 +160,12 @@ vertex.color = {1.0f, 1.0f, 1.0f};
 很好，看起来几何图形是正确的，但是纹理贴图发生了什么？这个问题是由于Vulkan的纹理坐标的起点是左上角，而OBJ格式则是左下角。
 通过反转纹理坐标的垂直分量来解决这个问题：
 
+<pre>
 vertex.texCoord = {
     attrib.texcoords[2 * index.texcoord_index + 0],
     1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
 };
+</pre>
 再次运行程序看到如下正确结果：
 
  ![Image](pic/29_2.png)
@@ -163,7 +177,7 @@ vertex.texCoord = {
 我们应该只保留唯一的顶点数据，并使用索引缓冲区来重新使用它们。实现这一点的直接方法是使用 map 或者 unordered_map 
 来跟踪唯一的顶点和相应的索引信息：
 
-<table>
+<pre>
 #include <unordered_map>
 
 ...
@@ -184,7 +198,7 @@ for (const auto& shape : shapes) {
         indices.push_back(uniqueVertices[vertex]);
     }
 }
-</table>
+</pre>
 
 每次从OBJ文件中读取顶点时，我们检查一下是否已经看到一个具有相同位置和纹理坐标的顶点。
 如果没有，我们将其添加到 vertices 并将其索引存储在 uniqueVertices 容器中。
@@ -194,14 +208,16 @@ for (const auto& shape : shapes) {
 程序将会编译错误，因为使用类似我们的 Vertex 结构体，它是自定义类型作为哈希表中的键，因为需要实现两个功能：灯饰测试和散列值计算。
 前者通过覆盖 Vertex 结构中的 == 运算符很容易实现：
 
+<pre>
 bool operator==(const Vertex& other) const {
     return pos == other.pos && color == other.color && texCoord == other.texCoord;
 }
+</pre>
 
 通过为 std::hash<T> 指定模版专门来实现 Vertex 的哈希函数。散列函数是一个复杂的主题，
 但 cppreference.com 建议采用以下方法组合结构体的字段来创建质量比较高的散列函数：
 
-
+<pre>
 namespace std {
     template<> struct hash<Vertex> {
         size_t operator()(Vertex const& vertex) const {
@@ -211,12 +227,13 @@ namespace std {
         }
     };
 }
+</pre>
 
 该代码应该放置在 Vertex 结构体之外。需要使用以下头文件来包含GLM类型的哈希函数：
 
-<table>
+<pre>
 #include <glm/gtx/hash.hpp>
-</table>
+</pre>
 
 现在应该能够成功编译和运行程序。如果检查 vertices 顶点数量，会发现它已经从 1,500,000 缩小到 265,645！
 这意味着每个顶点以平均被 大约6个三角形重新使用。这绝对会为我们节省很多GPU内存。
@@ -233,4 +250,6 @@ namespace std {
 * Compute shaders
 现在的程序有很多方式进行扩展，比如添加 Blinn-Phong lighting，post-processing效果和阴影映射。
 你应该能够了解这些效果如何从其他的API来完成，尽管因为Vulkan的明确性，但是许多概念是相同的。
+
+[代码](src/29.cpp)。
 

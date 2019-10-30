@@ -24,6 +24,8 @@ extern "C" {
 #define VK_NO_PROTOTYPES 1
 #include <vulkan/vulkan.h>
 
+bool GIsSupportVK();
+
 /* Initialize the Vulkan function pointer variables declared in this header.
  * Returns 0 if vulkan is not available, non-zero if it is available.
  */

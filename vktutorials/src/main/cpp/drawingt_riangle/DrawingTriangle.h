@@ -182,7 +182,7 @@ public:
     void recreateSwapChain();
 
 private:
-    android_app* androidAppCtx;
+    android_app* mAndroidAppCtx;
     bool initialized_;
     VDeleter<VkInstance> instance{DestroyInstance};
     VDeleter<VkDebugReportCallbackEXT>callback{instance, DestroyDebugReportCallbackEXT };

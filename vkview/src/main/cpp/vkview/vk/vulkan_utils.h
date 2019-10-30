@@ -86,12 +86,12 @@ public:
 
     void createDescriptorPool();
     VkDescriptorSet createDescriptorSet();
-    void updateUniformBuffer();
-    void drawCommandBuffers();
+    void updateUniformBufferRotate();
+    void drawCommandBuffersRotate();
 
     VkDescriptorSet createMVPDescriptorSet();
-    void updateUniformBufferMVP();
-    void drawCommandBuffersMVP();
+    void updateUniformBufferTranslate();
+    void drawCommandBuffersTranslate();
 
 public:
     void createSemaphores();
@@ -113,8 +113,8 @@ public:
 
     VkSwapchainKHR swapchain;
     VkRenderPass mRenderPass;
-    VkDescriptorPool mDescriptorPool;
 
+    VkDescriptorPool mDescriptorPools;
 
     VkFormat swapchainImageFormat;
     VkExtent2D swapchainExtent;
@@ -122,7 +122,7 @@ public:
     std::vector<VkImageView> mSwapchainImageViews;
     std::vector<VkFramebuffer> mFramebuffers;
     std::vector<VkCommandBuffer> mCommandBuffers;
-    std::vector<VkDescriptorPool >mDescriptorPools;
+
 
 
     std::vector<HVkBuffer*> mVertexBuffers;

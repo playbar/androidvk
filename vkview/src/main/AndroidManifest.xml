@@ -9,6 +9,7 @@
       android:targetSdkVersion="25" />
 
   <application
+      android:debuggable = "true"
       android:allowBackup="false"
       android:fullBackupContent="false"
       android:icon="@mipmap/ic_launcher"

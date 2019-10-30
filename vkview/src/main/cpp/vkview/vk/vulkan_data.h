@@ -10,7 +10,7 @@
 #include <glm/glm.hpp>
 #include <vulkan_wrapper.h>
 
-#define VERTEXT_BUFFER_ID 1
+#define VERTEXT_BUFFER_ID 0
 
 struct QueueFamilyIndices {
     int graphicsFamily = -1;
@@ -28,7 +28,7 @@ struct SwapchainSupportDetails {
 };
 
 struct Vertex {
-    glm::vec2 pos;
+    glm::vec3 pos;
     glm::vec2 texCoord;
 
     static VkVertexInputBindingDescription getBindingDescription() {

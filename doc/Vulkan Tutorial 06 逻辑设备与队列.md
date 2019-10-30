@@ -12,6 +12,7 @@
 VkDevice device;
 接下来创建一个新的函数createLogicalDevice，并在initVulkan函数中调用，以创建逻辑设备。
 
+<pre>
 void initVulkan() {
     createInstance();
     setupDebugCallback();
@@ -22,18 +23,20 @@ void initVulkan() {
 void createLogicalDevice() {
 
 }
-
+</pre>
 
 ## Specifying the queues to be created
 创建逻辑设备需要在结构体中明确具体的信息，首先第一个结构体VkDeviceQueueCreateInfo。
 这个结构体描述队列簇中预要申请使用的队列数量。现在我们仅关心具备图形能力的队列。
 
+<pre>
 QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
 VkDeviceQueueCreateInfo queueCreateInfo = {};
 queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 queueCreateInfo.queueFamilyIndex = indices.graphicsFamily;
 queueCreateInfo.queueCount = 1;
+</pre>
 
 当前可用的驱动程序所提供的队列簇只允许创建少量的队列，并且很多时候没有必要创建多个队列。
 这是因为可以在多个线程上创建所有命令缓冲区，然后在主线程一次性的以较低开销的调用提交队列。
@@ -41,8 +44,10 @@ queueCreateInfo.queueCount = 1;
 
 Vulkan允许使用0.0到1.0之间的浮点数分配队列优先级来影响命令缓冲区执行的调用。即使只有一个队列也是必须的:
 
+<pre>
 float queuePriority = 1.0f;
 queueCreateInfo.pQueuePriorities = &queuePriority;
+</pre>
 
 ## Specifying used device features
 下一个要明确的信息有关设备要使用的功能特性。这些是我们在上一节中用vkGetPhysicalDeviceFeatures
@@ -54,14 +59,20 @@ VkPhysicalDeviceFeatures deviceFeatures = {};
 ## Creating the logical device
 使用前面的两个结构体，我们可以填充VkDeviceCreateInfo结构。
 
+<pre>
 VkDeviceCreateInfo createInfo = {};
 createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+</pre>
+
 首先添加指向队列创建信息的结构体和设备功能结构体:
 
+<pre>
 createInfo.pQueueCreateInfos = &queueCreateInfo;
 createInfo.queueCreateInfoCount = 1;
 
 createInfo.pEnabledFeatures = &deviceFeatures;
+</pre>
+
 结构体其余的部分与VkInstanceCreateInfo相似，需要指定扩展和validation layers，
 总而言之这次不同之处是为具体的设备设置信息。
 
@@ -71,6 +82,7 @@ createInfo.pEnabledFeatures = &deviceFeatures;
 就像之前validation layers小节中提到的，允许为instance开启validation layers，
 现在我们将为设备开启validation layers，而不需要为设备指定任何扩展。
 
+<pre>
 createInfo.enabledExtensionCount = 0;
 
 if (enableValidationLayers) {
@@ -79,21 +91,28 @@ if (enableValidationLayers) {
 } else {
     createInfo.enabledLayerCount = 0;
 }
+</pre>
 
 就这样，我们现在可以通过调用vkCreateDevice函数来创建实例化逻辑设备。
 
+<pre>
 if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
     throw std::runtime_error("failed to create logical device!");
 }
+</pre>
+
 这些参数分别是包含具体队列使用信息的物理设备，可选的分配器回调指针以及用于存储逻辑设备的句柄。
 与instance创建类似，此调用可能由于启用不存在的扩展或者指定不支持的功能，导致返回错误。
 
 在cleanup函数中逻辑设备需要调用vkDestroyDevice销毁:
 
+<pre>
 void cleanup() {
     vkDestroyDevice(device, nullptr);
     ...
 }
+</pre>
+
 逻辑设备不与instance交互，所以参数中不包含instance。
 
 ## Retrieving queue handles
@@ -110,3 +129,5 @@ VkQueue graphicsQueue;
 vkGetDeviceQueue(device, indices.graphicsFamily, 0, &graphicsQueue);
 在成功获取逻辑设备和队列句柄后，我们可以通过显卡做一些实际的事情了，在接下来的几章节中，
 我们会设置资源并将相应的结果提交到窗体系统。
+
+[代码](src/06.cpp)。

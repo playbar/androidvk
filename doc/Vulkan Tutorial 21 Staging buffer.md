@@ -24,6 +24,7 @@
 考虑到我们在本章节需要创建多个缓冲区，比较理想的是创建辅助函数来完成。
 新增函数createBuffer并将createVertexBuffer中的部分代码(不包括映射)移入该函数。 
 
+<pre>
 void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -49,11 +50,13 @@ void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyF
 
     vkBindBufferMemory(device, buffer, bufferMemory, 0);
 }
+</pre>
 
 该函数需要传递缓冲区大小，内存属性和usage最终创建不同类型的缓冲区。最后两个参数保存输出的句柄。
 
 我们可以从createVertexBuffer函数中移除创建缓冲区和分配内存的代码，并使用createBuffer替代：
 
+<pre>
 void createVertexBuffer() {
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
     createBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, vertexBuffer, vertexBufferMemory);
@@ -63,12 +66,14 @@ void createVertexBuffer() {
     memcpy(data, vertices.data(), (size_t) bufferSize);
     vkUnmapMemory(device, vertexBufferMemory);
 }
+</pre>
 
 运行程序确保顶点缓冲区仍然正常工作。
 
 ## Using a staging buffer
 我们现在改变createVertexBuffer函数，仅仅使用host缓冲区作为临时缓冲区，并且使用device缓冲区作为最终的顶点缓冲区。
 
+<pre>
 void createVertexBuffer() {
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
@@ -83,6 +88,8 @@ void createVertexBuffer() {
 
     createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
 }
+</pre>
+
 
 我们使用stagingBuffer来划分stagingBufferMemory缓冲区用来映射、拷贝顶点数据。在本章节我们使用两个新的缓冲区usage标致类型：
 
@@ -95,13 +102,17 @@ vertexBuffer现在使用device类型作为分配的内存类型，意味着我�
 
 我们新增函数copyBuffer，用于从一个缓冲区拷贝数据到另一个缓冲区。
 
+<pre>
 void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
 
 }
+</pre>
+
 使用命令缓冲区执行内存传输的操作命令，就像绘制命令一样。因此我们需要分配一个临时命令缓冲区。
 或许在这里希望为短期的缓冲区分别创建command pool，那么可以考虑内存分配的优化策略，
 在command pool生成期间使用VK_COMMAND_POOL_CREATE_TRANSIENT_BIT标志位。
 
+<pre>
 void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
     VkCommandBufferAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -112,31 +123,37 @@ void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
     VkCommandBuffer commandBuffer;
     vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
 }
+</pre>
 
 立即使用命令缓冲过去进行记录：
 
+<pre>
 VkCommandBufferBeginInfo beginInfo = {};
 beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+</pre>
 
-vkBeginCommandBuffer(commandBuffer, &beginInfo);
+vkBeginCommandBuffer(commandBuffer, &beginInfo);v
 应用于绘制命令缓冲区的VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT标志位在此不必要，
 因为我们之需要使用一次命令缓冲区，等待该函数返回，直到复制操作完成。
 告知driver驱动程序使用VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT是一个好的习惯。
 
+<pre>
 VkBufferCopy copyRegion = {};
 copyRegion.srcOffset = 0; // Optional
 copyRegion.dstOffset = 0; // Optional
 copyRegion.size = size;
 vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+</pre>
 
 缓冲区内容使用vkCmdCopyBuffer命令传输。它使用source和destination缓冲区及一个缓冲区拷贝的区域作为参数。
 这个区域被定义在VkBufferCopy结构体中，描述源缓冲区的偏移量，目标缓冲区的偏移量和对应的大小。
 与vkMapMemory命令不同，这里不可以指定VK_WHOLE_SIZE。
 
-vkEndCommandBuffer(commandBuffer);
+vkEndCommandBuffer(commandBuffer);  
 此命令缓冲区仅包含拷贝命令，因此我们可以在此之后停止记录。现在执行命令缓冲区完成传输：
 
+<pre>
 VkSubmitInfo submitInfo = {};
 submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 submitInfo.commandBufferCount = 1;
@@ -144,22 +161,24 @@ submitInfo.pCommandBuffers = &commandBuffer;
 
 vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 vkQueueWaitIdle(graphicsQueue);
+</pre>
 
 与绘制命令不同的是，这个时候我们不需要等待任何事件。我们只是想立即在缓冲区执行传输命令。
 这里有同样有两个方式等待传输命令完成。我们可以使用vkWaitForFences等待栅栏fence，
 或者只是使用vkQueueWaitIdle等待传输队列状态变为idle。一个栅栏允许安排多个连续的传输操作，而不是一次执行一个。
 这给了驱动程序更多的优化空间。
 
-vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);  
 不要忘记清理用于传输命令的命令缓冲区。
 
 我们可以从createVertexBuffer函数中调用copyBuffer，拷贝顶点数据到设备缓冲区中：
 
 createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
 
-copyBuffer(stagingBuffer, vertexBuffer, bufferSize)
+copyBuffer(stagingBuffer, vertexBuffer, bufferSize)  
 当从暂存缓冲区拷贝数据到图形卡设备缓冲区完毕后，我们应该清理它：
 
+<pre>
  ...
 
     copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
@@ -167,6 +186,7 @@ copyBuffer(stagingBuffer, vertexBuffer, bufferSize)
     vkDestroyBuffer(device, stagingBuffer, nullptr);
     vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
+</pre>
 
 运行程序确认三角形绘制正常。性能的提升也许现在不能很好的显现出来，但其顶点数据已经是从高性能的显存中加载。
 当我们开始渲染更复杂的几何图形时，这个技术是非常重要。
@@ -179,4 +199,6 @@ copyBuffer(stagingBuffer, vertexBuffer, bufferSize)
 
 也可以自己实现一个灵活的内存分配器，或者使用GOUOpen提供的VulkanMemoryAllocator库。
 然而，对于本教程，我们可以做到为每个资源使用单独的分配，因为我们不会触达任何资源限制条件。 
+
+[代码](src/21.cpp)。
 

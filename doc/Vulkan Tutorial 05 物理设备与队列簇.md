@@ -10,6 +10,7 @@
  
 我们添加函数pickPhysicalDevice并在initVulkan函数中调用。
 
+<pre>
 void initVulkan() {
     createInstance();
     setupDebugCallback();
@@ -19,6 +20,7 @@ void initVulkan() {
 void pickPhysicalDevice() {
 
 }
+</pre>
 
 最终我们选择的图形显卡存储在类成员VkPhysicalDevice句柄中。当VkInstance销毁时，这个对象将会被隐式销毁，
 所以我们并不需要在cleanup函数中做任何操作。
@@ -44,7 +46,7 @@ bool isDeviceSuitable(VkPhysicalDevice device) {
 }
 我们将检查是否有任何物理设备符合我们的功能需求。
 
-
+<pre>
 for (const auto& device : devices) {
     if (isDeviceSuitable(device)) {
         physicalDevice = device;
@@ -55,6 +57,7 @@ for (const auto& device : devices) {
 if (physicalDevice == VK_NULL_HANDLE) {
     throw std::runtime_error("failed to find a suitable GPU!");
 }
+</pre>
 
 下一节我们介绍isDeviceSuitable函数，并检查第一个需要满足的功能。
 在后续的小节中，我们将开始使用更多的Vulkan功能，我们会扩展此功能函数以满足更多的检查条件。
@@ -74,6 +77,7 @@ vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
 例如，我们假设我们的应用程序仅适用于支持geometry shaders的专用显卡。那么isDeviceSuitable函数将如下所示:
 
+<pre>
 bool isDeviceSuitable(VkPhysicalDevice device) {
     VkPhysicalDeviceProperties deviceProperties;
     VkPhysicalDeviceFeatures deviceFeatures;
@@ -83,12 +87,13 @@ bool isDeviceSuitable(VkPhysicalDevice device) {
     return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
            deviceFeatures.geometryShader;
 }
+</pre>
 
 为了避免纯粹的单一的判断一个设备是否合适，尤其是当你发现多个设备都合适的条件下，你也可以给每一个设备做权值，
 选择最高的一个。这样，可以通过给予更高权值获取定制化的图形设备，但如果没有一个可用的设备，
 可以回滚到集成图形设备。你可以按照如下方式实现:
 
-<table>
+<pre>
 #include <map>
 
 ...
@@ -132,7 +137,7 @@ int rateDeviceSuitability(VkPhysicalDevice device) {
 
     return score;
 }
-</table>
+</pre>
 
 我们不需要在小节内实现所有内容，但我们可以了解如何选择图形设备的过程。当然，我们也可以显示图形设备的名称列表，
 让用户选择。
@@ -140,9 +145,12 @@ int rateDeviceSuitability(VkPhysicalDevice device) {
  
 因为我们刚刚开始，Vulkan的支持是我们唯一需要的，在这里假设任何GPU都可以:
 
+<pre>
 bool isDeviceSuitable(VkPhysicalDevice device) {
     return true;
 }
+</pre>
+
 在下一小节中，我们将会讨论第一个真正需要检查的设备功能。
 
 ## Queue families
@@ -159,7 +167,7 @@ bool isDeviceSuitable(VkPhysicalDevice device) {
 
 此函数返回满足某个属性的队列簇索引。定义结构体，其中索引-1表示"未找到":
 
-
+<pre>
 struct QueueFamilyIndices {
     int graphicsFamily = -1;
 
@@ -167,10 +175,11 @@ struct QueueFamilyIndices {
         return graphicsFamily >= 0;
     }
 };
+</pre>
 
 现在我们实现findQueueFamilies函数:
 
-
+<pre>
 QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
     QueueFamilyIndices indices;
 
@@ -178,17 +187,21 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
 
     return indices;
 }
+</pre>
 
 获取队列簇的列表函数为vkGetPhysicalDeviceQueueFamilyProperties:
 
+<pre>
 uint32_t queueFamilyCount = 0;
 vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
 
 std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
 vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+</pre>
+
 有关队列簇，结构体VkQueueFamilyProperties包含了具体信息，包括支持的操作类型和基于当前队列簇可以创建的有效队列数。我们至少需要找到一个支持VK_QUEUE_GRAPHICS_BIT的队列簇。
 
-
+<pre>
 int i = 0;
 for (const auto& queueFamily : queueFamilies) {
     if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
@@ -201,13 +214,19 @@ for (const auto& queueFamily : queueFamilies) {
 
     i++;
 }
+</pre>
 
 现在我们有了比较理想的队列簇查询功能，我们可以在isDeviceSuitable函数中使用，
 确保物理设备可以处理我们需要的命令:
 
+<pre>
 bool isDeviceSuitable(VkPhysicalDevice device) {
     QueueFamilyIndices indices = findQueueFamilies(device);
 
     return indices.isComplete();
 }
+</pre>
+
 很好，我们已经找到了我们需要的物理设备，在下一个小节我们会讨论逻辑设备。
+
+[代码](src/05.cpp)。

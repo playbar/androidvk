@@ -179,15 +179,15 @@ void VKRadialBlur::prepare()
 		shaderStages.push_back(loadShader(getAssetPath() + "shaders/base/textoverlay.vert.spv", VK_SHADER_STAGE_VERTEX_BIT));
 		shaderStages.push_back(loadShader(getAssetPath() + "shaders/base/textoverlay.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT));
 		textOverlay = new VulkanTextOverlay(
-                mVulkanDevice,
-			mQueue,
-			mFrameBuffers,
-			mSwapChain.colorFormat,
-			depthFormat,
-			&width,
-			&height,
-			shaderStages
-			);
+				mVulkanDevice,
+				mQueue,
+				mFrameBuffers,
+				mSwapChain.colorFormat,
+				depthFormat,
+				&width,
+				&height,
+				shaderStages
+		);
 		updateTextOverlay();
 	}
 	///////
@@ -389,7 +389,7 @@ void VKRadialBlur::submitFrame()
 
 		// Submit current text overlay command buffer
 		mSubmitInfo.commandBufferCount = 1;
-		mSubmitInfo.pCommandBuffers = &textOverlay->mCmdBuffers[currentBuffer];
+		mSubmitInfo.pCommandBuffers = &textOverlay->mCmdBuffers[miCurrentBuffer];
 		VK_CHECK_RESULT(vkQueueSubmit(mQueue, 1, &mSubmitInfo, VK_NULL_HANDLE));
 
 		// Reset stage mask
@@ -403,7 +403,7 @@ void VKRadialBlur::submitFrame()
 		mSubmitInfo.pSignalSemaphores = &mRenderComplete;
 	}
 
-	VK_CHECK_RESULT(mSwapChain.queuePresent(mQueue, currentBuffer,
+	VK_CHECK_RESULT(mSwapChain.queuePresent(mQueue, miCurrentBuffer,
 											submitTextOverlay ? mTextOverlayComplete : mRenderComplete));
 
 	VK_CHECK_RESULT(vkQueueWaitIdle(mQueue));
@@ -1656,7 +1656,7 @@ void VKRadialBlur::updateUniformBuffersScene()
 void VKRadialBlur::draw()
 {
 	// Acquire the next image from the swap chaing
-	VK_CHECK_RESULT(mSwapChain.acquireNextImage(mPresentComplete, &currentBuffer));
+	VK_CHECK_RESULT(mSwapChain.acquireNextImage(mPresentComplete, &miCurrentBuffer));
 
 	// Offscreen rendering
 
@@ -1678,7 +1678,7 @@ void VKRadialBlur::draw()
 	mSubmitInfo.pSignalSemaphores = &mRenderComplete;
 
 	// Submit work
-	mSubmitInfo.pCommandBuffers = &mDrawCmdBuffers[currentBuffer];
+	mSubmitInfo.pCommandBuffers = &mDrawCmdBuffers[miCurrentBuffer];
 	VK_CHECK_RESULT(vkQueueSubmit(mQueue, 1, &mSubmitInfo, VK_NULL_HANDLE));
 
 	submitFrame();

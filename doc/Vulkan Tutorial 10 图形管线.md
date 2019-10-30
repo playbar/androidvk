@@ -47,6 +47,7 @@ Vulkan中的图形管线几乎不可改变，因此如果需要更改着色器�
 
 在initVulkan中创建函数createGraphicsPipeline并在createImageViews后立即调用。我们在下一章节介绍函数功能。
 
+<pre>
 void initVulkan() {
     createInstance();
     setupDebugCallback();
@@ -63,8 +64,10 @@ void initVulkan() {
 void createGraphicsPipeline() {
 
 }
-
+</pre>
 
 在结尾处分享一下Vulkan官方的图形管线结构图，如下:
 
   ![Image](pic/10_2.png)
+  
+  [代码](src/10.cpp)。
