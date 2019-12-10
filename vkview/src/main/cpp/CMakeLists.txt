@@ -4,6 +4,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
                     -std=c++11 -fexceptions -Wall -fno-rtti -Wno-error=format-security \
                     -DVK_USE_PLATFORM_ANDROID_KHR")
 
+
+
 add_subdirectory(shaderc)
 
 ######
@@ -21,6 +23,7 @@ add_library(vkutils SHARED
 target_include_directories(vkutils PRIVATE
                           ${CMAKE_CURRENT_SOURCE_DIR}
                           ${CMAKE_CURRENT_SOURCE_DIR}/vk
+                          ${CMAKE_CURRENT_SOURCE_DIR}/vma
                           ${CMAKE_CURRENT_SOURCE_DIR}/data
                           ${CMAKE_CURRENT_SOURCE_DIR}/stb
                           ${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader

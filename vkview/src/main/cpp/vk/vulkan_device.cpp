@@ -11,6 +11,8 @@
 #include "vulkan_device.h"
 
 //#define USE_DEBUG_EXTENTIONS
+#define VMA_IMPLEMENTATION
+#include <vk_mem_alloc.h>
 
 #ifdef USE_DEBUG_EXTENTIONS
 const bool enableValidationLayers = true;
@@ -271,6 +273,51 @@ void VulkanDevice::createLogicalDevice()
     }
     vkGetDeviceQueue(mLogicalDevice, indices.graphicsFamily, 0, &mGraphicsQueue);
     vkGetDeviceQueue(mLogicalDevice, indices.presentFamily, 0, &mPresentQueue);
+}
+
+VmaAllocator VulkanDevice::get_memory_allocator() const
+{
+    return memory_allocator;
+}
+
+void VulkanDevice::createVmaAlloc()
+{
+    VmaVulkanFunctions vma_vulkan_func{};
+    vma_vulkan_func.vkAllocateMemory                    = vkAllocateMemory;
+    vma_vulkan_func.vkBindBufferMemory                  = vkBindBufferMemory;
+    vma_vulkan_func.vkBindImageMemory                   = vkBindImageMemory;
+    vma_vulkan_func.vkCreateBuffer                      = vkCreateBuffer;
+    vma_vulkan_func.vkCreateImage                       = vkCreateImage;
+    vma_vulkan_func.vkDestroyBuffer                     = vkDestroyBuffer;
+    vma_vulkan_func.vkDestroyImage                      = vkDestroyImage;
+    vma_vulkan_func.vkFlushMappedMemoryRanges           = vkFlushMappedMemoryRanges;
+    vma_vulkan_func.vkFreeMemory                        = vkFreeMemory;
+    vma_vulkan_func.vkGetBufferMemoryRequirements       = vkGetBufferMemoryRequirements;
+    vma_vulkan_func.vkGetImageMemoryRequirements        = vkGetImageMemoryRequirements;
+    vma_vulkan_func.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
+    vma_vulkan_func.vkGetPhysicalDeviceProperties       = vkGetPhysicalDeviceProperties;
+    vma_vulkan_func.vkInvalidateMappedMemoryRanges      = vkInvalidateMappedMemoryRanges;
+    vma_vulkan_func.vkMapMemory                         = vkMapMemory;
+    vma_vulkan_func.vkUnmapMemory                       = vkUnmapMemory;
+
+    VmaAllocatorCreateInfo allocator_info{};
+    allocator_info.physicalDevice = mPhysicalDevice;
+    allocator_info.device         = mLogicalDevice;
+
+//    if (can_get_memory_requirements && has_dedicated_allocation)
+//    {
+//        allocator_info.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
+//        vma_vulkan_func.vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2KHR;
+//        vma_vulkan_func.vkGetImageMemoryRequirements2KHR  = vkGetImageMemoryRequirements2KHR;
+//    }
+
+    allocator_info.pVulkanFunctions = &vma_vulkan_func;
+
+    VkResult result = vmaCreateAllocator(&allocator_info, &memory_allocator);
+    if (result != VK_SUCCESS)
+    {
+        LOGE("error");
+    }
 }
 
 void VulkanDevice::createSurface(ANativeWindow *window)

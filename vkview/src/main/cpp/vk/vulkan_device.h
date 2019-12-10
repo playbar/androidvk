@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include <vulkan_wrapper.h>
 #include "vulkan_data.h"
+#include "vk_mem_alloc.h"
 
 
 class VulkanDevice {
@@ -21,6 +22,7 @@ public:
     void pickPhysicalDevice();
     void createLogicalDevice();
     void createSurface(ANativeWindow *window);
+    void createVmaAlloc();
 
     bool isDeviceSuitable(VkPhysicalDevice device);
     bool checkDeviceExtensionSupport(VkPhysicalDevice device);
@@ -31,6 +33,8 @@ public:
     void resetCommandPool();
     VkCommandBuffer beginSingleTimeCommands();
     void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+
+    VmaAllocator get_memory_allocator() const;
     
     VkDeviceSize GetUniformBufferAlignment() const
     {
@@ -60,6 +64,9 @@ public:
 
     VkQueue mGraphicsQueue;
     VkQueue mPresentQueue;
+
+    VmaAllocator memory_allocator{VK_NULL_HANDLE};
+
 
 };
 

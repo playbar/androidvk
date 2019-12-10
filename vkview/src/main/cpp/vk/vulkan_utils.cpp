@@ -298,6 +298,7 @@ void VulkanUtils::createSurfaceDevice()
     mVKDevice.createSurface(window);
     mVKDevice.pickPhysicalDevice();
     mVKDevice.createLogicalDevice();
+    mVKDevice.createVmaAlloc();
     mVKDevice.createCommandPool();
     createSemaphores();
 }

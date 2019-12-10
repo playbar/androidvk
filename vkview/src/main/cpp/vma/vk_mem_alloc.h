@@ -1771,7 +1771,7 @@ available through VmaAllocatorCreateInfo::pRecordSettings.
 #endif
 
 #ifndef VULKAN_H_
-    #include <vulkan/vulkan.h>
+    #include "vulkan/vulkan.h"
 #endif
 
 #if VMA_RECORDING_ENABLED
@@ -15447,7 +15447,7 @@ VkResult VmaAllocator_T::ResizeAllocation(
     {
         return VK_SUCCESS;
     }
-    return VK_ERROR_OUT_OF_POOL_MEMORY;
+    return VK_ERROR_OUT_OF_POOL_MEMORY_KHR;
 }
 
 void VmaAllocator_T::CalculateStats(VmaStats* pStats)
