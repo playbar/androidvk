@@ -11,6 +11,7 @@ HVkBuffer::HVkBuffer(VulkanDevice *device)
 	mBuffer = NULL;
 	mSize = 0;
 	mOffset = OFFSET_VALUE;
+	mbUseVma = false;
 }
 
 HVkBuffer::~HVkBuffer()
@@ -21,6 +22,7 @@ HVkBuffer::~HVkBuffer()
 
 void HVkBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
 {
+	mbUseVma = false;
 	mSize = size;
 	VkBufferCreateInfo bufferInfo = {
 			.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -60,14 +62,52 @@ void HVkBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
 void HVkBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags buffer_usage,
 				  VmaMemoryUsage memory_usage, VmaAllocationCreateFlags flags)
 {
+	mSize = size;
+//	persistent = (flags & VMA_ALLOCATION_CREATE_MAPPED_BIT) != 0;
+	mbUseVma = true;
+	mAlignment = 64;
+
+	VkBufferCreateInfo buffer_info{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+	buffer_info.usage = buffer_usage;
+	buffer_info.size  = size;
+
+	VmaAllocationCreateInfo memory_info{};
+	memory_info.flags = flags;
+	memory_info.usage = memory_usage;
+
+	VmaAllocationInfo allocation_info{};
+	auto result = vmaCreateBuffer(mVkDevice->get_memory_allocator(),
+											   &buffer_info, &memory_info,
+											   &mBuffer, &mAllocation,
+											   &allocation_info);
+
+	mMemory = allocation_info.deviceMemory;
+
+	if (persistent)
+	{
+		mpData = static_cast<uint8_t *>(allocation_info.pMappedData);
+	}
 
 }
 
 VkResult HVkBuffer::map(VkDeviceSize size, VkDeviceSize offset)
 {
-	void* mapped_ptr = nullptr;
-	VkResult re = vkMapMemory(mVkDevice->mLogicalDevice, mMemory, offset, size, 0, &mapped_ptr);
-	mpData = (unsigned char*)mapped_ptr;
+	VkResult re = VK_SUCCESS;
+	if( mbUseVma )
+	{
+		if (!mapped && !mpData)
+		{
+			re = vmaMapMemory(mVkDevice->get_memory_allocator(), mAllocation,
+							  reinterpret_cast<void **>(&mpData));
+			mapped = true;
+		}
+	}
+	else
+	{
+		void* mapped_ptr = nullptr;
+		re = vkMapMemory(mVkDevice->mLogicalDevice, mMemory, offset, size, 0, &mapped_ptr);
+		mpData = (unsigned char*)mapped_ptr;
+	}
 	return re;
 
 }
@@ -78,7 +118,7 @@ void HVkBuffer::copyTo(void* data, VkDeviceSize size)
     memcpy(mpData, data, size);
 }
 
-void HVkBuffer::updateData(void* data, uint32_t length)
+void HVkBuffer::updateDataVk(void* data, uint32_t length)
 {
 	void* mapped_ptr = nullptr;
 	vkMapMemory(mVkDevice->mLogicalDevice, mMemory, 0, mSize, 0, &mapped_ptr);
@@ -95,9 +135,33 @@ void HVkBuffer::updateData(void* data, uint32_t length)
 		vkUnmapMemory(mVkDevice->mLogicalDevice, mMemory);
 		mpData = nullptr;
 	}
+
 }
 
-void HVkBuffer::unmap()
+void HVkBuffer::updateData(void* data, uint32_t length)
+{
+	if( mbUseVma )
+	{
+		if (mOffset + length >= mSize)
+		{
+			mOffset = OFFSET_VALUE;
+		}
+		if (persistent) {
+			memcpy(mpData + mOffset, data, length);
+//		flush(length);
+		} else {
+			map();
+			memcpy(mpData + mOffset, data, length);
+//		flush(length);
+			unmap();
+		}
+	}
+	else{
+		updateDataVk(data, length);
+	}
+}
+
+void HVkBuffer::unmapVk()
 {
 	if (mpData)
 	{
@@ -106,48 +170,21 @@ void HVkBuffer::unmap()
 	}
 }
 
-void HVkBuffer::copyBuffer(HVkBuffer &srcBuffer)
+void HVkBuffer::unmap()
 {
-	VkCommandBufferAllocateInfo allocInfo = {
-			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-			.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-			.commandPool = mVkDevice->mCommandPool,
-			.commandBufferCount = 1,
-	};
-
-	VkCommandBuffer commandBuffer;
-	vkAllocateCommandBuffers(mVkDevice->mLogicalDevice, &allocInfo, &commandBuffer);
-
-	VkCommandBufferBeginInfo beginInfo = {
-			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-			.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-	};
-	vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-	VkBufferCopy copyRegion = {
-			.size = srcBuffer.mSize
-	};
-	vkCmdCopyBuffer(commandBuffer, srcBuffer.mBuffer, mBuffer, 1, &copyRegion);
-
-	vkEndCommandBuffer(commandBuffer);
-
-	VkSubmitInfo submitInfo = {
-			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-			.commandBufferCount = 1,
-			.pCommandBuffers = &commandBuffer,
-	};
-	vkQueueSubmit(mVkDevice->mGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-	vkQueueWaitIdle(mVkDevice->mGraphicsQueue);
-
-	vkFreeCommandBuffers(mVkDevice->mLogicalDevice, mVkDevice->mCommandPool, 1, &commandBuffer);
-	return;
+	if( mbUseVma ) {
+		if (mapped) {
+			vmaUnmapMemory(mVkDevice->get_memory_allocator(), mAllocation);
+			mpData = nullptr;
+			mapped = false;
+		}
+	}
+	else
+	{
+		unmapVk();
+	}
 }
 
-
-VkResult HVkBuffer::bind(VkDeviceSize offset)
-{
-	return vkBindBufferMemory(mVkDevice->mLogicalDevice, mBuffer, mMemory, offset);
-}
 
 void HVkBuffer::setupDescriptor(VkDeviceSize size, VkDeviceSize offset)
 {
@@ -171,7 +208,7 @@ uint32_t HVkBuffer::calc_align(uint32_t n,uint32_t align)
 //    return  (n / align + 1) * align;
 }
 
-VkResult HVkBuffer::flush(VkDeviceSize size)
+VkResult HVkBuffer::flushVk(VkDeviceSize size)
 {
 	VkMappedMemoryRange mappedRange = {};
 	mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
@@ -179,13 +216,31 @@ VkResult HVkBuffer::flush(VkDeviceSize size)
 	mappedRange.offset = mOffset;
 	mappedRange.size = size;
 	VkResult re = vkFlushMappedMemoryRanges(mVkDevice->mLogicalDevice, 1, &mappedRange);
-
 	mOffset += calc_align(size, mAlignment);
 
 	if( mOffset >= mSize )
 	{
 		mOffset = OFFSET_VALUE;
 	}
+	return re;
+}
+
+VkResult HVkBuffer::flush(VkDeviceSize size)
+{
+
+	VkResult re = VK_SUCCESS;
+	if( mbUseVma) {
+		vmaFlushAllocation(mVkDevice->get_memory_allocator(), mAllocation, 0, size);
+
+		mOffset += calc_align(size, mAlignment);
+
+		if (mOffset >= mSize) {
+			mOffset = OFFSET_VALUE;
+		}
+	}else{
+		flushVk(size);
+	}
+
 	return re;
 }
 
@@ -208,21 +263,25 @@ VkResult HVkBuffer::invalidate(VkDeviceSize size, VkDeviceSize offset)
 
 void HVkBuffer::destroy()
 {
-	if (mpData)
-	{
-		vkUnmapMemory(mVkDevice->mLogicalDevice, mMemory);
-		mpData = nullptr;
-	}
+	if( mbUseVma) {
+		if (mBuffer != VK_NULL_HANDLE && mAllocation != VK_NULL_HANDLE) {
+			unmap();
+			vmaDestroyBuffer(mVkDevice->get_memory_allocator(), mBuffer, mAllocation);
+		}
+	}else {
+		if (mpData) {
+			vkUnmapMemory(mVkDevice->mLogicalDevice, mMemory);
+			mpData = nullptr;
+		}
 
-	if (mBuffer)
-	{
-		vkDestroyBuffer(mVkDevice->mLogicalDevice, mBuffer, nullptr);
-		mBuffer = NULL;
-	}
-	if (mMemory)
-	{
-		vkFreeMemory(mVkDevice->mLogicalDevice, mMemory, nullptr);
-		mMemory = NULL;
+		if (mBuffer) {
+			vkDestroyBuffer(mVkDevice->mLogicalDevice, mBuffer, nullptr);
+			mBuffer = NULL;
+		}
+		if (mMemory) {
+			vkFreeMemory(mVkDevice->mLogicalDevice, mMemory, nullptr);
+			mMemory = NULL;
+		}
 	}
 }
 

@@ -873,19 +873,30 @@ void VulkanUtils::createCacheBuffers()
     for( int i = 0; i < size; ++i )
     {
         HVkBuffer *pVerBuffer = new HVkBuffer(&mVKDevice);
+//        pVerBuffer->createBuffer(MAX_BUFFER_SIZE,
+//                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+//                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
         pVerBuffer->createBuffer(MAX_BUFFER_SIZE,
                                  VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                                 VMA_MEMORY_USAGE_CPU_TO_GPU);
 
         HVkBuffer *pIndBuffer = new HVkBuffer(&mVKDevice);
+//        pIndBuffer->createBuffer(MAX_BUFFER_SIZE,
+//                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+//                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
         pIndBuffer->createBuffer(MAX_BUFFER_SIZE,
-                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                 VMA_MEMORY_USAGE_CPU_TO_GPU);
 
         HVkBuffer *pUniBuffer = new HVkBuffer(&mVKDevice);
+//        pUniBuffer->createBuffer(MAX_BUFFER_SIZE,
+//                                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+//                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
         pUniBuffer->createBuffer(MAX_BUFFER_SIZE,
-                                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
         mVertexBuffers.push_back(pVerBuffer);
         mIndexBuffers.push_back(pIndBuffer);

@@ -16,6 +16,12 @@ public:
 	VkBuffer mBuffer;
 	VkDeviceMemory mMemory;
 
+	VmaAllocation mAllocation{VK_NULL_HANDLE};
+
+	bool persistent{false};
+	bool mapped{false};
+	bool mbUseVma;
+
 	VkDescriptorBufferInfo mDescriptor;
 	VkDeviceSize mSize = 0;
 	VkDeviceSize mOffset = 0;
@@ -30,7 +36,8 @@ public:
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
 
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags buffer_usage,
-					  VmaMemoryUsage memory_usage, VmaAllocationCreateFlags flags);
+					  VmaMemoryUsage memory_usage,
+					  VmaAllocationCreateFlags flags = VMA_ALLOCATION_CREATE_MAPPED_BIT);
 
 	VkResult map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
@@ -40,9 +47,9 @@ public:
 
 	void unmap();
 
-	void copyBuffer(HVkBuffer &srcBuffer);
+//	void copyBuffer(HVkBuffer &srcBuffer);
 
-	VkResult bind(VkDeviceSize offset = 0);
+//	VkResult bind(VkDeviceSize offset = 0);
 
 	void setupDescriptor(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
@@ -54,6 +61,11 @@ public:
 	void reset();
 
 	void destroy();
+
+private:
+	void updateDataVk(void* data, uint32_t length);
+	void unmapVk();
+	VkResult flushVk(VkDeviceSize size);
 
 };
 
