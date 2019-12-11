@@ -1,0 +1,84 @@
+#version 450
+/* Copyright (c) 2019, Arm Limited and Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 the "License";
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+precision highp float;
+
+layout(input_attachment_index = 0, binding = 0) uniform subpassInput i_depth;
+layout(input_attachment_index = 1, binding = 1) uniform subpassInput i_albedo;
+layout(input_attachment_index = 2, binding = 2) uniform subpassInput i_normal;
+
+layout(location = 0) in vec2 in_uv;
+
+layout(location = 0) out vec4 o_color;
+
+layout(set = 0, binding = 3) uniform GlobalUniform
+{
+	mat4 inv_view_proj;
+	vec2 inv_resolution;
+}
+global_uniform;
+
+struct Light
+{
+	vec4 position;         // position.w represents type of light
+	vec4 color;            // color.w represents light intensity
+	vec4 direction;        // direction.w represents range
+	vec2 info;             // (only used for spot lights) info.x represents light inner cone angle, info.y represents light outer cone angle
+};
+
+layout(set = 0, binding = 4) uniform LightsInfo
+{
+	uint  count;
+	Light lights[MAX_DEFERRED_LIGHT_COUNT];
+}
+lights;
+
+void main()
+{
+	// Retrieve position from depth
+	vec4  clip         = vec4(gl_FragCoord.xy * global_uniform.inv_resolution * 2.0 - 1.0, subpassLoad(i_depth).x, 1.0);
+	highp vec4 world_w = global_uniform.inv_view_proj * clip;
+	highp vec3 pos     = world_w.xyz / world_w.w;
+
+	vec4 albedo = subpassLoad(i_albedo);
+	// Transform from [0,1] to [-1,1]
+	vec3 normal = subpassLoad(i_normal).xyz;
+	normal      = normalize(2.0 * normal - 1.0);
+
+	// Calculate lighting
+	vec4 L = vec4(0.0);
+
+	for (uint i = 0U; i < lights.count; i++)
+	{
+		vec3 world_to_light = lights.lights[i].position.rgb - pos;
+
+		float dist = length(world_to_light) * 0.005;
+
+		// +0.00001 stop zero division
+		float attenuation = 1.0 / (0.00001 + (1.0 / lights.lights[i].color.a + 0.00001) * dist * dist);
+
+		float ndotl = clamp(dot(normal, normalize(world_to_light)), 0.0, 1.0);
+
+		L += ndotl * attenuation * lights.lights[i].color;
+	}
+
+	vec4 ambient_color = vec4(0.2, 0.2, 0.2, 1.0) * albedo;
+
+	o_color   = L * ambient_color;
+	o_color.a = 1.0;
+}

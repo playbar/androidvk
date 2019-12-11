@@ -1,51 +1,63 @@
-cmake_minimum_required(VERSION 3.4.1)
+# Copyright (c) 2019, Arm Limited and Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 the "License";
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11  -Werror -DVK_USE_PLATFORM_ANDROID_KHR")
+cmake_minimum_required(VERSION 3.6)
 
-get_filename_component(SHADERC_SRC
-                       ${ANDROID_NDK}/sources/third_party/shaderc
-                       ABSOLUTE)
+project(vulkan_samples)
 
-# Import shaderc lib in NDK
-#add_library(shaderc_lib STATIC IMPORTED)
-#set_target_properties(shaderc_lib PROPERTIES IMPORTED_LOCATION
-#                      ${SHADERC_SRC}/libs/${ANDROID_STL}/${ANDROID_ABI}/libshaderc.a)
+# create output folder
+file(MAKE_DIRECTORY output)
 
-#file(GLOB UTILS_SOURCE *.cpp)
-#file(GLOB GLUE_SOURCE *.c)
+# Add path for local cmake scripts
+list(APPEND CMAKE_MODULE_PATH
+    ${CMAKE_CURRENT_SOURCE_DIR}/bldsys/cmake
+    ${CMAKE_CURRENT_SOURCE_DIR}/bldsys/cmake/module)
 
-#add_library(vksample SHARED
-#            ${UTILS_SOURCE}
-#            ${GLUE_SOURCE})
+# Precompiled header macro. Parameters are source file list and filename for pch cpp file.
+macro(vulkan_samples_pch SRCS PCHCPP)
+  if(MSVC AND CMAKE_GENERATOR MATCHES "^Visual Studio")
+    set(PCH_NAME "$(IntDir)\\pch.pch")
+    # make source files use/depend on PCH_NAME
+    set_source_files_properties(${${SRCS}} PROPERTIES COMPILE_FLAGS "/Yupch.h /FIpch.h /Fp${PCH_NAME} /Zm300" OBJECT_DEPENDS "${PCH_NAME}")
+    # make PCHCPP file compile and generate PCH_NAME
+    set_source_files_properties(${PCHCPP} PROPERTIES COMPILE_FLAGS "/Ycpch.h /Fp${PCH_NAME} /Zm300" OBJECT_OUTPUTS "${PCH_NAME}")
+    list(APPEND ${SRCS} "${PCHCPP}")
+  endif()
+endmacro(vulkan_samples_pch)
 
+include(utils)
+include(global_options)
+include(sample_helper)
 
-add_subdirectory(shaderc)
+# Add third party libraries
+add_subdirectory(third_party)
 
+# Add vulkan framework
+add_subdirectory(framework)
 
-add_library(vksample SHARED
-            android_native_app_glue.c
-            instance.cpp
-            jniactivity.c
-            load.c
-            util.cpp
-            util_init.cpp
-            vulkan_wrapper.cpp)
+if(VKB_BUILD_TESTS)
+    # Add vulkan tests
+    add_subdirectory(tests)
+endif()
 
-target_include_directories(vksample PRIVATE
-                          ${CMAKE_CURRENT_SOURCE_DIR}
-                          ${CMAKE_CURRENT_SOURCE_DIR}/data
-                          ${CMAKE_CURRENT_SOURCE_DIR}/shaderc
-                          ${CMAKE_CURRENT_SOURCE_DIR}/shaderc/libshaderc/include)
-
-target_link_libraries(vksample
-                      android
-                      log
-                      shaderc
-                      shaderc_util
-                      glslang
-                      SPIRV
-                      SPIRV-Tools
-                      SPIRV-Tools-opt
-                      OSDependent
-                      OGLCompiler)
-
+if(VKB_BUILD_SAMPLES)
+    # Add vulkan samples
+    add_subdirectory(samples)
+    
+    # Add vulkan app (runs all samples)
+    add_subdirectory(android)
+endif()
