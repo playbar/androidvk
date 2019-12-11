@@ -29,6 +29,9 @@ public:
 
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
 
+	void createBuffer(VkDeviceSize size, VkBufferUsageFlags buffer_usage,
+					  VmaMemoryUsage memory_usage, VmaAllocationCreateFlags flags);
+
 	VkResult map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
 	void copyTo(void* data, VkDeviceSize size);

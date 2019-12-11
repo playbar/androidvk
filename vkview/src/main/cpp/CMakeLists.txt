@@ -18,6 +18,7 @@ add_library(vkutils SHARED
            vk/vulkan_global.cpp
            vk/vulkan_wrapper.cpp
            vk/vulkan_utils_jni.cpp
+           vma/vk_mem_alloc.cpp
             )
 
 target_include_directories(vkutils PRIVATE

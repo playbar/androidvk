@@ -21,12 +21,6 @@ HVkBuffer::~HVkBuffer()
 
 void HVkBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
 {
-	float data[2];
-	data[0] = 1;
-	data[1] = 2;
-
-	uint32_t leng = VK_WHOLE_SIZE;
-	leng = sizeof( data);
 	mSize = size;
 	VkBufferCreateInfo bufferInfo = {
 			.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -61,6 +55,12 @@ void HVkBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
 //	vkMapMemory(mVkDevice->mLogicalDevice, mMemory, 0, mSize, 0, &mapped_ptr);
 //	mpData = (unsigned char*)mapped_ptr;
 	return;
+}
+
+void HVkBuffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags buffer_usage,
+				  VmaMemoryUsage memory_usage, VmaAllocationCreateFlags flags)
+{
+
 }
 
 VkResult HVkBuffer::map(VkDeviceSize size, VkDeviceSize offset)
