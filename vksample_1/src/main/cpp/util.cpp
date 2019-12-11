@@ -15,6 +15,8 @@
 // Header files.
 #include <android_native_app_glue.h>
 #include "shaderc/shaderc.hpp"
+#include "cerrno"
+
 // Static variable that keeps ANativeWindow and asset manager instances.
 static android_app* Android_application = nullptr;
 #else
@@ -26,6 +28,8 @@ static android_app* Android_application = nullptr;
 #include <Windows.h>
 #else
 #include <sys/time.h>
+#include <cstring>
+
 #endif
 
 using namespace std;

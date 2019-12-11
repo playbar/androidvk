@@ -161,14 +161,6 @@ void HVkBuffer::updateData(void* data, uint32_t length)
 	}
 }
 
-void HVkBuffer::unmapVk()
-{
-	if (mpData)
-	{
-		vkUnmapMemory(mVkDevice->mLogicalDevice, mMemory);
-        mpData = nullptr;
-	}
-}
 
 void HVkBuffer::unmap()
 {
@@ -181,7 +173,11 @@ void HVkBuffer::unmap()
 	}
 	else
 	{
-		unmapVk();
+		if (mpData)
+		{
+			vkUnmapMemory(mVkDevice->mLogicalDevice, mMemory);
+			mpData = nullptr;
+		}
 	}
 }
 
@@ -263,8 +259,10 @@ VkResult HVkBuffer::invalidate(VkDeviceSize size, VkDeviceSize offset)
 
 void HVkBuffer::destroy()
 {
-	if( mbUseVma) {
-		if (mBuffer != VK_NULL_HANDLE && mAllocation != VK_NULL_HANDLE) {
+	if( mbUseVma)
+	{
+		if (mBuffer != VK_NULL_HANDLE && mAllocation != VK_NULL_HANDLE)
+		{
 			unmap();
 			vmaDestroyBuffer(mVkDevice->get_memory_allocator(), mBuffer, mAllocation);
 		}

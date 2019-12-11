@@ -64,7 +64,6 @@ public:
 
 private:
 	void updateDataVk(void* data, uint32_t length);
-	void unmapVk();
 	VkResult flushVk(VkDeviceSize size);
 
 };
